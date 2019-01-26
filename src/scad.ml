@@ -22,16 +22,16 @@ module Scad_core = struct
         let rec arrange_elms indent = List.fold_left (fun stmts scad -> stmts^(print indent scad)) ""
         and print indent = function
             | Cylinder { r1; r2; h; center } ->
-                    Printf.sprintf "%scylinder(h=%f, r1=%f, r2=%f, center=%B)\n" indent h r1 r2 center
+                    Printf.sprintf "%scylinder(h=%f, r1=%f, r2=%f, center=%B);\n" indent h r1 r2 center
             | Cube { size; center } ->
                 let (w, h, d) = size in
-                Printf.sprintf "%scube(size=[%f, %f, %f], center=%B)\n" indent w h d center
+                Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent w h d center
             | Sphere { r } ->
-                Printf.sprintf "%ssphere(%f)\n" indent r
+                Printf.sprintf "%ssphere(%f);\n" indent r
             | Translate (p, scad) ->
-                Printf.sprintf "%stranslate(%s)\n%s" indent (string_of_pos_t p) (print (indent^"\t") scad)
+                Printf.sprintf "%stranslate(%s);\n%s" indent (string_of_pos_t p) (print (indent^"\t") scad)
             | Rotate (r, scad) ->
-                Printf.sprintf "%srotate(%s)\n%s" indent (string_of_rotate_t r) (print (indent^"\t") scad)
+                Printf.sprintf "%srotate(%s);\n%s" indent (string_of_rotate_t r) (print (indent^"\t") scad)
             | Union elements ->
                 Printf.sprintf "%sunion(){\n%s}\n" indent @@ arrange_elms (indent^"\t") elements
             | Intersection elements ->
