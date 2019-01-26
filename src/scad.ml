@@ -1,3 +1,5 @@
+let pi = 4.0 *. atan 1.0
+
 type pos_t = float * float * float
 type rotate_t = float * float * float
 type scad_t =
