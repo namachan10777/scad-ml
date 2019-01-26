@@ -12,6 +12,7 @@ module Scad_core = struct
         | Union of scad_t list
         | Intersection of scad_t list
         | Difference of scad_t * scad_t list
+        | Polyhedron of pos_t list * int list list
 
     let string_of_pos_t = function (w, h, d) -> Printf.sprintf "[%f, %f, %f]" w h d
     let string_of_rotate_t =
@@ -38,6 +39,15 @@ module Scad_core = struct
                 Printf.sprintf "%sintersection(){\n%s}\n" indent @@ arrange_elms (indent^"\t") elements
             | Difference (minuend, subtrahend) ->
                 Printf.sprintf "%sdifference(){\n%s%s}\n" indent (print (indent^"\t") minuend) @@ arrange_elms (indent^"\t") subtrahend
+            | Polyhedron (points, faces) ->
+                let string_of_list string_of l =
+                    "["^
+                    (List.fold_left (fun str elm -> str^", "^(string_of elm)) (l |> List.hd |> string_of) (List.tl l))^
+                    "]"
+                in Printf.sprintf "%spolyhedron(points=%s, faces=%s);\n"
+                    indent
+                    (string_of_list string_of_pos_t points)
+                    (string_of_list (string_of_list string_of_int) faces)
         in print ""
 end
 
@@ -64,8 +74,13 @@ module Model = struct
 
     let intersection elements =
         Scad_core.Intersection elements
+
+    let polyhedron points faces =
+        Scad_core.Polyhedron (points, faces)
 end
 
 module Scad = struct
-    let write oc scad = Printf.fprintf oc "%s" (Scad_core.string_of_scad scad)
+    let write oc scad =
+        Printf.fprintf oc "%s" (Scad_core.string_of_scad scad);
+        flush oc
 end
