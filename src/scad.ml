@@ -34,11 +34,11 @@ module Scad_core = struct
             | Rotate (r, scad) ->
                 Printf.sprintf "%srotate(%s)\n%s" indent (string_of_rotate_t r) (print (indent^"\t") scad)
             | Union elements ->
-                Printf.sprintf "%sunion(){\n%s}\n" indent @@ arrange_elms (indent^"\t") elements
+                Printf.sprintf "%sunion(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
             | Intersection elements ->
-                Printf.sprintf "%sintersection(){\n%s}\n" indent @@ arrange_elms (indent^"\t") elements
+                Printf.sprintf "%sintersection(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
             | Difference (minuend, subtrahend) ->
-                Printf.sprintf "%sdifference(){\n%s%s}\n" indent (print (indent^"\t") minuend) @@ arrange_elms (indent^"\t") subtrahend
+                Printf.sprintf "%sdifference(){\n%s%s%s}\n" indent (print (indent^"\t") minuend) (arrange_elms (indent^"\t") subtrahend) indent
             | Polyhedron (points, faces) ->
                 let string_of_list string_of l =
                     "["^
