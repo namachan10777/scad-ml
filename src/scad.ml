@@ -30,9 +30,9 @@ module Scad_core = struct
             | Sphere { r } ->
                 Printf.sprintf "%ssphere(%f);\n" indent r
             | Translate (p, scad) ->
-                Printf.sprintf "%stranslate(%s);\n%s" indent (string_of_pos_t p) (print (indent^"\t") scad)
+                Printf.sprintf "%stranslate(%s)\n%s" indent (string_of_pos_t p) (print (indent^"\t") scad)
             | Rotate (r, scad) ->
-                Printf.sprintf "%srotate(%s);\n%s" indent (string_of_rotate_t r) (print (indent^"\t") scad)
+                Printf.sprintf "%srotate(%s)\n%s" indent (string_of_rotate_t r) (print (indent^"\t") scad)
             | Union elements ->
                 Printf.sprintf "%sunion(){\n%s}\n" indent @@ arrange_elms (indent^"\t") elements
             | Intersection elements ->
