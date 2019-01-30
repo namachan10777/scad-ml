@@ -13,6 +13,7 @@ module Scad_core = struct
         | Intersection of scad_t list
         | Difference of scad_t * scad_t list
         | Polyhedron of pos_t list * int list list
+        | Mirror of (int * int * int) * scad_t
 
     let string_of_pos_t = function (w, h, d) -> Printf.sprintf "[%f, %f, %f]" w h d
     let string_of_rotate_t =
@@ -48,6 +49,9 @@ module Scad_core = struct
                     indent
                     (string_of_list string_of_pos_t points)
                     (string_of_list (string_of_list string_of_int) faces)
+            | Mirror ((x, y, z), scad) ->
+                Printf.sprintf "%smirror(v=[%d, %d, %d])\n%s" indent x y z (print (indent^"\t") scad)
+
         in print ""
 end
 
@@ -77,6 +81,9 @@ module Model = struct
 
     let polyhedron points faces =
         Scad_core.Polyhedron (points, faces)
+
+    let mirror v scad =
+        Scad_core.Mirror (v, scad)
 end
 
 module Scad = struct
