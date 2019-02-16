@@ -4,9 +4,9 @@ module Scad_core = struct
     type pos_t = float * float * float
     type rotate_t = float * float * float
     type scad_t =
-        | Cylinder of { r1: float; r2: float; h: float; center: bool }
+        | Cylinder of { r1: float; r2: float; h: float; center: bool; fa: float option; fs: float option; fn: int option }
         | Cube of { size: (float * float * float); center: bool }
-        | Sphere of { r: float }
+        | Sphere of { r: float; fa: float option; fs: float option; fn: int option }
         | Translate of pos_t * scad_t
         | Rotate of rotate_t * scad_t
         | Union of scad_t list
@@ -20,16 +20,39 @@ module Scad_core = struct
         let deg_of_rad r = 360.0 *. r /. (2. *. pi) in
         function (w, h, d) -> Printf.sprintf "[%f, %f, %f]" (deg_of_rad w) (deg_of_rad h) (deg_of_rad d)
 
+    let map f = function
+        | Some(x) -> Some(f x)
+        | None -> None
+
+    let rec join x = function
+        | [] -> []
+        | h :: [] -> h :: []
+        | h :: t :: [] -> h :: x :: t :: []
+        | h :: t -> h :: x :: join x t 
+
+    let rec compact = function
+        | Some(h) :: t -> h :: compact t
+        | None :: t -> compact t
+        | [] -> []
+
     let string_of_scad =
+        let string_of_f_ fa fs fn =
+            [map (fun fa -> Printf.sprintf "$fa=%f" fa) fa; 
+             map (fun fs -> Printf.sprintf "$fs=%f" fs) fs; 
+             map (fun fn -> Printf.sprintf "$fn=%d" fn) fn]
+            |> compact
+            |> join ", "
+            |> List.fold_left (^) ", "
+        in
         let rec arrange_elms indent = List.fold_left (fun stmts scad -> stmts^(print indent scad)) ""
         and print indent = function
-            | Cylinder { r1; r2; h; center } ->
-                    Printf.sprintf "%scylinder(h=%f, r1=%f, r2=%f, center=%B);\n" indent h r1 r2 center
+            | Cylinder { r1; r2; h; center; fa; fs; fn } ->
+                    Printf.sprintf "%scylinder(h=%f, r1=%f, r2=%f, center=%B%s);\n" indent h r1 r2 center (string_of_f_ fa fs fn)
             | Cube { size; center } ->
                 let (w, h, d) = size in
                 Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent w h d center
-            | Sphere { r } ->
-                Printf.sprintf "%ssphere(%f);\n" indent r
+            | Sphere { r; fa; fs; fn } ->
+                Printf.sprintf "%ssphere(%f%s);\n" indent r (string_of_f_ fa fs fn)
             | Translate (p, scad) ->
                 Printf.sprintf "%stranslate(%s)\n%s" indent (string_of_pos_t p) (print (indent^"\t") scad)
             | Rotate (r, scad) ->
@@ -56,13 +79,13 @@ module Scad_core = struct
 end
 
 module Model = struct
-    let cylinder ?(center=false) r h =
-        Scad_core.Cylinder { r1=r; r2=r; h=h; center=false }
+    let cylinder ?(center=false) ?fa ?fs ?fn r h =
+        Scad_core.Cylinder { r1=r; r2=r; h=h; center=false; fa; fs; fn }
 
     let cube ?(center=false) size =
         Scad_core.Cube { size=size; center=false }
 
-    let sphere r = Scad_core.Sphere { r }
+    let sphere ?fa ?fs ?fn r = Scad_core.Sphere { r; fa; fs; fn }
 
     let translate p scad =
         Scad_core.Translate (p, scad)
