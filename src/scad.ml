@@ -42,7 +42,10 @@ module Scad_core = struct
              map (fun fn -> Printf.sprintf "$fn=%d" fn) fn]
             |> compact
             |> join ", "
-            |> List.fold_left (^) ", "
+            |> begin function
+                | [] -> ""
+                | l -> List.fold_left (^) ", " l
+            end
         in
         let rec arrange_elms indent = List.fold_left (fun stmts scad -> stmts^(print indent scad)) ""
         and print indent = function
