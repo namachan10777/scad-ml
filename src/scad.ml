@@ -12,6 +12,7 @@ module Scad_core = struct
         | Union of scad_t list
         | Intersection of scad_t list
         | Difference of scad_t * scad_t list
+        | Minkowski of scad_t list
         | Polyhedron of pos_t list * int list list
         | Mirror of (int * int * int) * scad_t
 
@@ -66,6 +67,8 @@ module Scad_core = struct
                 Printf.sprintf "%sintersection(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
             | Difference (minuend, subtrahend) ->
                 Printf.sprintf "%sdifference(){\n%s%s%s}\n" indent (print (indent^"\t") minuend) (arrange_elms (indent^"\t") subtrahend) indent
+            | Minkowski elements ->
+                Printf.sprintf "%sminkowski(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
             | Polyhedron (points, faces) ->
                 let string_of_list string_of l =
                     "["^
@@ -98,6 +101,9 @@ module Model = struct
 
     let union elements =
         Scad_core.Union elements
+
+    let minkowski elements =
+        Scad_core.Minkowski elements
 
     let difference min sub =
         Scad_core.Difference (min, sub)
