@@ -13,8 +13,11 @@ module Scad_core = struct
         | Intersection of scad_t list
         | Difference of scad_t * scad_t list
         | Minkowski of scad_t list
+        | Hull of scad_t list
         | Polyhedron of pos_t list * int list list
         | Mirror of (int * int * int) * scad_t
+        | Projection of { src: scad_t; cut: bool }
+        | LinearExtrude of { src: scad_t; height: float option; center: bool; convexity: int; twist: int option; slices: int; scale: float; fn: int }
 
     let string_of_pos_t = function (w, h, d) -> Printf.sprintf "[%f, %f, %f]" w h d
     let string_of_rotate_t =
@@ -24,6 +27,10 @@ module Scad_core = struct
     let map f = function
         | Some(x) -> Some(f x)
         | None -> None
+
+    let either f x = function
+        | Some(x) -> f x
+        | None -> x
 
     let rec join x = function
         | [] -> []
@@ -69,6 +76,8 @@ module Scad_core = struct
                 Printf.sprintf "%sdifference(){\n%s%s%s}\n" indent (print (indent^"\t") minuend) (arrange_elms (indent^"\t") subtrahend) indent
             | Minkowski elements ->
                 Printf.sprintf "%sminkowski(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
+            | Hull elements ->
+                Printf.sprintf "%shull(){\n%s%s}\n" indent (arrange_elms (indent^"\t") elements) indent
             | Polyhedron (points, faces) ->
                 let string_of_list string_of l =
                     "["^
@@ -80,7 +89,19 @@ module Scad_core = struct
                     (string_of_list (string_of_list string_of_int) faces)
             | Mirror ((x, y, z), scad) ->
                 Printf.sprintf "%smirror(v=[%d, %d, %d])\n%s" indent x y z (print (indent^"\t") scad)
-
+            | Projection { src; cut } ->
+                Printf.sprintf "%sprojection(cut=%B){\n%s%s}\n" indent cut (print (indent ^ "\t") src) indent
+            | LinearExtrude { src; height; center; convexity; twist; slices; scale; fn } ->
+                Printf.sprintf "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=%f, fn=%d)\n%s"
+                indent
+                (either (Printf.sprintf "height=%f, ") "" height)
+                center
+                convexity
+                (either (Printf.sprintf "twist=%d, ") "" twist)
+                slices
+                scale
+                fn
+                (print (indent^"\t") src)
         in print ""
 end
 
@@ -105,6 +126,9 @@ module Model = struct
     let minkowski elements =
         Scad_core.Minkowski elements
 
+    let hull elements =
+        Scad_core.Hull elements
+
     let difference min sub =
         Scad_core.Difference (min, sub)
 
@@ -116,6 +140,12 @@ module Model = struct
 
     let mirror v scad =
         Scad_core.Mirror (v, scad)
+
+    let projection ?(cut=false) src =
+        Scad_core.Projection { src; cut }
+
+    let linear_extrude ?height ?(center=false) ?(convexity=10) ?twist ?(slices=20) ?(scale=1.0) ?(fn=16) src =
+        Scad_core.LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
 end
 
 module Scad = struct
