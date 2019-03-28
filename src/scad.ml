@@ -110,7 +110,7 @@ module Model = struct
         Scad_core.Cylinder { r1=r; r2=r; h=h; center=false; fa; fs; fn }
 
     let cube ?(center=false) size =
-        Scad_core.Cube { size=size; center=false }
+        Scad_core.Cube { size=size; center }
 
     let sphere ?fa ?fs ?fn r = Scad_core.Sphere { r; fa; fs; fn }
 
