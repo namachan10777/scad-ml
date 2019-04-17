@@ -106,6 +106,8 @@ module Scad_core = struct
 end
 
 module Model = struct
+    type t = Scad_core.scad_t
+
     let cylinder ?(center=false) ?fa ?fs ?fn r h =
         Scad_core.Cylinder { r1=r; r2=r; h=h; center=false; fa; fs; fn }
 
