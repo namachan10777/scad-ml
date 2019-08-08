@@ -157,7 +157,8 @@ module Scad = struct
 end
 
 module Math = struct
-    module Pos = struct
+    module Vec = struct
+        type t = (float * float * float)
         let horizontal_op op p1 p2 = match p1, p2 with
             (x1, y1, z1), (x2, y2, z2) -> (op x1 x2), (op y1 y2), (op z1 z2)
 
