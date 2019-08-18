@@ -168,3 +168,16 @@ module Math = struct
         let div = horizontal_op (/.)
     end
 end
+
+module Util = struct
+    let get_x = function (x, _, _) -> x
+    let get_y = function (_, y, _) -> y
+    let get_z = function (_, _, z) -> z
+
+    let ( |>> ) src p = Model.translate p src
+    let ( |@> ) src r = Model.rotate r src
+    let ( <+> ) = Math.Vec.add
+    let ( <-> ) = Math.Vec.sub
+    let ( <*> ) = Math.Vec.mul
+    let ( </> ) = Math.Vec.div
+end
