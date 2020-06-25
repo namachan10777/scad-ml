@@ -1,0 +1,4 @@
+(executable
+ (public_name scad_ml)
+ (name main)
+ (libraries scad_ml))

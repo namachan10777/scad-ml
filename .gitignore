@@ -1,3 +1,2 @@
-*.cmo
-*.cmi
-*.cmt
+_build/
+.merlin
