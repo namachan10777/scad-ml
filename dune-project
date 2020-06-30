@@ -1,6 +1,6 @@
 (lang dune 2.6)
 (name scad_ml)
-(version 0.0.0)
+(version 0.1.0)
 (generate_opam_files true)
 
 (source (github namachan10777/scad-ml))
