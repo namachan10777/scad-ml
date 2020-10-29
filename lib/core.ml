@@ -89,7 +89,7 @@ let string_of_scad =
         | Projection { src; cut } ->
             Printf.sprintf "%sprojection(cut=%B){\n%s%s}\n" indent cut (print (indent ^ "\t") src) indent
         | LinearExtrude { src; height; center; convexity; twist; slices; scale; fn } ->
-            Printf.sprintf "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=%f, fn=%d)\n%s"
+            Printf.sprintf "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=%f, $fn=%d)\n%s"
             indent
             (either (Printf.sprintf "height=%f, ") "" height)
             center
