@@ -1,22 +1,12 @@
 open Scad_ml
 
-let square = Core.Square { size = 10., 10.; center = true }
-let circle = Core.Circle { r = 10.; fa = None; fs = None; fn = None }
-
-let triangle_polygon =
-  Core.Polygon { points = [ -0.5, 0.; 0., 1.; 0.5, 0. ]; paths = None; convexity = 2 }
-
+let square = Model.square ~center:true (10., 10.)
+let circle = Model.circle 10.
+let triangle_polygon = Model.polygon [ -0.5, 0.; 0., 1.; 0.5, 0. ]
 let linear_extrude_circle = Model.linear_extrude ~height:10. circle
 
 let rotate_extrude_triangle =
-  Core.RotateExtrude
-    { src = Model.translate (3., 0., 0.) triangle_polygon
-    ; angle = Some (Core.pi *. 2.)
-    ; convexity = 2
-    ; fa = None
-    ; fs = None
-    ; fn = None
-    }
+  Model.rotate_extrude (Model.translate (3., 0., 0.) triangle_polygon)
 
 let () =
   print_endline "Building test scads...";
