@@ -139,7 +139,7 @@ let value_map f ~default = function
   | Some x -> f x
   | None   -> default
 
-let maybe_param fmt param_opt = value_map (Printf.sprintf fmt) ~default:"" param_opt
+let maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
 
 let rec join x = function
   | []       -> []
@@ -190,7 +190,7 @@ let string_of_scad =
         indent
         (string_of_list (fun (w, h) -> Printf.sprintf "[%f, %f]" w h) points)
         ( Option.map (string_of_list (string_of_list string_of_int)) paths
-        |> maybe_param ", paths=%s" )
+        |> maybe_fmt ", paths=%s" )
         convexity
     | Text { text; size; font; halign; valign; spacing; direction; language; script; fn }
       ->
@@ -198,15 +198,15 @@ let string_of_scad =
         "%stext(\"%s\"%s%s%s%s%s%s%s%s%s);\n"
         indent
         text
-        (maybe_param ", size=\"%f\"" size)
-        (maybe_param ", font=\"%s\"" font)
-        (Option.map Text.h_align_to_string halign |> maybe_param ", halign=\"%s\"")
-        (Option.map Text.v_align_to_string valign |> maybe_param ", valign=\"%s\"")
-        (maybe_param ", spacing=\"%f\"" spacing)
-        (Option.map Text.direction_to_string direction |> maybe_param ", direction=\"%s\"")
-        (maybe_param ", language=\"%s\"" language)
-        (maybe_param ", script=\"%s\"" script)
-        (maybe_param ", $fn=\"%i\"" fn)
+        (maybe_fmt ", size=\"%f\"" size)
+        (maybe_fmt ", font=\"%s\"" font)
+        (Option.map Text.h_align_to_string halign |> maybe_fmt ", halign=\"%s\"")
+        (Option.map Text.v_align_to_string valign |> maybe_fmt ", valign=\"%s\"")
+        (maybe_fmt ", spacing=\"%f\"" spacing)
+        (Option.map Text.direction_to_string direction |> maybe_fmt ", direction=\"%s\"")
+        (maybe_fmt ", language=\"%s\"" language)
+        (maybe_fmt ", script=\"%s\"" script)
+        (maybe_fmt ", $fn=\"%i\"" fn)
     | Translate (p, scad) ->
       Printf.sprintf
         "%stranslate(%s)\n%s"
@@ -275,10 +275,10 @@ let string_of_scad =
       Printf.sprintf
         "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=%f, $fn=%d)\n%s"
         indent
-        (maybe_param "height=%f, " height)
+        (maybe_fmt "height=%f, " height)
         center
         convexity
-        (maybe_param "twist=%d, " twist)
+        (maybe_fmt "twist=%d, " twist)
         slices
         scale
         fn
@@ -287,7 +287,7 @@ let string_of_scad =
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
-        (Option.map deg_of_rad angle |> maybe_param "angle=%f")
+        (Option.map deg_of_rad angle |> maybe_fmt "angle=%f")
         convexity
         (string_of_f_ fa fs fn)
         (print (indent ^ "\t") src)
