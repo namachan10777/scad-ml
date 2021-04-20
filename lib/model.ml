@@ -8,6 +8,11 @@ let sphere ?fa ?fs ?fn r = Core.Sphere { r; fa; fs; fn }
 let square ?(center = false) size = Core.Square { size; center }
 let circle ?fa ?fs ?fn r = Core.Circle { r; fa; fs; fn }
 let polygon ?(convexity = 10) ?paths points = Core.Polygon { points; paths; convexity }
+
+let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str =
+  Core.Text
+    { text = str; size; font; halign; valign; spacing; direction; language; script; fn }
+
 let translate p scad = Core.Translate (p, scad)
 let rotate r scad = Core.Rotate (r, scad)
 let union elements = Core.Union elements
