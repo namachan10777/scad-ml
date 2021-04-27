@@ -119,6 +119,11 @@ type scad_t =
       }
   | Scale of (float * float * float) * scad_t
   | Resize of (float * float * float) * scad_t
+  | Offset of
+      { src : scad_t
+      ; offset : [ `Radius of float | `Delta of float ]
+      ; chamfer : bool
+      }
 
 let string_of_pos_t = function
   | w, h, d -> Printf.sprintf "[%f, %f, %f]" w h d
@@ -305,5 +310,14 @@ let string_of_scad =
         indent
         (string_of_pos_t p)
         (print (indent ^ "\t") scad)
+    | Offset { src; offset; chamfer } ->
+      Printf.sprintf
+        "%soffset(%s, chamfer=%B)\n%s"
+        indent
+        ( match offset with
+        | `Radius r -> Printf.sprintf "r = %f" r
+        | `Delta d  -> Printf.sprintf "delta = %f" d )
+        chamfer
+        (print (indent ^ "\t") src)
   in
   print ""
