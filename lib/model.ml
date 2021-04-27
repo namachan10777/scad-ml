@@ -39,3 +39,6 @@ let linear_extrude
 
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn src =
   Core.RotateExtrude { src; angle; convexity; fa; fs; fn }
+
+let scale ratios scad = Core.Scale (ratios, scad)
+let resize new_dims scad = Core.Resize (new_dims, scad)

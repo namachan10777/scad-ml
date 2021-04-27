@@ -117,6 +117,8 @@ type scad_t =
       ; fs : float option
       ; fn : int option
       }
+  | Scale of (float * float * float) * scad_t
+  | Resize of (float * float * float) * scad_t
 
 let string_of_pos_t = function
   | w, h, d -> Printf.sprintf "[%f, %f, %f]" w h d
@@ -291,5 +293,17 @@ let string_of_scad =
         convexity
         (string_of_f_ fa fs fn)
         (print (indent ^ "\t") src)
+    | Scale (p, scad) ->
+      Printf.sprintf
+        "%sscale(%s)\n%s"
+        indent
+        (string_of_pos_t p)
+        (print (indent ^ "\t") scad)
+    | Resize (p, scad) ->
+      Printf.sprintf
+        "%sresize(%s)\n%s"
+        indent
+        (string_of_pos_t p)
+        (print (indent ^ "\t") scad)
   in
   print ""
