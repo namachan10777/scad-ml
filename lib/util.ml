@@ -7,7 +7,6 @@ let ( <+> ) = Math.add
 let ( <-> ) = Math.sub
 let ( <*> ) = Math.mul
 let ( </> ) = Math.div
-let rotate_about_pt r p scad = scad |>> p |@> r |>> Math.negate p
 
 let write oc scad =
   Printf.fprintf oc "%s" (Core.string_of_scad scad);
