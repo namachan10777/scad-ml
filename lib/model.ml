@@ -15,7 +15,7 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
 
 let translate p scad = Core.Translate (p, scad)
 let rotate r scad = Core.Rotate (r, scad)
-let rotate_about_pt r p scad = Util.(scad |>> p |@> r |>> Math.negate p)
+let rotate_about_pt r p scad = translate p scad |> rotate r |> translate (Math.negate p)
 let union elements = Core.Union elements
 let minkowski elements = Core.Minkowski elements
 let hull elements = Core.Hull elements
