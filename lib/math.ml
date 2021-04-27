@@ -34,3 +34,4 @@ let rotate_z theta (x, y, z) =
   x', y', z
 
 let rotate (tx, ty, tz) p = rotate_x tx p |> rotate_y ty |> rotate_z tz
+let rotate_about_pt r o p = sub p o |> rotate r |> add o
