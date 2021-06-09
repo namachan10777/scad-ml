@@ -35,3 +35,10 @@ let rotate_z theta (x, y, z) =
 
 let rotate (tx, ty, tz) p = rotate_x tx p |> rotate_y ty |> rotate_z tz
 let rotate_about_pt r pivot p = add p pivot |> rotate r |> add (negate pivot)
+let magnitude (x, y, z) = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
+
+let norm ((x, y, z) as p) =
+  let mag = magnitude p in
+  if mag > 0. then x /. mag, y /. mag, z /. mag else p
+
+let dot (x1, y1, z1) (x2, y2, z2) = (x1 *. x2) +. (y1 *. y2) +. (z1 *. z2)
