@@ -7,6 +7,7 @@ let ( <+> ) = Math.add
 let ( <-> ) = Math.sub
 let ( <*> ) = Math.mul
 let ( </> ) = Math.div
+let string_of_point (x, y, z) = Printf.printf "(%.3f, %.3f, %.3f)" x y z
 
 let write oc scad =
   Printf.fprintf oc "%s" (Core.string_of_scad scad);
