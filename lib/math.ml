@@ -12,6 +12,11 @@ let mul = horizontal_op ( *. )
 let div = horizontal_op ( /. )
 let negate = horizontal_op ( *. ) (-1., -1., -1.)
 
+let equal p1 p2 =
+  match horizontal_op ( = ) p1 p2 with
+  | true, true, true -> true
+  | _                -> false
+
 let rotate_x theta (x, y, z) =
   let s = Float.sin theta in
   let c = Float.cos theta in
