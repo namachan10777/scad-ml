@@ -1,5 +1,21 @@
 open Scad_ml
 
+let mat =
+  let a = Math.pi /. 4. in
+  let cos_a = Float.cos a
+  and sin_a = Float.sin a in
+  Core.MultMatrix.of_list_exn
+    [ [ cos_a; -.sin_a; 0.; 10. ]; [ sin_a; cos_a; 0.; 20. ]; [ 0.; 0.; 1.; 30. ] ]
+
+let mat_mul_cube =
+  (* NOTE: These cubes should be equivalent if matmul is working correctly. *)
+  let box = Model.cube ~center:true (10., 10., 10.) in
+  let a = box |> Model.multmatrix mat
+  and b =
+    box |> Model.rotate (0., 0., Math.pi /. 4.) |> Model.translate (10., 20., 30.)
+  in
+  Model.union [ a; b ]
+
 let square = Model.square ~center:true (10., 10.)
 let circle = Model.circle 10.
 let triangle_polygon = Model.polygon [ -0.5, 0.; 0., 1.; 0.5, 0. ]
@@ -26,4 +42,5 @@ let () =
   Util.write (open_out "rotate_extrude_triangle.scad") rotate_extrude_triangle;
   Util.write (open_out "hello.scad") hello;
   Util.write (open_out "vertical_text.scad") vertical_text;
+  Util.write (open_out "mat_mul_cube.scad") mat_mul_cube;
   print_endline "Done!"

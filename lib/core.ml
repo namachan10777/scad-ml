@@ -51,7 +51,15 @@ module Text = struct
     }
 end
 
-module MultMatrix = struct
+module MultMatrix : sig
+  (* TODO: Add basic matrix operations, plan is to keep private so that mutations
+   * cannot be done directly on the matrix, operations will return new matrices. *)
+  type t = private float array array
+
+  val of_list : float list list -> (t, string) result
+  val of_list_exn : float list list -> t
+  val to_string : t -> string
+end = struct
   type t = float array array
 
   let of_list l =
@@ -61,7 +69,7 @@ module MultMatrix = struct
       try
         let mat = Array.make_matrix 4 4 0. in
         let set_row i r =
-          if List.length l = 4
+          if List.length r = 4
           then List.iteri (fun j e -> mat.(i).(j) <- e) r
           else failwith "Row must be have length = 4."
         in
@@ -82,16 +90,6 @@ module MultMatrix = struct
     match of_list l with
     | Ok mat  -> mat
     | Error e -> failwith e
-
-  let to_deg t =
-    let mat = Array.copy t in
-    for i = 0 to 2 do
-      for j = 0 to 3 do
-        let e = mat.(i).(j) in
-        mat.(i).(j) <- deg_of_rad e
-      done
-    done;
-    mat
 
   let to_string t =
     let row i =
@@ -288,7 +286,7 @@ let string_of_scad =
       Printf.sprintf
         "%smultmatrix(%s)\n%s"
         indent
-        MultMatrix.(to_deg mat |> to_string)
+        (MultMatrix.to_string mat)
         (print (indent ^ "\t") scad)
     | Union elements ->
       Printf.sprintf

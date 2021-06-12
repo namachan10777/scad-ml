@@ -21,6 +21,7 @@ let vector_rotate ax r scad = Core.VectorRotate (ax, r, scad)
 let vector_rotate_about_pt ax r p scad =
   translate p scad |> vector_rotate ax r |> translate (Math.negate p)
 
+let multmatrix mat scad = Core.MultMatrix (mat, scad)
 let union elements = Core.Union elements
 let minkowski elements = Core.Minkowski elements
 let hull elements = Core.Hull elements

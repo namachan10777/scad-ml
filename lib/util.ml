@@ -8,6 +8,8 @@ let ( <-> ) = Math.sub
 let ( <*> ) = Math.mul
 let ( </> ) = Math.div
 let string_of_point (x, y, z) = Printf.sprintf "(%.3f, %.3f, %.3f)" x y z
+let mat_of_list = Core.MultMatrix.of_list
+let mat_of_list_exn = Core.MultMatrix.of_list_exn
 
 let write oc scad =
   Printf.fprintf oc "%s" (Core.string_of_scad scad);
