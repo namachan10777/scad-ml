@@ -2,6 +2,7 @@ type pos_t = float * float * float
 type rotate_t = float * float * float
 
 let pi = 4.0 *. atan 1.0
+let deg_of_rad r = 360.0 *. r /. (2. *. pi)
 
 module Text = struct
   type h_align =
@@ -50,6 +51,56 @@ module Text = struct
     }
 end
 
+module MultMatrix = struct
+  type t = float array array
+
+  let of_list l =
+    let n_rows = List.length l in
+    if n_rows = 3 || n_rows = 4
+    then (
+      try
+        let mat = Array.make_matrix 4 4 0. in
+        let set_row i r =
+          if List.length l = 4
+          then List.iteri (fun j e -> mat.(i).(j) <- e) r
+          else failwith "Row must be have length = 4."
+        in
+        let rec loop i = function
+          | r :: rows ->
+            set_row i r;
+            loop (i + 1) rows
+          | [] when i = 3 -> mat.(i).(3) <- 1.
+          | [] -> ()
+        in
+        loop 0 l;
+        Ok mat
+      with
+      | Failure e -> Result.error e )
+    else Result.error "Matrix must have 3 or 4 rows."
+
+  let of_list_exn l =
+    match of_list l with
+    | Ok mat  -> mat
+    | Error e -> failwith e
+
+  let to_deg t =
+    let mat = Array.copy t in
+    for i = 0 to 2 do
+      for j = 0 to 3 do
+        let e = mat.(i).(j) in
+        mat.(i).(j) <- deg_of_rad e
+      done
+    done;
+    mat
+
+  let to_string t =
+    let row i =
+      let comma = if i < 3 then "," else "" in
+      Printf.sprintf "[%f, %f, %f, %f]%s" t.(i).(0) t.(i).(1) t.(i).(2) t.(i).(3) comma
+    in
+    Printf.sprintf "[ %s\n %s\n %s\n %s ]" (row 0) (row 1) (row 2) (row 3)
+end
+
 type scad_t =
   | Cylinder of
       { r1 : float
@@ -89,6 +140,7 @@ type scad_t =
   | Translate of pos_t * scad_t
   | Rotate of rotate_t * scad_t
   | VectorRotate of pos_t * float * scad_t
+  | MultMatrix of MultMatrix.t * scad_t
   | Union of scad_t list
   | Intersection of scad_t list
   | Difference of scad_t * scad_t list
@@ -128,8 +180,6 @@ type scad_t =
 
 let string_of_pos_t = function
   | w, h, d -> Printf.sprintf "[%f, %f, %f]" w h d
-
-let deg_of_rad r = 360.0 *. r /. (2. *. pi)
 
 let string_of_rotate_t = function
   | w, h, d -> Printf.sprintf "[%f, %f, %f]" (deg_of_rad w) (deg_of_rad h) (deg_of_rad d)
@@ -233,6 +283,12 @@ let string_of_scad =
         indent
         (deg_of_rad r)
         (string_of_pos_t axis)
+        (print (indent ^ "\t") scad)
+    | MultMatrix (mat, scad) ->
+      Printf.sprintf
+        "%smultmatrix(%s)\n%s"
+        indent
+        MultMatrix.(to_deg mat |> to_string)
         (print (indent ^ "\t") scad)
     | Union elements ->
       Printf.sprintf
