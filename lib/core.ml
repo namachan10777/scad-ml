@@ -1,7 +1,7 @@
-let pi = 4.0 *. atan 1.0
-
 type pos_t = float * float * float
 type rotate_t = float * float * float
+
+let pi = 4.0 *. atan 1.0
 
 module Text = struct
   type h_align =
@@ -88,6 +88,7 @@ type scad_t =
   | Text of Text.t
   | Translate of pos_t * scad_t
   | Rotate of rotate_t * scad_t
+  | VectorRotate of pos_t * float * scad_t
   | Union of scad_t list
   | Intersection of scad_t list
   | Difference of scad_t * scad_t list
@@ -225,6 +226,13 @@ let string_of_scad =
         "%srotate(%s)\n%s"
         indent
         (string_of_rotate_t r)
+        (print (indent ^ "\t") scad)
+    | VectorRotate (axis, r, scad) ->
+      Printf.sprintf
+        "%srotate(a=%f, v=%s)\n%s"
+        indent
+        r
+        (string_of_pos_t axis)
         (print (indent ^ "\t") scad)
     | Union elements ->
       Printf.sprintf
