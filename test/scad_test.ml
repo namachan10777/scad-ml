@@ -4,7 +4,7 @@ let mat =
   let a = Math.pi /. 4. in
   let cos_a = Float.cos a
   and sin_a = Float.sin a in
-  Core.MultMatrix.of_list_exn
+  MultMatrix.of_list_exn
     [ [ cos_a; -.sin_a; 0.; 10. ]; [ sin_a; cos_a; 0.; 20. ]; [ 0.; 0.; 1.; 30. ] ]
 
 let mat_mul_cube =
