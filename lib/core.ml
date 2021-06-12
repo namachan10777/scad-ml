@@ -231,7 +231,7 @@ let string_of_scad =
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
-        r
+        (deg_of_rad r)
         (string_of_pos_t axis)
         (print (indent ^ "\t") scad)
     | Union elements ->
