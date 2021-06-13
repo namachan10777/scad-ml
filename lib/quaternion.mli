@@ -17,3 +17,4 @@ val dot : t -> t -> float
 val conj : t -> t
 val distance : t -> t -> float
 val to_multmatrix : t -> MultMatrix.t
+val to_string : t -> string

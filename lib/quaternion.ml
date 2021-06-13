@@ -52,3 +52,5 @@ let to_multmatrix (x, y, z, w) =
     ; zsx -. ysw, zsy +. xsw, 1. -. xsx -. ysy, 0.
     ; 0., 0., 0., 1.
     ]
+
+let to_string (x, y, z, w) = Printf.sprintf "(%.3f, %.3f, %.3f, %.3f)" x y z w
