@@ -11,6 +11,7 @@ let sub = horizontal_op ( -. )
 let mul = horizontal_op ( *. )
 let div = horizontal_op ( /. )
 let negate = horizontal_op ( *. ) (-1., -1., -1.)
+let map f (x, y, z) = f x, f y, f z
 
 let equal p1 p2 =
   match horizontal_op ( = ) p1 p2 with
