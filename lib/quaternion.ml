@@ -58,5 +58,3 @@ let get_x (x, _, _, _) = x
 let get_y (_, y, _, _) = y
 let get_z (_, _, z, _) = z
 let get_w (_, _, _, w) = w
-let get_ax (x, y, z, _) = x, y, z
-let get_angle = get_w

@@ -22,5 +22,3 @@ val get_x : t -> float
 val get_y : t -> float
 val get_z : t -> float
 val get_w : t -> float
-val get_ax : t -> float * float * float
-val get_angle : t -> float
