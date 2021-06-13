@@ -4,16 +4,25 @@ let mat =
   let a = Math.pi /. 4. in
   let cos_a = Float.cos a
   and sin_a = Float.sin a in
-  MultMatrix.of_list_exn
-    [ [ cos_a; -.sin_a; 0.; 10. ]; [ sin_a; cos_a; 0.; 20. ]; [ 0.; 0.; 1.; 30. ] ]
+  MultMatrix.of_row_list_exn
+    [ cos_a, -.sin_a, 0., 10.; sin_a, cos_a, 0., 20.; 0., 0., 1., 30. ]
 
 let mat_mul_cube =
   (* NOTE: These cubes should be equivalent if matmul is working correctly. *)
   let box = Model.cube ~center:true (10., 10., 10.) in
-  let a = box |> Model.multmatrix mat
+  let a = Model.multmatrix mat box
   and b =
     box |> Model.rotate (0., 0., Math.pi /. 4.) |> Model.translate (10., 20., 30.)
   in
+  Model.union [ a; b ]
+
+let quat_cube =
+  (* NOTE: These cubes should be equivalent if quaternion is working correctly. *)
+  let box = Model.cube ~center:true (10., 10., 10.)
+  and angle = Math.pi /. 4.
+  and ax = 1., 1., 0. in
+  let a = Model.vector_rotate ax angle box
+  and b = Model.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
   Model.union [ a; b ]
 
 let square = Model.square ~center:true (10., 10.)
@@ -43,4 +52,5 @@ let () =
   Util.write (open_out "hello.scad") hello;
   Util.write (open_out "vertical_text.scad") vertical_text;
   Util.write (open_out "mat_mul_cube.scad") mat_mul_cube;
+  Util.write (open_out "quat_cube.scad") quat_cube;
   print_endline "Done!"
