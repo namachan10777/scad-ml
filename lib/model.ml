@@ -15,11 +15,11 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
 
 let translate p scad = Core.Translate (p, scad)
 let rotate r scad = Core.Rotate (r, scad)
-let rotate_about_pt r p scad = translate p scad |> rotate r |> translate (Math.negate p)
+let rotate_about_pt r p scad = translate p scad |> rotate r |> translate (Vec3.negate p)
 let vector_rotate ax r scad = Core.VectorRotate (ax, r, scad)
 
 let vector_rotate_about_pt ax r p scad =
-  translate p scad |> vector_rotate ax r |> translate (Math.negate p)
+  translate p scad |> vector_rotate ax r |> translate (Vec3.negate p)
 
 let multmatrix mat scad = Core.MultMatrix (mat, scad)
 let union elements = Core.Union elements
@@ -49,3 +49,5 @@ let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn src =
 let scale ratios scad = Core.Scale (ratios, scad)
 let resize new_dims scad = Core.Resize (new_dims, scad)
 let offset ?(chamfer = false) offset src = Core.Offset { src; offset; chamfer }
+let ( |>> ) scad p = translate p scad
+let ( |@> ) scad r = rotate r scad

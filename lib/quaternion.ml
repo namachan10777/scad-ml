@@ -3,7 +3,7 @@ type t = float * float * float * float
 let id = 0., 0., 0., 1.
 
 let make ax angle =
-  let x, y, z = Math.norm ax in
+  let x, y, z = Vec3.normalize ax in
   let s = Float.sin (angle /. 2.) in
   x *. s, y *. s, z *. s, Float.cos (angle /. 2.)
 
@@ -41,11 +41,11 @@ let to_multmatrix (x, y, z, w) =
     let len_sqr = (x *. x) +. (y *. y) +. (z *. z) +. (w *. w) in
     if len_sqr != 0. then 2. /. len_sqr else 0.
   in
-  let xyzs = Math.map (( *. ) s) (x, y, z) in
-  let xsw, ysw, zsw = Math.map (( *. ) w) xyzs in
-  let xsx, ysx, zsx = Math.map (( *. ) x) xyzs
-  and _, ysy, zsy = Math.map (( *. ) y) xyzs
-  and zsz = z *. Util.get_z xyzs in
+  let ((_, _, zs) as xyzs) = Vec3.map (( *. ) s) (x, y, z) in
+  let xsw, ysw, zsw = Vec3.map (( *. ) w) xyzs in
+  let xsx, ysx, zsx = Vec3.map (( *. ) x) xyzs
+  and _, ysy, zsy = Vec3.map (( *. ) y) xyzs
+  and zsz = z *. zs in
   MultMatrix.of_row_list_exn
     [ 1. -. ysy -. zsz, ysx -. zsw, zsx +. ysw, 0.
     ; ysx +. zsw, 1. -. xsx -. zsz, zsy -. xsw, 0.
@@ -53,4 +53,10 @@ let to_multmatrix (x, y, z, w) =
     ; 0., 0., 0., 1.
     ]
 
-let to_string (x, y, z, w) = Printf.sprintf "(%.3f, %.3f, %.3f, %.3f)" x y z w
+let to_string (x, y, z, w) = Printf.sprintf "[%f, %f, %f, %f]" x y z w
+let get_x (x, _, _, _) = x
+let get_y (_, y, _, _) = y
+let get_z (_, _, z, _) = z
+let get_w (_, _, _, w) = w
+let get_ax (x, y, z, _) = x, y, z
+let get_angle = get_w

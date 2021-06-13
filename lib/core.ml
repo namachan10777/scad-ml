@@ -1,9 +1,3 @@
-type pos_t = float * float * float
-type rotate_t = float * float * float
-
-let pi = 4.0 *. atan 1.0
-let deg_of_rad r = 360.0 *. r /. (2. *. pi)
-
 module Text = struct
   type h_align =
     | Left
@@ -87,16 +81,16 @@ type scad_t =
       ; convexity : int
       }
   | Text of Text.t
-  | Translate of pos_t * scad_t
-  | Rotate of rotate_t * scad_t
-  | VectorRotate of pos_t * float * scad_t
+  | Translate of Vec3.t * scad_t
+  | Rotate of Vec3.t * scad_t
+  | VectorRotate of Vec3.t * float * scad_t
   | MultMatrix of MultMatrix.t * scad_t
   | Union of scad_t list
   | Intersection of scad_t list
   | Difference of scad_t * scad_t list
   | Minkowski of scad_t list
   | Hull of scad_t list
-  | Polyhedron of pos_t list * int list list
+  | Polyhedron of Vec3.t list * int list list
   | Mirror of (int * int * int) * scad_t
   | Projection of
       { src : scad_t
@@ -128,11 +122,7 @@ type scad_t =
       ; chamfer : bool
       }
 
-let string_of_pos_t = function
-  | w, h, d -> Printf.sprintf "[%f, %f, %f]" w h d
-
-let string_of_rotate_t = function
-  | w, h, d -> Printf.sprintf "[%f, %f, %f]" (deg_of_rad w) (deg_of_rad h) (deg_of_rad d)
+let deg_of_rad r = 180.0 *. r /. Float.pi
 
 let string_of_list f = function
   | h :: t ->
@@ -219,20 +209,20 @@ let string_of_scad =
       Printf.sprintf
         "%stranslate(%s)\n%s"
         indent
-        (string_of_pos_t p)
+        (Vec3.to_string p)
         (print (indent ^ "\t") scad)
     | Rotate (r, scad) ->
       Printf.sprintf
         "%srotate(%s)\n%s"
         indent
-        (string_of_rotate_t r)
+        (Vec3.deg_of_rad r |> Vec3.to_string)
         (print (indent ^ "\t") scad)
     | VectorRotate (axis, r, scad) ->
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
         (deg_of_rad r)
-        (string_of_pos_t axis)
+        (Vec3.to_string axis)
         (print (indent ^ "\t") scad)
     | MultMatrix (mat, scad) ->
       Printf.sprintf
@@ -275,7 +265,7 @@ let string_of_scad =
       Printf.sprintf
         "%spolyhedron(points=%s, faces=%s);\n"
         indent
-        (string_of_list string_of_pos_t points)
+        (string_of_list Vec3.to_string points)
         (string_of_list (string_of_list string_of_int) faces)
     | Mirror ((x, y, z), scad) ->
       Printf.sprintf
@@ -316,13 +306,13 @@ let string_of_scad =
       Printf.sprintf
         "%sscale(%s)\n%s"
         indent
-        (string_of_pos_t p)
+        (Vec3.to_string p)
         (print (indent ^ "\t") scad)
     | Resize (p, scad) ->
       Printf.sprintf
         "%sresize(%s)\n%s"
         indent
-        (string_of_pos_t p)
+        (Vec3.to_string p)
         (print (indent ^ "\t") scad)
     | Offset { src; offset; chamfer } ->
       Printf.sprintf
@@ -335,3 +325,7 @@ let string_of_scad =
         (print (indent ^ "\t") src)
   in
   print ""
+
+let write oc scad =
+  Printf.fprintf oc "%s" (string_of_scad scad);
+  flush oc

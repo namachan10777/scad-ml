@@ -1,7 +1,7 @@
 open Scad_ml
 
 let mat =
-  let a = Math.pi /. 4. in
+  let a = Float.pi /. 4. in
   let cos_a = Float.cos a
   and sin_a = Float.sin a in
   MultMatrix.of_row_list_exn
@@ -12,14 +12,14 @@ let mat_mul_cube =
   let box = Model.cube ~center:true (10., 10., 10.) in
   let a = Model.multmatrix mat box
   and b =
-    box |> Model.rotate (0., 0., Math.pi /. 4.) |> Model.translate (10., 20., 30.)
+    box |> Model.rotate (0., 0., Float.pi /. 4.) |> Model.translate (10., 20., 30.)
   in
   Model.union [ a; b ]
 
 let quat_cube =
   (* NOTE: These cubes should be equivalent if quaternion is working correctly. *)
   let box = Model.cube ~center:true (10., 10., 10.)
-  and angle = Math.pi /. 4.
+  and angle = Float.pi /. 4.
   and ax = 1., 1., 0. in
   let a = Model.vector_rotate ax angle box
   and b = Model.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
@@ -44,13 +44,13 @@ let vertical_text =
 
 let () =
   print_endline "Building test scads...";
-  Util.write (open_out "square.scad") square;
-  Util.write (open_out "circle.scad") circle;
-  Util.write (open_out "triangle_polygon.scad") triangle_polygon;
-  Util.write (open_out "linear_extrude_circle.scad") linear_extrude_circle;
-  Util.write (open_out "rotate_extrude_triangle.scad") rotate_extrude_triangle;
-  Util.write (open_out "hello.scad") hello;
-  Util.write (open_out "vertical_text.scad") vertical_text;
-  Util.write (open_out "mat_mul_cube.scad") mat_mul_cube;
-  Util.write (open_out "quat_cube.scad") quat_cube;
+  Core.write (open_out "square.scad") square;
+  Core.write (open_out "circle.scad") circle;
+  Core.write (open_out "triangle_polygon.scad") triangle_polygon;
+  Core.write (open_out "linear_extrude_circle.scad") linear_extrude_circle;
+  Core.write (open_out "rotate_extrude_triangle.scad") rotate_extrude_triangle;
+  Core.write (open_out "hello.scad") hello;
+  Core.write (open_out "vertical_text.scad") vertical_text;
+  Core.write (open_out "mat_mul_cube.scad") mat_mul_cube;
+  Core.write (open_out "quat_cube.scad") quat_cube;
   print_endline "Done!"
