@@ -32,3 +32,17 @@ let to_string t =
     Printf.sprintf "[%f, %f, %f, %f]%s" t.(i).(0) t.(i).(1) t.(i).(2) t.(i).(3) comma
   in
   Printf.sprintf "[ %s\n %s\n %s\n %s ]" (row 0) (row 1) (row 2) (row 3)
+
+module Ops = SquareMatrix.Make (struct
+  let size = 4
+end)
+
+let mul = Ops.mul
+let add = Ops.add
+let sub = Ops.sub
+let transpose = Ops.transpose
+let map = Ops.map
+let scalar_mul = Ops.scalar_mul
+let scalar_div = Ops.scalar_div
+let scalar_add = Ops.scalar_add
+let scalar_sub = Ops.scalar_sub

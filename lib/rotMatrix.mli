@@ -1,5 +1,3 @@
-(** TODO: Add basic matrix operations, plan is to keep private so that mutations
- * cannot be done directly on the matrix, operations will return new matrices. *)
 type t = private float array array
 
 val of_row_list_exn : (float * float * float) list -> t
@@ -11,3 +9,5 @@ val align : Vec3.t -> Vec3.t -> (t, string) result
 val to_euler : t -> Vec3.t
 val trace : t -> float
 val get : t -> int -> int -> float
+
+include SquareMatrix.Ops with type t := t

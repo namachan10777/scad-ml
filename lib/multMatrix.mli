@@ -5,3 +5,5 @@ type t = private float array array
 val of_row_list : (float * float * float * float) list -> (t, string) result
 val of_row_list_exn : (float * float * float * float) list -> t
 val to_string : t -> string
+
+include SquareMatrix.Ops with type t := t

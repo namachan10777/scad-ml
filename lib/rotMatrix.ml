@@ -60,3 +60,17 @@ let to_euler t =
 
 let trace t = t.(0).(0) +. t.(1).(1) +. t.(2).(2)
 let get t r c = t.(r).(c)
+
+module Ops = SquareMatrix.Make (struct
+  let size = 3
+end)
+
+let mul = Ops.mul
+let add = Ops.add
+let sub = Ops.sub
+let transpose = Ops.transpose
+let map = Ops.map
+let scalar_mul = Ops.scalar_mul
+let scalar_div = Ops.scalar_div
+let scalar_add = Ops.scalar_add
+let scalar_sub = Ops.scalar_sub
