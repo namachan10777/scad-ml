@@ -37,9 +37,8 @@ let conj (x, y, z, w) = -.x, -.y, -.z, w
 let distance a b = norm (sub a b)
 
 let of_rotmatrix m =
-  let open RotMatrix in
-  let g = get m in
-  match trace m with
+  let g = RotMatrix.get m in
+  match RotMatrix.trace m with
   | tr when tr > 0. ->
     let s = Float.sqrt (tr +. 1.) *. 2. in
     let w = 0.25 *. s
