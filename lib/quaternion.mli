@@ -16,6 +16,7 @@ val normalize : t -> t
 val dot : t -> t -> float
 val conj : t -> t
 val distance : t -> t -> float
+val of_rotmatrix : RotMatrix.t -> t
 val to_multmatrix : t -> MultMatrix.t
 val to_string : t -> string
 val get_x : t -> float

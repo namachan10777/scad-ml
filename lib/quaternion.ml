@@ -36,6 +36,39 @@ let dot (x1, y1, z1, w1) (x2, y2, z2, w2) =
 let conj (x, y, z, w) = -.x, -.y, -.z, w
 let distance a b = norm (sub a b)
 
+let of_rotmatrix m =
+  let open RotMatrix in
+  let g = get m in
+  match trace m with
+  | tr when tr > 0. ->
+    let s = Float.sqrt (tr +. 1.) *. 2. in
+    let w = 0.25 *. s
+    and x = (g 2 1 -. g 1 2) /. s
+    and y = (g 0 2 -. g 2 0) /. s
+    and z = (g 1 0 -. g 0 1) /. s in
+    x, y, z, w
+  | _ when g 0 0 > g 1 1 && g 0 0 > g 2 2 ->
+    let s = Float.sqrt (1. +. g 0 0 -. g 1 1 -. g 2 2) *. 2. in
+    let w = (g 2 1 -. g 1 2) /. s
+    and x = 0.25 *. s
+    and y = (g 0 1 +. g 1 0) /. s
+    and z = (g 0 2 +. g 2 0) /. s in
+    x, y, z, w
+  | _ when g 1 1 > g 2 2 ->
+    let s = Float.sqrt (1. +. g 1 1 -. g 0 0 -. g 2 2) *. 2. in
+    let w = (g 0 2 -. g 2 0) /. s
+    and x = (g 0 1 +. g 1 0) /. s
+    and y = 0.25 *. s
+    and z = (g 1 2 +. g 2 1) /. s in
+    x, y, z, w
+  | _ ->
+    let s = Float.sqrt (1. +. g 2 2 -. g 0 0 -. g 1 1) *. 2. in
+    let w = (g 1 0 -. g 0 1) /. s
+    and x = (g 0 2 +. g 2 0) /. s
+    and y = (g 1 2 +. g 2 1) /. s
+    and z = 0.25 *. s in
+    x, y, z, w
+
 let to_multmatrix (x, y, z, w) =
   let s =
     let len_sqr = (x *. x) +. (y *. y) +. (z *. z) +. (w *. w) in
