@@ -27,8 +27,8 @@ let negate q = mul_scalar q (-1.)
 let norm (x, y, z, w) = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z) +. (w *. w))
 
 let normalize t =
-  let mag = norm t in
-  if mag > 0. then div_scalar t mag else t
+  let n = norm t in
+  if n > 0. then div_scalar t n else t
 
 let dot (x1, y1, z1, w1) (x2, y2, z2, w2) =
   (x1 *. x2) +. (y1 *. y2) +. (z1 *. z2) +. (w1 *. w2)
@@ -90,3 +90,24 @@ let get_x (x, _, _, _) = x
 let get_y (_, y, _, _) = y
 let get_z (_, _, z, _) = z
 let get_w (_, _, _, w) = w
+
+let slerp a b =
+  let a = normalize a
+  and b = normalize b in
+  fun v ->
+    let v = if v < 0. then 0. else if v > 1. then 1. else v in
+    let compute a' b' d =
+      let theta_0 = Float.acos d in
+      let sin_theta_0 = Float.sin theta_0 in
+      let theta = theta_0 *. v in
+      let sin_theta = Float.sin theta in
+      let s0 = Float.cos theta -. (d *. sin_theta /. sin_theta_0)
+      and s1 = sin_theta /. sin_theta_0 in
+      add (mul_scalar a' s0) (mul_scalar b' s1) |> normalize
+    in
+    (* If dot is negative, slerp won't take shorter path. Fix by reversing one quat.
+     *  Dot is constrained for cases using compute, so acos is safe. *)
+    match dot a b with
+    | d when d < 0. -> compute (negate a) b (-.d)
+    | d when d > 0.9995 -> add a (mul_scalar (sub b a) v) |> normalize
+    | d -> compute a b d

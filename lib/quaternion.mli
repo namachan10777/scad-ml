@@ -23,3 +23,7 @@ val get_x : t -> float
 val get_y : t -> float
 val get_z : t -> float
 val get_w : t -> float
+
+(** Spherical linear interpotation.
+ ** Adapted from https://github.com/KieranWynn/pyquaternion *)
+val slerp : t -> t -> float -> t

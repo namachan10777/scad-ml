@@ -25,6 +25,17 @@ let quat_cube =
   and b = Model.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
   Model.union [ a; b ]
 
+let quat_slerp =
+  let cyl = Model.cylinder ~center:true 2.5 20. in
+  let q0 = Quaternion.make (0., 1., 0.) 0. in
+  let q1 = Quaternion.make (0., 1., 0.) (Float.pi /. 2.) in
+  let slerp = Quaternion.slerp q0 q1 in
+  let step t scad =
+    Model.quaternion (slerp t) scad |> Model.translate (0., 30. *. t, 0.)
+  in
+  Model.union
+    [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
+
 let square = Model.square ~center:true (10., 10.)
 let circle = Model.circle 10.
 let triangle_polygon = Model.polygon [ -0.5, 0.; 0., 1.; 0.5, 0. ]
@@ -53,4 +64,5 @@ let () =
   Core.write (open_out "vertical_text.scad") vertical_text;
   Core.write (open_out "mat_mul_cube.scad") mat_mul_cube;
   Core.write (open_out "quat_cube.scad") quat_cube;
+  Core.write (open_out "quat_slerp.scad") quat_slerp;
   print_endline "Done!"
