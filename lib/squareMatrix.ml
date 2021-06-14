@@ -6,10 +6,10 @@ module type Ops = sig
   val sub : t -> t -> t
   val transpose : t -> t
   val map : (float -> float) -> t -> t
-  val scalar_mul : t -> float -> t
-  val scalar_div : t -> float -> t
-  val scalar_add : t -> float -> t
-  val scalar_sub : t -> float -> t
+  val mul_scalar : t -> float -> t
+  val div_scalar : t -> float -> t
+  val add_scalar : t -> float -> t
+  val sub_scalar : t -> float -> t
 end
 
 module type Config = sig
@@ -64,8 +64,8 @@ module Make (C : Config) : S = struct
     done;
     m
 
-  let scalar_mul t a = map (( *. ) a) t
-  let scalar_div t a = map (( /. ) a) t
-  let scalar_add t a = map (( +. ) a) t
-  let scalar_sub t a = map (( -. ) a) t
+  let mul_scalar t a = map (( *. ) a) t
+  let div_scalar t a = map (( /. ) a) t
+  let add_scalar t a = map (( +. ) a) t
+  let sub_scalar t a = map (( -. ) a) t
 end
