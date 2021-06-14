@@ -57,3 +57,6 @@ let to_euler t =
   in
   let z = Float.atan2 t.(1).(0) t.(0).(0) in
   x, y, z
+
+let trace t = t.(0).(0) +. t.(1).(1) +. t.(2).(2)
+let get t r c = t.(r).(c)
