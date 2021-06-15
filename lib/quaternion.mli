@@ -27,3 +27,5 @@ val get_w : t -> float
 (** Spherical linear interpotation.
  ** Adapted from https://github.com/KieranWynn/pyquaternion *)
 val slerp : t -> t -> float -> t
+
+val rotate_vec3 : t -> Vec3.t -> Vec3.t

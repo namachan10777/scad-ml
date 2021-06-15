@@ -111,3 +111,7 @@ let slerp a b =
     | d when d < 0. -> compute (negate a) b (-.d)
     | d when d > 0.9995 -> add a (mul_scalar (sub b a) v) |> normalize
     | d -> compute a b d
+
+let rotate_vec3 t (x, y, z) =
+  let r = 0., x, y, z in
+  mul (mul t r) (conj t) |> fun (_, x', y', z') -> x', y', z'
