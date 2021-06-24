@@ -58,3 +58,4 @@ let ( <-> ) = sub
 let ( <*> ) = mul
 let ( </> ) = div
 let to_vec2 (x, y, _) = x, y
+let zero = 0., 0., 0.
