@@ -115,7 +115,8 @@ let slerp a b =
 let rotate_vec3 t (x, y, z) =
   (* let r = 0., x, y, z in *)
   let r = x, y, z, 0. in
-  mul (mul t r) (conj t) |> fun (_, x', y', z') -> x', y', z'
+  (* mul (mul t r) (conj t) |> fun (_, x', y', z') -> x', y', z' *)
+  mul (mul t r) (conj t) |> fun (x', y', z', _) -> x', y', z'
 
 let rotate_vec3_about_pt t vec pt =
   let px, py, pz = Vec3.(vec <+> pt) in
