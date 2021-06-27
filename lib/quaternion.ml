@@ -118,7 +118,4 @@ let rotate_vec3 t (x, y, z) =
   (* mul (mul t r) (conj t) |> fun (_, x', y', z') -> x', y', z' *)
   mul (mul t r) (conj t) |> fun (x', y', z', _) -> x', y', z'
 
-let rotate_vec3_about_pt t vec pt =
-  let px, py, pz = Vec3.(vec <+> pt) in
-  let r = 0., px, py, pz in
-  mul (mul t r) (conj t) |> fun (_, x', y', z') -> Vec3.((x', y', z') <-> pt)
+let rotate_vec3_about_pt t vec pt = Vec3.(rotate_vec3 t (vec <+> pt) <-> pt)
