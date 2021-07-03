@@ -1,5 +1,6 @@
 type t = float * float * float
 
+let zero = 0., 0., 0.
 let horizontal_op op (x1, y1, z1) (x2, y2, z2) = op x1 x2, op y1 y2, op z1 z2
 let add = horizontal_op ( +. )
 let sub = horizontal_op ( -. )
@@ -47,6 +48,10 @@ let dot (x1, y1, z1) (x2, y2, z2) = (x1 *. x2) +. (y1 *. y2) +. (z1 *. z2)
 let cross (x1, y1, z1) (x2, y2, z2) =
   (y1 *. z2) -. (z1 *. y2), (z1 *. x2) -. (x1 *. z2), (x1 *. y2) -. (y1 *. x2)
 
+let mean l =
+  let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
+  map (fun a -> a /. Float.of_int n) sum
+
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y
 let get_z (_, _, z) = z
@@ -58,4 +63,3 @@ let ( <-> ) = sub
 let ( <*> ) = mul
 let ( </> ) = div
 let to_vec2 (x, y, _) = x, y
-let zero = 0., 0., 0.
