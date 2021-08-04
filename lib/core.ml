@@ -121,6 +121,11 @@ type scad_t =
       ; offset : [ `Radius of float | `Delta of float ]
       ; chamfer : bool
       }
+  | Import of
+      { file : string
+      ; convexity : int
+      ; dxf_layer : string option
+      }
 
 let deg_of_rad r = 180.0 *. r /. Float.pi
 
@@ -323,6 +328,13 @@ let string_of_scad =
         | `Delta d  -> Printf.sprintf "delta = %f" d )
         chamfer
         (print (indent ^ "\t") src)
+    | Import { file; convexity; dxf_layer } ->
+      Printf.sprintf
+        "%simport(%s, convexity=%i%s);\n"
+        indent
+        file
+        convexity
+        (maybe_fmt ", layer=%s" dxf_layer)
   in
   print ""
 
