@@ -34,6 +34,11 @@ type scad_t =
       ; convexity : int
       }
   | Text of Text.t
+  | Color of
+      { src : scad_t
+      ; color : Color.t
+      ; alpha : float option
+      }
   | Translate of Vec3.t * scad_t
   | Rotate of Vec3.t * scad_t
   | VectorRotate of Vec3.t * float * scad_t
@@ -288,6 +293,13 @@ let string_of_scad =
         file
         convexity
         (maybe_fmt ", layer=%s" dxf_layer)
+    | Color { src; color; alpha } ->
+      Printf.sprintf
+        "%scolor(%s%s)\n%s"
+        indent
+        (Color.to_string color)
+        (maybe_fmt ", alpha=%f" alpha)
+        (print (indent ^ "\t") src)
   in
   print ""
 

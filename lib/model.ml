@@ -55,5 +55,6 @@ let scale ratios scad = Core.Scale (ratios, scad)
 let resize new_dims scad = Core.Resize (new_dims, scad)
 let offset ?(chamfer = false) offset src = Core.Offset { src; offset; chamfer }
 let import ?dxf_layer ?(convexity = 10) file = Core.Import { file; convexity; dxf_layer }
+let color ?alpha color src = Core.Color { src; color; alpha }
 let ( |>> ) scad p = translate p scad
 let ( |@> ) scad r = rotate r scad
