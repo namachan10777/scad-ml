@@ -47,11 +47,7 @@ let rotate_extrude_triangle =
 let hello = Model.text "Hello, world!"
 
 let vertical_text =
-  Model.text
-    "Tall Text"
-    ~spacing:5.
-    ~valign:Core.Text.Top
-    ~direction:Core.Text.TopToBottom
+  Model.text "Tall Text" ~spacing:5. ~valign:Text.Top ~direction:Text.TopToBottom
 
 let () =
   print_endline "Building test scads...";
