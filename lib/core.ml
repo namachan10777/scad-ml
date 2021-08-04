@@ -330,7 +330,7 @@ let string_of_scad =
         (print (indent ^ "\t") src)
     | Import { file; convexity; dxf_layer } ->
       Printf.sprintf
-        "%simport(%s, convexity=%i%s);\n"
+        "%simport(\"%s\", convexity=%i%s);\n"
         indent
         file
         convexity
