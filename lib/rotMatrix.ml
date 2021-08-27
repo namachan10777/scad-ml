@@ -61,16 +61,8 @@ let to_euler t =
 let trace t = t.(0).(0) +. t.(1).(1) +. t.(2).(2)
 let get t r c = t.(r).(c)
 
-module Ops = SquareMatrix.Make (struct
-  let size = 3
-end)
-
-let mul = Ops.mul
-let add = Ops.add
-let sub = Ops.sub
-let transpose = Ops.transpose
-let map = Ops.map
-let mul_scalar = Ops.mul_scalar
-let div_scalar = Ops.div_scalar
-let add_scalar = Ops.add_scalar
-let sub_scalar = Ops.sub_scalar
+include (
+  SquareMatrix.Make (struct
+    let size = 3
+  end) :
+    SquareMatrix.Ops with type t := t )

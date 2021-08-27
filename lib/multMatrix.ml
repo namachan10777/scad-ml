@@ -33,16 +33,8 @@ let to_string t =
   in
   Printf.sprintf "[ %s\n %s\n %s\n %s ]" (row 0) (row 1) (row 2) (row 3)
 
-module Ops = SquareMatrix.Make (struct
-  let size = 4
-end)
-
-let mul = Ops.mul
-let add = Ops.add
-let sub = Ops.sub
-let transpose = Ops.transpose
-let map = Ops.map
-let mul_scalar = Ops.mul_scalar
-let div_scalar = Ops.div_scalar
-let add_scalar = Ops.add_scalar
-let sub_scalar = Ops.sub_scalar
+include (
+  SquareMatrix.Make (struct
+    let size = 4
+  end) :
+    SquareMatrix.Ops with type t := t )
