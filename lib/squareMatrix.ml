@@ -67,5 +67,5 @@ module Make (C : Config) : S = struct
   let mul_scalar t s = map (( *. ) s) t
   let div_scalar t s = map (( *. ) (1. /. s)) t
   let add_scalar t s = map (( +. ) s) t
-  let sub_scalar t s = map (( -. ) s) t
+  let sub_scalar t s = map (( +. ) (-1. *. s)) t
 end
