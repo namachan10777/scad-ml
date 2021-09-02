@@ -8,6 +8,10 @@ let mul = horizontal_op ( *. )
 let div = horizontal_op ( /. )
 let negate = horizontal_op ( *. ) (-1., -1., -1.)
 let map f (x, y, z) = f x, f y, f z
+let add_scalar t s = map (( +. ) s) t
+let sub_scalar t s = sub t (s, s, s)
+let mul_scalar t s = map (( *. ) s) t
+let div_scalar t s = div t (s, s, s)
 
 let equal p1 p2 =
   match horizontal_op ( = ) p1 p2 with
