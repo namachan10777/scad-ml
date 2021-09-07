@@ -1,4 +1,4 @@
-type scad_t =
+type t =
   | Cylinder of
       { r1 : float
       ; r2 : float
@@ -35,27 +35,27 @@ type scad_t =
       }
   | Text of Text.t
   | Color of
-      { src : scad_t
+      { src : t
       ; color : Color.t
       ; alpha : float option
       }
-  | Translate of Vec3.t * scad_t
-  | Rotate of Vec3.t * scad_t
-  | VectorRotate of Vec3.t * float * scad_t
-  | MultMatrix of MultMatrix.t * scad_t
-  | Union of scad_t list
-  | Intersection of scad_t list
-  | Difference of scad_t * scad_t list
-  | Minkowski of scad_t list
-  | Hull of scad_t list
+  | Translate of Vec3.t * t
+  | Rotate of Vec3.t * t
+  | VectorRotate of Vec3.t * float * t
+  | MultMatrix of MultMatrix.t * t
+  | Union of t list
+  | Intersection of t list
+  | Difference of t * t list
+  | Minkowski of t list
+  | Hull of t list
   | Polyhedron of Vec3.t list * int list list
-  | Mirror of (float * float * float) * scad_t
+  | Mirror of (float * float * float) * t
   | Projection of
-      { src : scad_t
+      { src : t
       ; cut : bool
       }
   | LinearExtrude of
-      { src : scad_t
+      { src : t
       ; height : float option
       ; center : bool
       ; convexity : int
@@ -65,17 +65,17 @@ type scad_t =
       ; fn : int
       }
   | RotateExtrude of
-      { src : scad_t
+      { src : t
       ; angle : float option
       ; convexity : int
       ; fa : float option
       ; fs : float option
       ; fn : int option
       }
-  | Scale of (float * float * float) * scad_t
-  | Resize of (float * float * float) * scad_t
+  | Scale of (float * float * float) * t
+  | Resize of (float * float * float) * t
   | Offset of
-      { src : scad_t
+      { src : t
       ; offset : [ `Radius of float | `Delta of float ]
       ; chamfer : bool
       }

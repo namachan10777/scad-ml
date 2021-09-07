@@ -51,14 +51,14 @@ let vertical_text =
 
 let () =
   print_endline "Building test scads...";
-  Core.write (open_out "square.scad") square;
-  Core.write (open_out "circle.scad") circle;
-  Core.write (open_out "triangle_polygon.scad") triangle_polygon;
-  Core.write (open_out "linear_extrude_circle.scad") linear_extrude_circle;
-  Core.write (open_out "rotate_extrude_triangle.scad") rotate_extrude_triangle;
-  Core.write (open_out "hello.scad") hello;
-  Core.write (open_out "vertical_text.scad") vertical_text;
-  Core.write (open_out "mat_mul_cube.scad") mat_mul_cube;
-  Core.write (open_out "quat_cube.scad") quat_cube;
-  Core.write (open_out "quat_slerp.scad") quat_slerp;
+  Scad.write (open_out "square.scad") square;
+  Scad.write (open_out "circle.scad") circle;
+  Scad.write (open_out "triangle_polygon.scad") triangle_polygon;
+  Scad.write (open_out "linear_extrude_circle.scad") linear_extrude_circle;
+  Scad.write (open_out "rotate_extrude_triangle.scad") rotate_extrude_triangle;
+  Scad.write (open_out "hello.scad") hello;
+  Scad.write (open_out "vertical_text.scad") vertical_text;
+  Scad.write (open_out "mat_mul_cube.scad") mat_mul_cube;
+  Scad.write (open_out "quat_cube.scad") quat_cube;
+  Scad.write (open_out "quat_slerp.scad") quat_slerp;
   print_endline "Done!"
