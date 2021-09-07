@@ -49,7 +49,7 @@ type scad_t =
   | Minkowski of scad_t list
   | Hull of scad_t list
   | Polyhedron of Vec3.t list * int list list
-  | Mirror of (int * int * int) * scad_t
+  | Mirror of (float * float * float) * scad_t
   | Projection of
       { src : scad_t
       ; cut : bool
@@ -232,7 +232,7 @@ let string_of_scad =
         (string_of_list (string_of_list string_of_int) faces)
     | Mirror ((x, y, z), scad) ->
       Printf.sprintf
-        "%smirror(v=[%d, %d, %d])\n%s"
+        "%smirror(v=[%f, %f, %f])\n%s"
         indent
         x
         y
