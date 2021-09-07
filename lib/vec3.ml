@@ -56,6 +56,7 @@ let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
   map (fun a -> a /. Float.of_int n) sum
 
+let mirror ax t = sub t (mul_scalar ax (2. *. (dot t ax /. dot ax ax)))
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y
 let get_z (_, _, z) = z
@@ -67,3 +68,4 @@ let ( <-> ) = sub
 let ( <*> ) = mul
 let ( </> ) = div
 let to_vec2 (x, y, _) = x, y
+let of_vec2 (x, y) = x, y, 0.
