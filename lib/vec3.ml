@@ -42,6 +42,7 @@ let rotate_z theta (x, y, z) =
 let rotate (tx, ty, tz) p = rotate_x tx p |> rotate_y ty |> rotate_z tz
 let rotate_about_pt r pivot p = add p pivot |> rotate r |> add (negate pivot)
 let norm (x, y, z) = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
+let distance a b = norm (sub a b)
 
 let normalize ((x, y, z) as p) =
   let n = norm p in
