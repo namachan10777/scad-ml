@@ -113,9 +113,24 @@ let slerp a b =
     | d -> compute a b d
 
 let rotate_vec3 t (x, y, z) =
-  (* let r = 0., x, y, z in *)
   let r = x, y, z, 0. in
-  (* mul (mul t r) (conj t) |> fun (_, x', y', z') -> x', y', z' *)
   mul (mul t r) (conj t) |> fun (x', y', z', _) -> x', y', z'
 
 let rotate_vec3_about_pt t pt vec = Vec3.(rotate_vec3 t (vec <+> pt) <-> pt)
+
+let alignment v1 v2 =
+  let dp = Vec3.dot v1 v2 in
+  if dp > 0.999999 (* already parallel *)
+  then id
+  else if dp < -0.999999 (* opposite *)
+  then (
+    let x_cross = Vec3.cross (1., 0., 0.) v1 in
+    let axis =
+      Vec3.normalize
+      @@ if Vec3.norm x_cross < 0.000001 then Vec3.cross (0., 1., 0.) v1 else x_cross
+    in
+    make axis Float.pi )
+  else (
+    let x, y, z = Vec3.(cross v1 v2) in
+    let w = Vec3.((norm v1 *. norm v2) +. dot v1 v2) in
+    normalize (x, y, z, w) )

@@ -30,3 +30,4 @@ val slerp : t -> t -> float -> t
 
 val rotate_vec3 : t -> Vec3.t -> Vec3.t
 val rotate_vec3_about_pt : t -> Vec3.t -> Vec3.t -> Vec3.t
+val alignment : Vec3.t -> Vec3.t -> t
