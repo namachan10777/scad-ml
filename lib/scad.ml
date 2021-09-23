@@ -85,36 +85,89 @@ type t =
       ; dxf_layer : string option
       }
 
-let deg_of_rad r = 180.0 *. r /. Float.pi
+let cylinder ?(center = false) ?fa ?fs ?fn r h =
+  Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
 
-let string_of_list f = function
-  | h :: t ->
-    List.fold_left
-      (fun acc a -> Printf.sprintf "%s, %s" acc (f a))
-      (Printf.sprintf "[%s" (f h))
-      t
-    ^ "]"
-  | []     -> "[]"
+let cube ?(center = false) size = Cube { size; center }
+let sphere ?fa ?fs ?fn r = Sphere { r; fa; fs; fn }
+let square ?(center = false) size = Square { size; center }
+let circle ?fa ?fs ?fn r = Circle { r; fa; fs; fn }
+let polygon ?(convexity = 10) ?paths points = Polygon { points; paths; convexity }
 
-let value_map f ~default = function
-  | Some x -> f x
-  | None   -> default
+let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str =
+  Text
+    { text = str; size; font; halign; valign; spacing; direction; language; script; fn }
 
-let maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
+let translate p t = Translate (p, t)
+let rotate r t = Rotate (r, t)
+let rotate_about_pt r p t = translate p t |> rotate r |> translate (Vec3.negate p)
+let vector_rotate ax r t = VectorRotate (ax, r, t)
 
-let rec join x = function
-  | []       -> []
-  | [ h ]    -> [ h ]
-  | [ h; t ] -> [ h; x; t ]
-  | h :: t   -> h :: x :: join x t
+let vector_rotate_about_pt ax r p t =
+  translate p t |> vector_rotate ax r |> translate (Vec3.negate p)
 
-let rec compact = function
-  | Some h :: t -> h :: compact t
-  | None :: t   -> compact t
-  | []          -> []
+let multmatrix mat t = MultMatrix (mat, t)
+let quaternion q t = MultMatrix (Quaternion.to_multmatrix q, t)
+let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3.negate p)
+let union elements = Union elements
+let minkowski elements = Minkowski elements
+let hull elements = Hull elements
+let difference min sub = Difference (min, sub)
+let intersection elements = Intersection elements
+let polyhedron points faces = Polyhedron (points, faces)
+let mirror v t = Mirror (v, t)
+let projection ?(cut = false) src = Projection { src; cut }
 
-let string_of_scad =
-  let string_of_f_ fa fs fn =
+let linear_extrude
+    ?height
+    ?(center = false)
+    ?(convexity = 10)
+    ?twist
+    ?(slices = 20)
+    ?(scale = 1.0)
+    ?(fn = 16)
+    src
+  =
+  LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
+
+let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn src =
+  RotateExtrude { src; angle; convexity; fa; fs; fn }
+
+let scale ratios t = Scale (ratios, t)
+let resize new_dims t = Resize (new_dims, t)
+let offset ?(chamfer = false) offset src = Offset { src; offset; chamfer }
+let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
+let color ?alpha color src = Color { src; color; alpha }
+let ( |>> ) t p = translate p t
+let ( |@> ) t r = rotate r t
+
+let to_string =
+  let value_map f ~default = function
+    | Some x -> f x
+    | None   -> default
+  in
+  let deg_of_rad r = 180.0 *. r /. Float.pi
+  and string_of_list f = function
+    | h :: t ->
+      List.fold_left
+        (fun acc a -> Printf.sprintf "%s, %s" acc (f a))
+        (Printf.sprintf "[%s" (f h))
+        t
+      ^ "]"
+    | []     -> "[]"
+  and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
+  and string_of_f_ fa fs fn =
+    let rec join x = function
+      | []       -> []
+      | [ h ]    -> [ h ]
+      | [ h; t ] -> [ h; x; t ]
+      | h :: t   -> h :: x :: join x t
+    in
+    let rec compact = function
+      | Some h :: t -> h :: compact t
+      | None :: t   -> compact t
+      | []          -> []
+    in
     [ Option.map (fun fa -> Printf.sprintf "$fa=%f" fa) fa
     ; Option.map (fun fs -> Printf.sprintf "$fs=%f" fs) fs
     ; Option.map (fun fn -> Printf.sprintf "$fn=%d" fn) fn
@@ -304,5 +357,5 @@ let string_of_scad =
   print ""
 
 let write oc scad =
-  Printf.fprintf oc "%s" (string_of_scad scad);
+  Printf.fprintf oc "%s" (to_string scad);
   flush oc

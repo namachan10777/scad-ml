@@ -9,45 +9,40 @@ let mat =
 
 let mat_mul_cube =
   (* NOTE: These cubes should be equivalent if matmul is working correctly. *)
-  let box = Model.cube ~center:true (10., 10., 10.) in
-  let a = Model.multmatrix mat box
-  and b =
-    box |> Model.rotate (0., 0., Float.pi /. 4.) |> Model.translate (10., 20., 30.)
-  in
-  Model.union [ a; b ]
+  let box = Scad.cube ~center:true (10., 10., 10.) in
+  let a = Scad.multmatrix mat box
+  and b = box |> Scad.rotate (0., 0., Float.pi /. 4.) |> Scad.translate (10., 20., 30.) in
+  Scad.union [ a; b ]
 
 let quat_cube =
   (* NOTE: These cubes should be equivalent if quaternion is working correctly. *)
-  let box = Model.cube ~center:true (10., 10., 10.)
+  let box = Scad.cube ~center:true (10., 10., 10.)
   and angle = Float.pi /. 4.
   and ax = 1., 1., 0. in
-  let a = Model.vector_rotate ax angle box
-  and b = Model.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
-  Model.union [ a; b ]
+  let a = Scad.vector_rotate ax angle box
+  and b = Scad.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
+  Scad.union [ a; b ]
 
 let quat_slerp =
-  let cyl = Model.cylinder ~center:true 2.5 20. in
+  let cyl = Scad.cylinder ~center:true 2.5 20. in
   let q0 = Quaternion.make (0., 1., 0.) 0. in
   let q1 = Quaternion.make (0., 1., 0.) (Float.pi /. 2.) in
   let slerp = Quaternion.slerp q0 q1 in
-  let step t scad =
-    Model.quaternion (slerp t) scad |> Model.translate (0., 30. *. t, 0.)
-  in
-  Model.union
-    [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
+  let step t scad = Scad.quaternion (slerp t) scad |> Scad.translate (0., 30. *. t, 0.) in
+  Scad.union [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
 
-let square = Model.square ~center:true (10., 10.)
-let circle = Model.circle 10.
-let triangle_polygon = Model.polygon [ -0.5, 0.; 0., 1.; 0.5, 0. ]
-let linear_extrude_circle = Model.linear_extrude ~height:10. circle
+let square = Scad.square ~center:true (10., 10.)
+let circle = Scad.circle 10.
+let triangle_polygon = Scad.polygon [ -0.5, 0.; 0., 1.; 0.5, 0. ]
+let linear_extrude_circle = Scad.linear_extrude ~height:10. circle
 
 let rotate_extrude_triangle =
-  Model.rotate_extrude (Model.translate (3., 0., 0.) triangle_polygon)
+  Scad.rotate_extrude (Scad.translate (3., 0., 0.) triangle_polygon)
 
-let hello = Model.text "Hello, world!"
+let hello = Scad.text "Hello, world!"
 
 let vertical_text =
-  Model.text "Tall Text" ~spacing:5. ~valign:Text.Top ~direction:Text.TopToBottom
+  Scad.text "Tall Text" ~spacing:5. ~valign:Text.Top ~direction:Text.TopToBottom
 
 let () =
   print_endline "Building test scads...";
