@@ -13,17 +13,17 @@ let sub_scalar t s = sub t (s, s, s)
 let mul_scalar t s = map (( *. ) s) t
 let div_scalar t s = div t (s, s, s)
 
-let equal p1 p2 =
-  match horizontal_op ( = ) p1 p2 with
+let equal a b =
+  match horizontal_op ( = ) a b with
   | true, true, true -> true
   | _                -> false
 
 let norm (x, y, z) = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
 let distance a b = norm (sub a b)
 
-let normalize ((x, y, z) as p) =
-  let n = norm p in
-  if n > 0. then x /. n, y /. n, z /. n else p
+let normalize ((x, y, z) as t) =
+  let n = norm t in
+  if n > 0. then x /. n, y /. n, z /. n else t
 
 let dot (x1, y1, z1) (x2, y2, z2) = (x1 *. x2) +. (y1 *. y2) +. (z1 *. z2)
 
@@ -68,8 +68,9 @@ let rotate_z theta (x, y, z) =
   let y' = (y *. c) +. (x *. s) in
   x', y', z
 
-let rotate (tx, ty, tz) p = rotate_x tx p |> rotate_y ty |> rotate_z tz
-let rotate_about_pt r pivot p = add p pivot |> rotate r |> add (negate pivot)
+let rotate (rx, ry, rz) t = rotate_x rx t |> rotate_y ry |> rotate_z rz
+let rotate_about_pt r pivot t = add t pivot |> rotate r |> add (negate pivot)
 let translate = add
 let scale = mul
 let mirror ax t = sub t (mul_scalar ax (2. *. (dot t ax /. dot ax ax)))
+let projection (x, y, _) = x, y, 0.

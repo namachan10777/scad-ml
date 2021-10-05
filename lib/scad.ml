@@ -356,6 +356,6 @@ let to_string =
   in
   print ""
 
-let write oc scad =
-  Printf.fprintf oc "%s" (to_string scad);
+let write oc t =
+  Printf.fprintf oc "%s" (to_string t);
   flush oc
