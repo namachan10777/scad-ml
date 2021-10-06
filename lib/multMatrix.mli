@@ -1,5 +1,9 @@
-(** TODO: Add basic matrix operations, plan is to keep private so that mutations
- * cannot be done directly on the matrix, operations will return new matrices. *)
+(** An affine transformation matrix.
+
+    To be used with OpenSCADs
+    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
+    which is applied in this library with {!Scad.multmatrix}. *)
+
 type t = private float array array
 
 val of_row_list : (float * float * float * float) list -> (t, string) result

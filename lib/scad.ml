@@ -109,13 +109,13 @@ let vector_rotate_about_pt ax r p t =
 let multmatrix mat t = MultMatrix (mat, t)
 let quaternion q t = MultMatrix (Quaternion.to_multmatrix q, t)
 let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3.negate p)
-let union elements = Union elements
-let minkowski elements = Minkowski elements
-let hull elements = Hull elements
-let difference min sub = Difference (min, sub)
-let intersection elements = Intersection elements
+let union ts = Union ts
+let minkowski ts = Minkowski ts
+let hull ts = Hull ts
+let difference t sub = Difference (t, sub)
+let intersection ts = Intersection ts
 let polyhedron points faces = Polyhedron (points, faces)
-let mirror v t = Mirror (v, t)
+let mirror ax t = Mirror (ax, t)
 let projection ?(cut = false) src = Projection { src; cut }
 
 let linear_extrude
@@ -133,7 +133,7 @@ let linear_extrude
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn src =
   RotateExtrude { src; angle; convexity; fa; fs; fn }
 
-let scale ratios t = Scale (ratios, t)
+let scale factors t = Scale (factors, t)
 let resize new_dims t = Resize (new_dims, t)
 let offset ?(chamfer = false) offset src = Offset { src; offset; chamfer }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }

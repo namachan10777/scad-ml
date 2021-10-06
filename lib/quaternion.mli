@@ -1,3 +1,5 @@
+(** Provides quaternion rotation functions. *)
+
 type t = float * float * float * float
 
 val id : t
@@ -24,8 +26,10 @@ val get_y : t -> float
 val get_z : t -> float
 val get_w : t -> float
 
-(** Spherical linear interpotation.
- ** Adapted from https://github.com/KieranWynn/pyquaternion *)
+(** [slerp a b step]
+
+    Spherical linear interpotation. Adapted from
+    {{:https://github.com/KieranWynn/pyquaternion} pyquaternion}. *)
 val slerp : t -> t -> float -> t
 
 val rotate_vec3 : t -> Vec3.t -> Vec3.t

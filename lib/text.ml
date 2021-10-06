@@ -1,3 +1,5 @@
+(** Types pertaining to the configuration of OpenSCAD text objects. *)
+
 type h_align =
   | Left
   | Center

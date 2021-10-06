@@ -1,3 +1,5 @@
+(** Type defining the available colour options in OpenSCAD. *)
+
 type t =
   | RGB of float * float * float
   | Hex of string
