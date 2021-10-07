@@ -145,9 +145,8 @@ let to_string =
   let value_map f ~default = function
     | Some x -> f x
     | None   -> default
-  in
-  let deg_of_rad r = 180.0 *. r /. Float.pi
-  and string_of_list f = function
+  and deg_of_rad r = 180.0 *. r /. Float.pi in
+  let string_of_list f = function
     | h :: t ->
       List.fold_left
         (fun acc a -> Printf.sprintf "%s, %s" acc (f a))
@@ -157,23 +156,11 @@ let to_string =
     | []     -> "[]"
   and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
   and string_of_f_ fa fs fn =
-    let rec join x = function
-      | []       -> []
-      | [ h ]    -> [ h ]
-      | [ h; t ] -> [ h; x; t ]
-      | h :: t   -> h :: x :: join x t
-    in
-    let rec compact = function
-      | Some h :: t -> h :: compact t
-      | None :: t   -> compact t
-      | []          -> []
-    in
-    [ Option.map (fun fa -> Printf.sprintf "$fa=%f" fa) fa
+    [ Option.map (fun fa -> Printf.sprintf "$fa=%f" @@ deg_of_rad fa) fa
     ; Option.map (fun fs -> Printf.sprintf "$fs=%f" fs) fs
     ; Option.map (fun fn -> Printf.sprintf "$fn=%d" fn) fn
     ]
-    |> compact
-    |> join ", "
+    |> List.filter_map Fun.id
     |> function
     | [] -> ""
     | l  -> List.fold_left ( ^ ) ", " l
