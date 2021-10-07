@@ -30,7 +30,7 @@ let () =
 ```
 ![OpenSCAD logo](images/scad_logo.png)
 Generated scads can then be viewed with the [OpenSCAD
-viewer](https://openscad.org/downloads.html) as usual.
+viewer](https://openscad.org/downloads.html) as you normally would.
 
 ## Documentation
 Online documentation is available
