@@ -362,12 +362,12 @@ val rotate_extrude
     Supported 3D formats include:
     - STL (both ASCII and Binary)
     - OFF
-    - AMF {b Note:} {i Requires version 2019.05}
-    - 3MF {b Note:} {i Requires version 2019.05}
+    - AMF {b Note: }{i Requires version 2019.05}
+    - 3MF {b Note: }{i Requires version 2019.05}
 
     Supported 2D formats include:
     - DXF
-    - SVG {b Note:} {i Requires version 2019.05} *)
+    - SVG {b Note: }{i Requires version 2019.05} *)
 val import : ?dxf_layer:string -> ?convexity:int -> string -> t
 
 (** [t |>> p]
