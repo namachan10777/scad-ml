@@ -48,7 +48,11 @@ type t =
   | Difference of t * t list
   | Minkowski of t list
   | Hull of t list
-  | Polyhedron of Vec3.t list * int list list
+  | Polyhedron of
+      { points : Vec3.t list
+      ; faces : int list list
+      ; convexity : int
+      }
   | Mirror of (float * float * float) * t
   | Projection of
       { src : t
@@ -61,7 +65,7 @@ type t =
       ; convexity : int
       ; twist : int option
       ; slices : int
-      ; scale : float
+      ; scale : float * float
       ; fn : int
       }
   | RotateExtrude of
@@ -87,6 +91,9 @@ type t =
 
 let cylinder ?(center = false) ?fa ?fs ?fn r h =
   Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
+
+let cone ?(center = false) ?fa ?fs ?fn ~height r1 r2 =
+  Cylinder { r1; r2; h = height; center; fa; fs; fn }
 
 let cube ?(center = false) size = Cube { size; center }
 let sphere ?fa ?fs ?fn r = Sphere { r; fa; fs; fn }
@@ -114,7 +121,7 @@ let minkowski ts = Minkowski ts
 let hull ts = Hull ts
 let difference t sub = Difference (t, sub)
 let intersection ts = Intersection ts
-let polyhedron points faces = Polyhedron (points, faces)
+let polyhedron ?(convexity = 10) points faces = Polyhedron { points; faces; convexity }
 let mirror ax t = Mirror (ax, t)
 let projection ?(cut = false) src = Projection { src; cut }
 
@@ -124,7 +131,7 @@ let linear_extrude
     ?(convexity = 10)
     ?twist
     ?(slices = 20)
-    ?(scale = 1.0)
+    ?(scale = 1.0, 1.0)
     ?(fn = 16)
     src
   =
@@ -264,12 +271,13 @@ let to_string =
         indent
         (arrange_elms (indent ^ "\t") elements)
         indent
-    | Polyhedron (points, faces) ->
+    | Polyhedron { points; faces; convexity } ->
       Printf.sprintf
-        "%spolyhedron(points=%s, faces=%s);\n"
+        "%spolyhedron(points=%s, faces=%s, convexity=%i);\n"
         indent
         (string_of_list Vec3.to_string points)
         (string_of_list (string_of_list string_of_int) faces)
+        convexity
     | Mirror ((x, y, z), scad) ->
       Printf.sprintf
         "%smirror(v=[%f, %f, %f])\n%s"
@@ -285,16 +293,19 @@ let to_string =
         cut
         (print (indent ^ "\t") src)
         indent
-    | LinearExtrude { src; height; center; convexity; twist; slices; scale; fn } ->
+    | LinearExtrude { src; height; center; convexity; twist; slices; scale = sx, sy; fn }
+      ->
       Printf.sprintf
-        "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=%f, $fn=%d)\n%s"
+        "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=[%f, %f], $fn=%d)\n\
+         %s"
         indent
         (maybe_fmt "height=%f, " height)
         center
         convexity
         (maybe_fmt "twist=%d, " twist)
         slices
-        scale
+        sx
+        sy
         fn
         (print (indent ^ "\t") src)
     | RotateExtrude { src; angle; convexity; fa; fs; fn } ->
