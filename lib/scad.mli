@@ -12,7 +12,12 @@ type three_d = ThreeD
 
 (** The scad type is kept abstract, as the available constructor functions
     provide much less cumbersome means of building up models.*)
-type t
+type scad
+
+(** This GADT allows scads to be tagged as 2D or 3D, restricting usage of functions
+    that should only apply to one or the other, and preventing mixing during
+    boolean operations. *)
+type 'space t
 
 (** {1 A note on special facet parameters}
 
@@ -34,19 +39,26 @@ type t
 
     Creates a cube in the first octant, with the given xyz [dimensions]. When
     [center] is true, the cube is centered on the origin. *)
-val cube : ?center:bool -> float * float * float -> t
+val cube : ?center:bool -> float * float * float -> three_d t
 
 (** [sphere ?fa ?fs ?fn radius]
 
     Creates a sphere with given [radius] at the origin of the coordinate system. *)
-val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
+val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> three_d t
 
 (** [cylinder ?center ?fa ?fs ?fn radius height]
 
      Creates a cylinder centered about the z axis. When center is true, it will
      also be centered vertically, otherwise the base will sit upon the XY
      plane. *)
-val cylinder : ?center:bool -> ?fa:float -> ?fs:float -> ?fn:int -> float -> float -> t
+val cylinder
+  :  ?center:bool
+  -> ?fa:float
+  -> ?fs:float
+  -> ?fn:int
+  -> float
+  -> float
+  -> three_d t
 
 (** [cone ?center ?fa ?fs ?fn ~height r1 r2 ]
 
@@ -60,7 +72,7 @@ val cone
   -> height:float
   -> float
   -> float
-  -> t
+  -> three_d t
 
 (** [polyhedron points faces]
 
@@ -85,7 +97,7 @@ val cone
     If you are having trouble, please see the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Debugging_polyhedra}
     debugging polyhedra} section of the OpenSCAD user manual. *)
-val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> t
+val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> three_d t
 
 (** {1 2d shape primitives} *)
 
@@ -94,12 +106,12 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> t
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> float * float -> t
+val square : ?center:bool -> float * float -> two_d t
 
 (** [circle ?fa ?fs ?fn radius]
 
     Creates a circle with given [radius] at the origin. *)
-val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
+val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> two_d t
 
 (** [polygon ?convexity ?paths points]
 
@@ -112,7 +124,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> t
+val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> two_d t
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -140,20 +152,20 @@ val text
   -> ?script:string
   -> ?fn:int
   -> string
-  -> t
+  -> two_d t
 
 (** {1 Transformations} *)
 
 (** [translate p t]
 
     Moves [t] along the vector [p]. *)
-val translate : Vec3.t -> t -> t
+val translate : Vec3.t -> 's t -> 's t
 
 (** [rotate r t]
 
     Performs an Euler rotation (x -> y -> z) on [t] with the angles [r]
     (in radians). *)
-val rotate : Vec3.t -> t -> t
+val rotate : Vec3.t -> 's t -> 's t
 
 (** [rotate_about_pt r p t]
 
@@ -161,12 +173,12 @@ val rotate : Vec3.t -> t -> t
     and finally, moving back along the vector [p]. Functionally, rotating about
     the point in space arrived at by the initial translation along the vector
     [p]. *)
-val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
+val rotate_about_pt : Vec3.t -> Vec3.t -> 's t -> 's t
 
 (** [vector_rotate ax r t]
 
     Rotates [t] about the arbitrary axis [ax] by the angle [r]. *)
-val vector_rotate : Vec3.t -> float -> t -> t
+val vector_rotate : Vec3.t -> float -> 's t -> 's t
 
 (** [vector_rotate_about_pt ax r p t]
 
@@ -174,7 +186,7 @@ val vector_rotate : Vec3.t -> float -> t -> t
     [ax] by angle [r], and finally, moving back along the vector [p].
     Functionally, rotating about the point in space arrived at by the initial
     translation along the vector [p]. *)
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
+val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> 's t -> 's t
 
 (** [multmatrix mat t]
 
@@ -182,18 +194,18 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
     You can find a detailed explanation of how these are formed and interpreted
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
     here}. *)
-val multmatrix : MultMatrix.t -> t -> t
+val multmatrix : MultMatrix.t -> 's t -> 's t
 
 (** [mirror ax t]
 
     Mirrors [t] on a plane through the origin, defined by the normal vector
     [ax]. *)
-val mirror : float * float * float -> t -> t
+val mirror : float * float * float -> 's t -> 's t
 
 (** [quaternion q t]
 
     Applys the quaternion rotation [q] to [t]. *)
-val quaternion : Quaternion.t -> t -> t
+val quaternion : Quaternion.t -> 's t -> 's t
 
 (** [quaternion_about_pt q p t]
 
@@ -201,17 +213,17 @@ val quaternion : Quaternion.t -> t -> t
     quaternion [q], and finally, moving back along the vector [p]. Functionally,
     rotating about the point in space arrived at by the initial translation
     along the vector [p]. *)
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
+val quaternion_about_pt : Quaternion.t -> Vec3.t -> 's t -> 's t
 
 (** [scale factors t]
 
     Scales [t] by the given [factors] in xyz. *)
-val scale : float * float * float -> t -> t
+val scale : float * float * float -> 's t -> 's t
 
 (** [resize dimensions t]
 
     Adjusts the size of [t] to match the given [dimensions]. *)
-val resize : float * float * float -> t -> t
+val resize : float * float * float -> 's t -> 's t
 
 (** [offset ?chamfer offset t]
 
@@ -228,14 +240,14 @@ val resize : float * float * float -> t -> t
     like can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#offset}
     here}. *)
-val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> t -> t
+val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> two_d t -> two_d t
 
 (** [color ?alpha color t]
 
     Displays [t] with the specified [color] and [?alpha] value. This is only
     used for the F5 preview as CGAL and STL (F6, render) do not currently
     support color. Defaults to opaque (alpha = 1.0). *)
-val color : ?alpha:float -> Color.t -> t -> t
+val color : ?alpha:float -> Color.t -> 's t -> 's t
 
 (** {1 Boolean Combination} *)
 
@@ -264,17 +276,26 @@ val color : ?alpha:float -> Color.t -> t -> t
              ; translate (1. -. eps, 0., 0.) (cube (2. +. eps, 2., 2.))
              ]
    ]} *)
-val union : t list -> t
+val union_nonempty : 's t list -> 's t
+
+val union_2d : two_d t list -> two_d t
+val union_3d : three_d t list -> three_d t
 
 (** [minkowski ts]
 
     Displays the minkowski sum of [ts]. *)
-val minkowski : t list -> t
+val minkowski_nonempty : 's t list -> 's t
+
+val minkowski_2d : two_d t list -> two_d t
+val minkowski_3d : three_d t list -> three_d t
 
 (** [hull ts]
 
     Displays the convex hull of [ts]. *)
-val hull : t list -> t
+val hull_nonempty : 's t list -> 's t
+
+val hull_2d : two_d t list -> two_d t
+val hull_3d : three_d t list -> three_d t
 
 (** [difference t sub]
 
@@ -288,7 +309,7 @@ val hull : t list -> t
     in non-manifold render warnings or the removal of pieces from the render
     output. See the description above in union for why this is required and an
     example of how to do this by this using a small epsilon value. *)
-val difference : t -> t list -> t
+val difference : 's t -> 's t list -> 's t
 
 (** [intersection ts]
 
@@ -296,7 +317,10 @@ val difference : t -> t list -> t
     (logical {b and}). Only the area which is common or shared by {b all} shapes
     are retained. May be used with either 2D or 3D objects, but they should not
     be mixed. *)
-val intersection : t list -> t
+val intersection_nonempty : 's t list -> 's t
+
+val intersection_2d : two_d t list -> two_d t
+val intersection_3d : three_d t list -> three_d t
 
 (** {1 3d to 2d} *)
 
@@ -308,7 +332,7 @@ val intersection : t list -> t
     intersects with the XY plane) are considered. When [?cut] is false (the
     default when not specified), then points above and below the XY plane will
     be considered in forming the projection. *)
-val projection : ?cut:bool -> t -> t
+val projection : ?cut:bool -> three_d t -> two_d t
 
 (** {1 2d to 3d extrusions} *)
 
@@ -333,8 +357,8 @@ val linear_extrude
   -> ?slices:int
   -> ?scale:float * float
   -> ?fn:int
-  -> t
-  -> t
+  -> two_d t
+  -> three_d t
 
 (** [rotate_extrude ?angle ?convexity ?fa ?fs ?fn t]
 
@@ -353,8 +377,8 @@ val rotate_extrude
   -> ?fa:float
   -> ?fs:float
   -> ?fn:int
-  -> t
-  -> t
+  -> two_d t
+  -> three_d t
 
 (** [import ?dxf_layer ?convexity file]
 
@@ -371,25 +395,28 @@ val rotate_extrude
     Supported 2D formats include:
     - DXF
     - SVG {b Note: } {i Requires version 2019.05} *)
-val import : ?dxf_layer:string -> ?convexity:int -> string -> t
+val import : ?dxf_layer:string -> ?convexity:int -> string -> scad
+
+val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
+val import_3d : ?convexity:int -> string -> three_d t
 
 (** [t |>> p]
 
     Infix {!translate} *)
-val ( |>> ) : t -> Vec3.t -> t
+val ( |>> ) : 's t -> Vec3.t -> 's t
 
 (** [t |@> r]
 
     Infix {!rotate} *)
-val ( |@> ) : t -> Vec3.t -> t
+val ( |@> ) : 's t -> Vec3.t -> 's t
 
 (** [to_string t]
 
     Convert the scad [t] to a string in the OpenSCAD language. *)
-val to_string : t -> string
+val to_string : 's t -> string
 
 (** [write oc t]
 
     Write the scad [t] to the given [out_channel] (typically a file), as an
     OpenSCAD script (using {!to_string}). *)
-val write : out_channel -> t -> unit
+val write : out_channel -> 's t -> unit

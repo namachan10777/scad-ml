@@ -149,38 +149,76 @@ let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
-let nonempty
-    (type a)
-    ~(f2 : two_d t list -> two_d t)
-    ~(f3 : three_d t list -> three_d t)
-    (ts : a t list)
-    : a t
-  =
+(* let nonempty
+ *     (type a)
+ *     ~(f2 : two_d t list -> two_d t)
+ *     ~(f3 : three_d t list -> three_d t)
+ *     (ts : a t list)
+ *     : a t
+ *   =
+ *   match ts with
+ *   | D2 _ :: _ -> f2 ts
+ *   | D3 _ :: _ -> f3 ts
+ *   | []        -> failwith "List must be non-empty." *)
+(* let nonempty
+ *     : type a.
+ *       (two_d t list -> two_d t) -> (three_d t list -> three_d t) -> a t list -> a t
+ *   =
+ *  fun f2 f3 ts ->
+ *   match ts with
+ *   | D2 _ :: _ -> f2 ts
+ *   | D3 _ :: _ -> f3 ts
+ *   | []        -> failwith "List must be non-empty." *)
+
+(* let union_nonempty = nonempty union_2d union_3d *)
+let union_nonempty : type a. a t list -> a t =
+ fun ts ->
   match ts with
-  | D2 _ :: _ -> f2 ts
-  | D3 _ :: _ -> f3 ts
+  | D2 _ :: _ -> union_2d ts
+  | D3 _ :: _ -> union_3d ts
   | []        -> failwith "List must be non-empty."
 
-let union_nonempty = nonempty ~f2:union_2d ~f3:union_3d
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
-let minkowski_nonempty = nonempty ~f2:minkowski_2d ~f3:minkowski_3d
+
+(* let minkowski_nonempty = nonempty minkowski_2d minkowski_3d *)
+let minkowski_nonempty : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> minkowski_2d ts
+  | D3 _ :: _ -> minkowski_3d ts
+  | []        -> failwith "List must be non-empty."
+
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
-let hull_nonempty = nonempty ~f2:hull_2d ~f3:hull_3d
+
+(* let hull_nonempty = nonempty hull_2d hull_3d *)
+let hull_nonempty : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> hull_2d ts
+  | D3 _ :: _ -> hull_3d ts
+  | []        -> failwith "List must be non-empty."
 
 let difference (type a) (t : a t) (sub : a t list) =
-  Difference (unpack t, List.map unpack sub)
+  map (fun scad -> Difference (scad, List.map unpack sub)) t
 
 let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
 let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
-let intersection_nonempty = nonempty ~f2:intersection_2d ~f3:intersection_3d
+
+(* let intersection_nonempty = nonempty intersection_2d intersection_3d *)
+let intersection_nonempty : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> intersection_2d ts
+  | D3 _ :: _ -> intersection_3d ts
+  | []        -> failwith "List must be non-empty."
 
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
 
 let mirror ax = map (fun scad -> Mirror (ax, scad))
-let projection ?(cut = false) (D3 src) = Projection { src; cut }
+let projection ?(cut = false) (D3 src) = d2 @@ Projection { src; cut }
 
 let linear_extrude
     ?height
@@ -192,10 +230,10 @@ let linear_extrude
     ?(fn = 16)
     (D2 src)
   =
-  LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
+  d3 @@ LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
 
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
-  RotateExtrude { src; angle; convexity; fa; fs; fn }
+  d3 @@ RotateExtrude { src; angle; convexity; fa; fs; fn }
 
 let scale factors = map (fun scad -> Scale (factors, scad))
 let resize new_dims = map (fun scad -> Resize (new_dims, scad))
