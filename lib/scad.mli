@@ -7,9 +7,23 @@
     User Manual} can be referred to for additional information about most of the
     functions (and examples of output) made available here. *)
 
+type two_d = TwoD
+type three_d = ThreeD
+
 (** The scad type is kept abstract, as the available constructor functions
-    provide much less cumbersome means of building up models.*)
-type t
+    provide much less cumbersome means of building up models. *)
+type scad
+
+(** This GADT allows scads to be tagged as 2D or 3D, restricting usage of functions
+    that should only apply to one or the other, and preventing mixing during
+    boolean operations. *)
+type 'space t
+
+(** Two-dimensional shape *)
+type d2 = two_d t
+
+(** Three-dimensional shape *)
+type d3 = three_d t
 
 (** {1 A note on special facet parameters}
 
@@ -17,12 +31,12 @@ type t
     "special parameters" governing the number of facets used to generate arcs
     ($fa, $fs, and $fn respectively). Where present, they govern the following:
 
-    - ?fa is the minimum angle for a fragment. Note that this should be given in
-      radians here (as opposed to degrees in the OpenSCAD language).
-    - ?fs is the minimum size/length of a fragment. Even if ?fa is given, and
+    - [?fa] is the minimum angle for a fragment. Note that this should be given
+      in radians here (as opposed to degrees in the OpenSCAD language).
+    - [?fs] is the minimum size/length of a fragment. Even if ?fa is given, and
       very small, this parameter will limit how small the generated fragments
       can be.
-    - ?fn will set the absolute number of fragments to be used (causing the
+    - [?fn] will set the absolute number of fragments to be used (causing the
       previous two parameters to be ignored. *)
 
 (** {1 3d shape primitives} *)
@@ -31,19 +45,19 @@ type t
 
     Creates a cube in the first octant, with the given xyz [dimensions]. When
     [center] is true, the cube is centered on the origin. *)
-val cube : ?center:bool -> float * float * float -> t
+val cube : ?center:bool -> float * float * float -> d3
 
 (** [sphere ?fa ?fs ?fn radius]
 
     Creates a sphere with given [radius] at the origin of the coordinate system. *)
-val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
+val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> d3
 
 (** [cylinder ?center ?fa ?fs ?fn radius height]
 
      Creates a cylinder centered about the z axis. When center is true, it will
      also be centered vertically, otherwise the base will sit upon the XY
      plane. *)
-val cylinder : ?center:bool -> ?fa:float -> ?fs:float -> ?fn:int -> float -> float -> t
+val cylinder : ?center:bool -> ?fa:float -> ?fs:float -> ?fn:int -> float -> float -> d3
 
 (** [cone ?center ?fa ?fs ?fn ~height r1 r2 ]
 
@@ -57,7 +71,7 @@ val cone
   -> height:float
   -> float
   -> float
-  -> t
+  -> d3
 
 (** [polyhedron points faces]
 
@@ -82,7 +96,7 @@ val cone
     If you are having trouble, please see the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Debugging_polyhedra}
     debugging polyhedra} section of the OpenSCAD user manual. *)
-val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> t
+val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
 
 (** {1 2d shape primitives} *)
 
@@ -91,12 +105,12 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> t
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> float * float -> t
+val square : ?center:bool -> float * float -> d2
 
 (** [circle ?fa ?fs ?fn radius]
 
     Creates a circle with given [radius] at the origin. *)
-val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
+val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> d2
 
 (** [polygon ?convexity ?paths points]
 
@@ -109,7 +123,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> t
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> t
+val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> d2
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -137,20 +151,22 @@ val text
   -> ?script:string
   -> ?fn:int
   -> string
-  -> t
+  -> d2
 
-(** {1 Transformations} *)
+(** {1 Transformations}
+
+    These functions can be applied freely to both 2d and 3d shapes. *)
 
 (** [translate p t]
 
     Moves [t] along the vector [p]. *)
-val translate : Vec3.t -> t -> t
+val translate : Vec3.t -> 's t -> 's t
 
 (** [rotate r t]
 
     Performs an Euler rotation (x -> y -> z) on [t] with the angles [r]
     (in radians). *)
-val rotate : Vec3.t -> t -> t
+val rotate : Vec3.t -> 's t -> 's t
 
 (** [rotate_about_pt r p t]
 
@@ -158,12 +174,12 @@ val rotate : Vec3.t -> t -> t
     and finally, moving back along the vector [p]. Functionally, rotating about
     the point in space arrived at by the initial translation along the vector
     [p]. *)
-val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
+val rotate_about_pt : Vec3.t -> Vec3.t -> 's t -> 's t
 
 (** [vector_rotate ax r t]
 
     Rotates [t] about the arbitrary axis [ax] by the angle [r]. *)
-val vector_rotate : Vec3.t -> float -> t -> t
+val vector_rotate : Vec3.t -> float -> 's t -> 's t
 
 (** [vector_rotate_about_pt ax r p t]
 
@@ -171,7 +187,7 @@ val vector_rotate : Vec3.t -> float -> t -> t
     [ax] by angle [r], and finally, moving back along the vector [p].
     Functionally, rotating about the point in space arrived at by the initial
     translation along the vector [p]. *)
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
+val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> 's t -> 's t
 
 (** [multmatrix mat t]
 
@@ -179,18 +195,18 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
     You can find a detailed explanation of how these are formed and interpreted
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
     here}. *)
-val multmatrix : MultMatrix.t -> t -> t
+val multmatrix : MultMatrix.t -> 's t -> 's t
 
 (** [mirror ax t]
 
     Mirrors [t] on a plane through the origin, defined by the normal vector
     [ax]. *)
-val mirror : float * float * float -> t -> t
+val mirror : float * float * float -> 's t -> 's t
 
 (** [quaternion q t]
 
     Applys the quaternion rotation [q] to [t]. *)
-val quaternion : Quaternion.t -> t -> t
+val quaternion : Quaternion.t -> 's t -> 's t
 
 (** [quaternion_about_pt q p t]
 
@@ -198,17 +214,17 @@ val quaternion : Quaternion.t -> t -> t
     quaternion [q], and finally, moving back along the vector [p]. Functionally,
     rotating about the point in space arrived at by the initial translation
     along the vector [p]. *)
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
+val quaternion_about_pt : Quaternion.t -> Vec3.t -> 's t -> 's t
 
 (** [scale factors t]
 
     Scales [t] by the given [factors] in xyz. *)
-val scale : float * float * float -> t -> t
+val scale : float * float * float -> 's t -> 's t
 
 (** [resize dimensions t]
 
     Adjusts the size of [t] to match the given [dimensions]. *)
-val resize : float * float * float -> t -> t
+val resize : float * float * float -> 's t -> 's t
 
 (** [offset ?chamfer offset t]
 
@@ -225,23 +241,31 @@ val resize : float * float * float -> t -> t
     like can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#offset}
     here}. *)
-val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> t -> t
+val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> d2 -> d2
 
 (** [color ?alpha color t]
 
     Displays [t] with the specified [color] and [?alpha] value. This is only
     used for the F5 preview as CGAL and STL (F6, render) do not currently
     support color. Defaults to opaque (alpha = 1.0). *)
-val color : ?alpha:float -> Color.t -> t -> t
+val color : ?alpha:float -> Color.t -> 's t -> 's t
 
-(** {1 Boolean Combination} *)
+(** {1 Boolean Combination}
+
+    Perform boolean operations between shapes of the same dimension (non-mixing
+    of 2d and 3d shapes is enforced by the the GADT {!type:t}. {!Note that the
+    polymorphic versions of {!union}, {!minkowski}, {!hull}, and
+    {!intersection}, throw exceptions when the input list is empty. If empty
+    list inputs are expected, then use the appropriate [_2d] or [_3d]
+    variant. *)
 
 (** [union ts]
 
-    Creates the union/sum (logical {b or}) [ts]. May be used with 2D or 3D
-    objects, but they should not be mixed.
+    Creates the union/sum (logical {b or }) [ts]. Throws an exception if [ts] is
+    empty, use {!union_2d} or {!union_3d} if you would like empty unions to pass
+    silently.
 
-    {b Note:} It is mandatory for all unions, explicit or implicit, that
+    {b Note: } It is mandatory for all unions, explicit or implicit, that
     external faces to be merged not be coincident. Failure to follow this rule
     results in a design with undefined behavior, and can result in a render
     which is not manifold (with zero volume portions, or portions inside out),
@@ -261,39 +285,54 @@ val color : ?alpha:float -> Color.t -> t -> t
              ; translate (1. -. eps, 0., 0.) (cube (2. +. eps, 2., 2.))
              ]
    ]} *)
-val union : t list -> t
+val union : 's t list -> 's t
+
+val union_2d : d2 list -> d2
+val union_3d : d3 list -> d3
 
 (** [minkowski ts]
 
-    Displays the minkowski sum of [ts]. *)
-val minkowski : t list -> t
+    Displays the minkowski sum of [ts]. Throws an exception if [ts] is empty,
+    use {!minkowski_2d} or {!minkowski_3d} if you would like empty minkowski
+    sums to pass silently. *)
+val minkowski : 's t list -> 's t
+
+val minkowski_2d : d2 list -> d2
+val minkowski_3d : d3 list -> d3
 
 (** [hull ts]
 
-    Displays the convex hull of [ts]. *)
-val hull : t list -> t
+    Displays the convex hull of [ts]. Throws an exception if [ts] is empty, use
+    {!hull_2d} or {!hull_3d} if you would like empty hulls to pass silently. *)
+val hull : 's t list -> 's t
+
+val hull_2d : d2 list -> d2
+val hull_3d : d3 list -> d3
 
 (** [difference t sub]
 
-    Subracts the shapes of [sub] from [t] (logical {b and not}). May be used
-    with 2D or 3D objects, but they should not be mixed.
+    Subracts the shapes of [sub] from [t] (logical {b and not }).
 
-    {b Note:} It is mandatory that surfaces that are to be removed by a
+    {b Note: } It is mandatory that surfaces that are to be removed by a
     difference operation have an overlap, and that the negative piece being
     removed extends fully outside of the volume it is removing that surface
     from. Failure to follow this rule can cause preview artifacts and can result
     in non-manifold render warnings or the removal of pieces from the render
     output. See the description above in union for why this is required and an
     example of how to do this by this using a small epsilon value. *)
-val difference : t -> t list -> t
+val difference : 's t -> 's t list -> 's t
 
 (** [intersection ts]
 
     Creates an in intersection of [ts]. This keeps the overlapping portion
-    (logical {b and}). Only the area which is common or shared by {b all} shapes
-    are retained. May be used with either 2D or 3D objects, but they should not
-    be mixed. *)
-val intersection : t list -> t
+    (logical {b and }). Only the area which is common or shared by {b all } shapes
+    are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
+    or {!intersection_3d} if you would like empty intersections to pass
+    silently. *)
+val intersection : 's t list -> 's t
+
+val intersection_2d : d2 list -> d2
+val intersection_3d : d3 list -> d3
 
 (** {1 3d to 2d} *)
 
@@ -305,7 +344,7 @@ val intersection : t list -> t
     intersects with the XY plane) are considered. When [?cut] is false (the
     default when not specified), then points above and below the XY plane will
     be considered in forming the projection. *)
-val projection : ?cut:bool -> t -> t
+val projection : ?cut:bool -> d3 -> d2
 
 (** {1 2d to 3d extrusions} *)
 
@@ -330,8 +369,8 @@ val linear_extrude
   -> ?slices:int
   -> ?scale:float * float
   -> ?fn:int
-  -> t
-  -> t
+  -> d2
+  -> d3
 
 (** [rotate_extrude ?angle ?convexity ?fa ?fs ?fn t]
 
@@ -339,8 +378,8 @@ val linear_extrude
     to form a solid which has rotational symmetry. Since [t] is actually 2D (and
     does not really exist in Z), it is more like it is spun around the Y-axis to
     form the solid, which is then placed so that its axis of rotation lies along
-    the Z-axis. For this reason, [t] {b must} lie completely on either the right
-    (recommended) or the left side of the Y-axis. Further explaination and
+    the Z-axis. For this reason, [t] {b must } lie completely on either the
+    right (recommended) or the left side of the Y-axis. Further explaination and
     examples can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Rotate_Extrude}
     here}. *)
@@ -350,43 +389,49 @@ val rotate_extrude
   -> ?fa:float
   -> ?fs:float
   -> ?fn:int
-  -> t
-  -> t
+  -> d2
+  -> d3
 
-(** [import ?dxf_layer ?convexity file]
+(** [import_2d ?dxf_layer ?convexity file]
+
+    Imports a [file] for use in the current OpenSCAD model. The file extension
+    is used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be
+    used to indicate a specific layer for import. Throws exception if the
+    extension does not match (case insensitive) one of the following 3D formats:
+    - DXF
+    - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
+val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
+
+(** [import_3d  ?convexity file]
 
     Imports [file] for use in the current OpenSCAD model. The file extension is
-    used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be used
-    to indicate a specific layer for import.
-
-    Supported 3D formats include:
+    used to determine which type. Throws exception if the extension does not
+    match (case insensitive) one of the following 3D formats:
     - STL (both ASCII and Binary)
     - OFF
-    - AMF {b Note: } {i Requires version 2019.05}
-    - 3MF {b Note: } {i Requires version 2019.05}
-
-    Supported 2D formats include:
-    - DXF
-    - SVG {b Note: } {i Requires version 2019.05} *)
-val import : ?dxf_layer:string -> ?convexity:int -> string -> t
-
-(** [t |>> p]
-
-    Infix {!translate} *)
-val ( |>> ) : t -> Vec3.t -> t
-
-(** [t |@> r]
-
-    Infix {!rotate} *)
-val ( |@> ) : t -> Vec3.t -> t
+    - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD }
+    - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
+val import_3d : ?convexity:int -> string -> d3
 
 (** [to_string t]
 
     Convert the scad [t] to a string in the OpenSCAD language. *)
-val to_string : t -> string
+val to_string : 's t -> string
 
 (** [write oc t]
 
     Write the scad [t] to the given [out_channel] (typically a file), as an
     OpenSCAD script (using {!to_string}). *)
-val write : out_channel -> t -> unit
+val write : out_channel -> 's t -> unit
+
+module Infix : sig
+  (** [t |>> p]
+
+    Infix {!translate} *)
+  val ( |>> ) : 's t -> Vec3.t -> 's t
+
+  (** [t |@> r]
+
+    Infix {!rotate} *)
+  val ( |@> ) : 's t -> Vec3.t -> 's t
+end

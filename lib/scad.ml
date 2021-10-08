@@ -1,4 +1,7 @@
-type t =
+type two_d = TwoD
+type three_d = ThreeD
+
+type scad =
   | Cylinder of
       { r1 : float
       ; r2 : float
@@ -35,31 +38,31 @@ type t =
       }
   | Text of Text.t
   | Color of
-      { src : t
+      { src : scad
       ; color : Color.t
       ; alpha : float option
       }
-  | Translate of Vec3.t * t
-  | Rotate of Vec3.t * t
-  | VectorRotate of Vec3.t * float * t
-  | MultMatrix of MultMatrix.t * t
-  | Union of t list
-  | Intersection of t list
-  | Difference of t * t list
-  | Minkowski of t list
-  | Hull of t list
+  | Translate of Vec3.t * scad
+  | Rotate of Vec3.t * scad
+  | VectorRotate of Vec3.t * float * scad
+  | MultMatrix of MultMatrix.t * scad
+  | Union of scad list
+  | Intersection of scad list
+  | Difference of scad * scad list
+  | Minkowski of scad list
+  | Hull of scad list
   | Polyhedron of
       { points : Vec3.t list
       ; faces : int list list
       ; convexity : int
       }
-  | Mirror of (float * float * float) * t
+  | Mirror of (float * float * float) * scad
   | Projection of
-      { src : t
+      { src : scad
       ; cut : bool
       }
   | LinearExtrude of
-      { src : t
+      { src : scad
       ; height : float option
       ; center : bool
       ; convexity : int
@@ -69,17 +72,17 @@ type t =
       ; fn : int
       }
   | RotateExtrude of
-      { src : t
+      { src : scad
       ; angle : float option
       ; convexity : int
       ; fa : float option
       ; fs : float option
       ; fn : int option
       }
-  | Scale of (float * float * float) * t
-  | Resize of (float * float * float) * t
+  | Scale of (float * float * float) * scad
+  | Resize of (float * float * float) * scad
   | Offset of
-      { src : t
+      { src : scad
       ; offset : [ `Radius of float | `Delta of float ]
       ; chamfer : bool
       }
@@ -89,41 +92,117 @@ type t =
       ; dxf_layer : string option
       }
 
+type 'space t =
+  | D2 : scad -> two_d t
+  | D3 : scad -> three_d t
+
+type d2 = two_d t
+type d3 = three_d t
+
+let d2 scad = D2 scad
+let d3 scad = D3 scad
+
+let unpack : type a. a t -> scad = function
+  | D2 scad -> scad
+  | D3 scad -> scad
+
+let map : type a. (scad -> scad) -> a t -> a t =
+ fun f -> function
+  | D2 scad -> D2 (f scad)
+  | D3 scad -> D3 (f scad)
+
 let cylinder ?(center = false) ?fa ?fs ?fn r h =
-  Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
+  d3 @@ Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
 
 let cone ?(center = false) ?fa ?fs ?fn ~height r1 r2 =
-  Cylinder { r1; r2; h = height; center; fa; fs; fn }
+  d3 @@ Cylinder { r1; r2; h = height; center; fa; fs; fn }
 
-let cube ?(center = false) size = Cube { size; center }
-let sphere ?fa ?fs ?fn r = Sphere { r; fa; fs; fn }
-let square ?(center = false) size = Square { size; center }
-let circle ?fa ?fs ?fn r = Circle { r; fa; fs; fn }
-let polygon ?(convexity = 10) ?paths points = Polygon { points; paths; convexity }
+let cube ?(center = false) size = d3 @@ Cube { size; center }
+let sphere ?fa ?fs ?fn r = d3 @@ Sphere { r; fa; fs; fn }
+let square ?(center = false) size = d2 @@ Square { size; center }
+let circle ?fa ?fs ?fn r = d2 @@ Circle { r; fa; fs; fn }
+let polygon ?(convexity = 10) ?paths points = d2 @@ Polygon { points; paths; convexity }
 
 let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str =
-  Text
-    { text = str; size; font; halign; valign; spacing; direction; language; script; fn }
+  d2
+  @@ Text
+       { text = str
+       ; size
+       ; font
+       ; halign
+       ; valign
+       ; spacing
+       ; direction
+       ; language
+       ; script
+       ; fn
+       }
 
-let translate p t = Translate (p, t)
-let rotate r t = Rotate (r, t)
+let translate p = map (fun scad -> Translate (p, scad))
+let rotate r = map (fun scad -> Rotate (r, scad))
 let rotate_about_pt r p t = translate p t |> rotate r |> translate (Vec3.negate p)
-let vector_rotate ax r t = VectorRotate (ax, r, t)
+let vector_rotate ax r = map (fun scad -> VectorRotate (ax, r, scad))
 
 let vector_rotate_about_pt ax r p t =
   translate p t |> vector_rotate ax r |> translate (Vec3.negate p)
 
-let multmatrix mat t = MultMatrix (mat, t)
-let quaternion q t = MultMatrix (Quaternion.to_multmatrix q, t)
+let multmatrix mat = map (fun scad -> MultMatrix (mat, scad))
+let quaternion q = map (fun scad -> MultMatrix (Quaternion.to_multmatrix q, scad))
 let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3.negate p)
-let union ts = Union ts
-let minkowski ts = Minkowski ts
-let hull ts = Hull ts
-let difference t sub = Difference (t, sub)
-let intersection ts = Intersection ts
-let polyhedron ?(convexity = 10) points faces = Polyhedron { points; faces; convexity }
-let mirror ax t = Mirror (ax, t)
-let projection ?(cut = false) src = Projection { src; cut }
+let union_2d ts = d2 @@ Union (List.map unpack ts)
+let union_3d ts = d3 @@ Union (List.map unpack ts)
+
+let empty_message n =
+  Printf.sprintf
+    "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
+    n
+    n
+
+let union : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> union_2d ts
+  | D3 _ :: _ -> union_3d ts
+  | []        -> failwith (empty_message "union")
+
+let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
+let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
+
+let minkowski : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> minkowski_2d ts
+  | D3 _ :: _ -> minkowski_3d ts
+  | []        -> failwith (empty_message "minkowski")
+
+let hull_2d ts = d2 @@ Hull (List.map unpack ts)
+let hull_3d ts = d3 @@ Hull (List.map unpack ts)
+
+let hull : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> hull_2d ts
+  | D3 _ :: _ -> hull_3d ts
+  | []        -> failwith (empty_message "hull")
+
+let difference (type a) (t : a t) (sub : a t list) =
+  map (fun scad -> Difference (scad, List.map unpack sub)) t
+
+let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
+let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
+
+let intersection : type a. a t list -> a t =
+ fun ts ->
+  match ts with
+  | D2 _ :: _ -> intersection_2d ts
+  | D3 _ :: _ -> intersection_3d ts
+  | []        -> failwith (empty_message "intersection")
+
+let polyhedron ?(convexity = 10) points faces =
+  d3 @@ Polyhedron { points; faces; convexity }
+
+let mirror ax = map (fun scad -> Mirror (ax, scad))
+let projection ?(cut = false) (D3 src) = d2 @@ Projection { src; cut }
 
 let linear_extrude
     ?height
@@ -133,22 +212,46 @@ let linear_extrude
     ?(slices = 20)
     ?(scale = 1.0, 1.0)
     ?(fn = 16)
-    src
+    (D2 src)
   =
-  LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
+  d3 @@ LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
 
-let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn src =
-  RotateExtrude { src; angle; convexity; fa; fs; fn }
+let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
+  d3 @@ RotateExtrude { src; angle; convexity; fa; fs; fn }
 
-let scale factors t = Scale (factors, t)
-let resize new_dims t = Resize (new_dims, t)
-let offset ?(chamfer = false) offset src = Offset { src; offset; chamfer }
+let scale factors = map (fun scad -> Scale (factors, scad))
+let resize new_dims = map (fun scad -> Resize (new_dims, scad))
+let offset ?(chamfer = false) offset (D2 src) = d2 @@ Offset { src; offset; chamfer }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
-let color ?alpha color src = Color { src; color; alpha }
-let ( |>> ) t p = translate p t
-let ( |@> ) t r = rotate r t
 
-let to_string =
+let legal_ext allowed file =
+  let ext =
+    let len = String.length file in
+    String.sub file (len - 3) 3 |> String.uncapitalize_ascii
+  in
+  let rec aux = function
+    | h :: t -> if String.equal ext h then Ok () else aux t
+    | []     -> Error ext
+  in
+  aux allowed
+
+let import_2d ?dxf_layer ?convexity file =
+  match legal_ext [ "dxf"; "svg" ] file with
+  | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
+  | Error ext ->
+    failwith
+      (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
+
+let import_3d ?convexity file =
+  match legal_ext [ "stl"; "off"; "amf"; "3mf" ] file with
+  | Ok ()     -> d3 (import ?convexity file)
+  | Error ext ->
+    failwith
+      (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
+
+let color ?alpha color = map (fun src -> Color { src; color; alpha })
+
+let to_string t =
   let value_map f ~default = function
     | Some x -> f x
     | None   -> default
@@ -352,8 +455,13 @@ let to_string =
         (maybe_fmt ", alpha=%f" alpha)
         (print (indent ^ "\t") src)
   in
-  print ""
+  print "" (unpack t)
 
 let write oc t =
   Printf.fprintf oc "%s" (to_string t);
   flush oc
+
+module Infix = struct
+  let ( |>> ) t p = translate p t
+  let ( |@> ) t r = rotate r t
+end

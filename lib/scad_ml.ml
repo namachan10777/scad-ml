@@ -14,9 +14,16 @@ module Quaternion = Quaternion
 module Vec3 = struct
   include Vec3
 
-  (** [quaternion q t] *)
+  (** [quaternion q t]
+
+      Rotate [t] with the quaternion [q]. *)
   let quaternion = Quaternion.rotate_vec3
 
-  (** [quaternion_about_pt q p t] *)
+  (** [quaternion_about_pt q p t]
+
+    Translates [t] along the vector [p], rotating the resulting vector with the
+    quaternion [q], and finally, moving back along the vector [p]. Functionally,
+    rotating about the point in space arrived at by the initial translation
+    along the vector [p]. *)
   let quaternion_about_pt = Quaternion.rotate_vec3_about_pt
 end

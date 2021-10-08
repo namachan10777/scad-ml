@@ -12,7 +12,7 @@ let mat_mul_cube =
   let box = Scad.cube ~center:true (10., 10., 10.) in
   let a = Scad.multmatrix mat box
   and b = box |> Scad.rotate (0., 0., Float.pi /. 4.) |> Scad.translate (10., 20., 30.) in
-  Scad.union [ a; b ]
+  Scad.union_3d [ a; b ]
 
 let quat_cube =
   (* NOTE: These cubes should be equivalent if quaternion is working correctly. *)
@@ -21,7 +21,7 @@ let quat_cube =
   and ax = 1., 1., 0. in
   let a = Scad.vector_rotate ax angle box
   and b = Scad.multmatrix Quaternion.(to_multmatrix (make ax angle)) box in
-  Scad.union [ a; b ]
+  Scad.union_3d [ a; b ]
 
 let quat_slerp =
   let cyl = Scad.cylinder ~center:true 2.5 20. in
@@ -29,7 +29,8 @@ let quat_slerp =
   let q1 = Quaternion.make (0., 1., 0.) (Float.pi /. 2.) in
   let slerp = Quaternion.slerp q0 q1 in
   let step t scad = Scad.quaternion (slerp t) scad |> Scad.translate (0., 30. *. t, 0.) in
-  Scad.union [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
+  Scad.union_3d
+    [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
 
 let square = Scad.square ~center:true (10., 10.)
 let circle = Scad.circle 10.
