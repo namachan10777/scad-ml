@@ -7,6 +7,9 @@
     User Manual} can be referred to for additional information about most of the
     functions (and examples of output) made available here. *)
 
+type two_d = TwoD
+type three_d = ThreeD
+
 (** The scad type is kept abstract, as the available constructor functions
     provide much less cumbersome means of building up models.*)
 type t
