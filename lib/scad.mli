@@ -249,12 +249,16 @@ val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> two_d t 
     support color. Defaults to opaque (alpha = 1.0). *)
 val color : ?alpha:float -> Color.t -> 's t -> 's t
 
-(** {1 Boolean Combination} *)
+(** {1 Boolean Combination}
+
+    Note that the polymorphic versions of {!union}, {!minkowski}, {!hull}, and
+    {!intersection}, throw exceptions when the input list is empty. *)
 
 (** [union ts]
 
-    Creates the union/sum (logical {b or}) [ts]. May be used with 2D or 3D
-    objects, but they should not be mixed.
+    Creates the union/sum (logical {b or}) [ts]. Throws an exception if [ts] is
+    empty, use {!union_2d} or {!union_3d} if you would like empty unions to pass
+    silently.
 
     {b Note:} It is mandatory for all unions, explicit or implicit, that
     external faces to be merged not be coincident. Failure to follow this rule
@@ -276,31 +280,33 @@ val color : ?alpha:float -> Color.t -> 's t -> 's t
              ; translate (1. -. eps, 0., 0.) (cube (2. +. eps, 2., 2.))
              ]
    ]} *)
-val union_nonempty : 's t list -> 's t
+val union : 's t list -> 's t
 
 val union_2d : two_d t list -> two_d t
 val union_3d : three_d t list -> three_d t
 
 (** [minkowski ts]
 
-    Displays the minkowski sum of [ts]. *)
-val minkowski_nonempty : 's t list -> 's t
+    Displays the minkowski sum of [ts]. Throws an exception if [ts] is empty,
+    use {!minkowski_2d} or {!minkowski_3d} if you would like empty minkowski
+    sums to pass silently. *)
+val minkowski : 's t list -> 's t
 
 val minkowski_2d : two_d t list -> two_d t
 val minkowski_3d : three_d t list -> three_d t
 
 (** [hull ts]
 
-    Displays the convex hull of [ts]. *)
-val hull_nonempty : 's t list -> 's t
+    Displays the convex hull of [ts]. Throws an exception if [ts] is empty, use
+    {!hull_2d} or {!hull_3d} if you would like empty hulls to pass silently. *)
+val hull : 's t list -> 's t
 
 val hull_2d : two_d t list -> two_d t
 val hull_3d : three_d t list -> three_d t
 
 (** [difference t sub]
 
-    Subracts the shapes of [sub] from [t] (logical {b and not}). May be used
-    with 2D or 3D objects, but they should not be mixed.
+    Subracts the shapes of [sub] from [t] (logical {b and not}).
 
     {b Note:} It is mandatory that surfaces that are to be removed by a
     difference operation have an overlap, and that the negative piece being
@@ -315,9 +321,10 @@ val difference : 's t -> 's t list -> 's t
 
     Creates an in intersection of [ts]. This keeps the overlapping portion
     (logical {b and}). Only the area which is common or shared by {b all} shapes
-    are retained. May be used with either 2D or 3D objects, but they should not
-    be mixed. *)
-val intersection_nonempty : 's t list -> 's t
+    are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
+    or {!intersection_3d} if you would like empty intersections to pass
+    silently. *)
+val intersection : 's t list -> 's t
 
 val intersection_2d : two_d t list -> two_d t
 val intersection_3d : three_d t list -> three_d t
@@ -380,24 +387,28 @@ val rotate_extrude
   -> two_d t
   -> three_d t
 
-(** [import ?dxf_layer ?convexity file]
+(** [import_2d ?dxf_layer ?convexity file]
 
-    Imports [file] for use in the current OpenSCAD model. The file extension is
+    Imports a [file] for use in the current OpenSCAD model. The file extension is
     used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be used
     to indicate a specific layer for import.
+
+    Supported 2D formats include:
+    - DXF
+    - SVG {b Note: } {i Requires version 2019.05} *)
+
+val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
+
+(** [import_3d  ?convexity file]
+
+    Imports [file] for use in the current OpenSCAD model. The file extension is
+    used to determine which type.
 
     Supported 3D formats include:
     - STL (both ASCII and Binary)
     - OFF
     - AMF {b Note: } {i Requires version 2019.05}
-    - 3MF {b Note: } {i Requires version 2019.05}
-
-    Supported 2D formats include:
-    - DXF
-    - SVG {b Note: } {i Requires version 2019.05} *)
-val import : ?dxf_layer:string -> ?convexity:int -> string -> scad
-
-val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
+    - 3MF {b Note: } {i Requires version 2019.05} *)
 val import_3d : ?convexity:int -> string -> three_d t
 
 (** [t |>> p]

@@ -149,29 +149,7 @@ let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
-(* let nonempty
- *     (type a)
- *     ~(f2 : two_d t list -> two_d t)
- *     ~(f3 : three_d t list -> three_d t)
- *     (ts : a t list)
- *     : a t
- *   =
- *   match ts with
- *   | D2 _ :: _ -> f2 ts
- *   | D3 _ :: _ -> f3 ts
- *   | []        -> failwith "List must be non-empty." *)
-(* let nonempty
- *     : type a.
- *       (two_d t list -> two_d t) -> (three_d t list -> three_d t) -> a t list -> a t
- *   =
- *  fun f2 f3 ts ->
- *   match ts with
- *   | D2 _ :: _ -> f2 ts
- *   | D3 _ :: _ -> f3 ts
- *   | []        -> failwith "List must be non-empty." *)
-
-(* let union_nonempty = nonempty union_2d union_3d *)
-let union_nonempty : type a. a t list -> a t =
+let union : type a. a t list -> a t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> union_2d ts
@@ -181,8 +159,7 @@ let union_nonempty : type a. a t list -> a t =
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
 
-(* let minkowski_nonempty = nonempty minkowski_2d minkowski_3d *)
-let minkowski_nonempty : type a. a t list -> a t =
+let minkowski : type a. a t list -> a t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> minkowski_2d ts
@@ -192,8 +169,7 @@ let minkowski_nonempty : type a. a t list -> a t =
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
 
-(* let hull_nonempty = nonempty hull_2d hull_3d *)
-let hull_nonempty : type a. a t list -> a t =
+let hull : type a. a t list -> a t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> hull_2d ts
@@ -206,8 +182,7 @@ let difference (type a) (t : a t) (sub : a t list) =
 let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
 let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
 
-(* let intersection_nonempty = nonempty intersection_2d intersection_3d *)
-let intersection_nonempty : type a. a t list -> a t =
+let intersection : type a. a t list -> a t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> intersection_2d ts
