@@ -42,26 +42,19 @@ type d3 = three_d t
 
     Creates a cube in the first octant, with the given xyz [dimensions]. When
     [center] is true, the cube is centered on the origin. *)
-val cube : ?center:bool -> float * float * float -> three_d t
+val cube : ?center:bool -> float * float * float -> d3
 
 (** [sphere ?fa ?fs ?fn radius]
 
     Creates a sphere with given [radius] at the origin of the coordinate system. *)
-val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> three_d t
+val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> d3
 
 (** [cylinder ?center ?fa ?fs ?fn radius height]
 
      Creates a cylinder centered about the z axis. When center is true, it will
      also be centered vertically, otherwise the base will sit upon the XY
      plane. *)
-val cylinder
-  :  ?center:bool
-  -> ?fa:float
-  -> ?fs:float
-  -> ?fn:int
-  -> float
-  -> float
-  -> three_d t
+val cylinder : ?center:bool -> ?fa:float -> ?fs:float -> ?fn:int -> float -> float -> d3
 
 (** [cone ?center ?fa ?fs ?fn ~height r1 r2 ]
 
@@ -75,7 +68,7 @@ val cone
   -> height:float
   -> float
   -> float
-  -> three_d t
+  -> d3
 
 (** [polyhedron points faces]
 
@@ -100,7 +93,7 @@ val cone
     If you are having trouble, please see the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Debugging_polyhedra}
     debugging polyhedra} section of the OpenSCAD user manual. *)
-val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> three_d t
+val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
 
 (** {1 2d shape primitives} *)
 
@@ -109,12 +102,12 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> three_d t
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> float * float -> two_d t
+val square : ?center:bool -> float * float -> d2
 
 (** [circle ?fa ?fs ?fn radius]
 
     Creates a circle with given [radius] at the origin. *)
-val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> two_d t
+val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> d2
 
 (** [polygon ?convexity ?paths points]
 
@@ -127,7 +120,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> two_d t
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> two_d t
+val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> d2
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -155,7 +148,7 @@ val text
   -> ?script:string
   -> ?fn:int
   -> string
-  -> two_d t
+  -> d2
 
 (** {1 Transformations} *)
 
@@ -243,7 +236,7 @@ val resize : float * float * float -> 's t -> 's t
     like can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#offset}
     here}. *)
-val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> two_d t -> two_d t
+val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> d2 -> d2
 
 (** [color ?alpha color t]
 
@@ -285,8 +278,8 @@ val color : ?alpha:float -> Color.t -> 's t -> 's t
    ]} *)
 val union : 's t list -> 's t
 
-val union_2d : two_d t list -> two_d t
-val union_3d : three_d t list -> three_d t
+val union_2d : d2 list -> d2
+val union_3d : d3 list -> d3
 
 (** [minkowski ts]
 
@@ -295,8 +288,8 @@ val union_3d : three_d t list -> three_d t
     sums to pass silently. *)
 val minkowski : 's t list -> 's t
 
-val minkowski_2d : two_d t list -> two_d t
-val minkowski_3d : three_d t list -> three_d t
+val minkowski_2d : d2 list -> d2
+val minkowski_3d : d3 list -> d3
 
 (** [hull ts]
 
@@ -304,8 +297,8 @@ val minkowski_3d : three_d t list -> three_d t
     {!hull_2d} or {!hull_3d} if you would like empty hulls to pass silently. *)
 val hull : 's t list -> 's t
 
-val hull_2d : two_d t list -> two_d t
-val hull_3d : three_d t list -> three_d t
+val hull_2d : d2 list -> d2
+val hull_3d : d3 list -> d3
 
 (** [difference t sub]
 
@@ -329,8 +322,8 @@ val difference : 's t -> 's t list -> 's t
     silently. *)
 val intersection : 's t list -> 's t
 
-val intersection_2d : two_d t list -> two_d t
-val intersection_3d : three_d t list -> three_d t
+val intersection_2d : d2 list -> d2
+val intersection_3d : d3 list -> d3
 
 (** {1 3d to 2d} *)
 
@@ -342,7 +335,7 @@ val intersection_3d : three_d t list -> three_d t
     intersects with the XY plane) are considered. When [?cut] is false (the
     default when not specified), then points above and below the XY plane will
     be considered in forming the projection. *)
-val projection : ?cut:bool -> three_d t -> two_d t
+val projection : ?cut:bool -> d3 -> d2
 
 (** {1 2d to 3d extrusions} *)
 
@@ -367,8 +360,8 @@ val linear_extrude
   -> ?slices:int
   -> ?scale:float * float
   -> ?fn:int
-  -> two_d t
-  -> three_d t
+  -> d2
+  -> d3
 
 (** [rotate_extrude ?angle ?convexity ?fa ?fs ?fn t]
 
@@ -387,8 +380,8 @@ val rotate_extrude
   -> ?fa:float
   -> ?fs:float
   -> ?fn:int
-  -> two_d t
-  -> three_d t
+  -> d2
+  -> d3
 
 (** [import_2d ?dxf_layer ?convexity file]
 
@@ -398,7 +391,7 @@ val rotate_extrude
     extension does not match (case insensitive) one of the following 3D formats:
     - DXF
     - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
-val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
+val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
 
 (** [import_3d  ?convexity file]
 
@@ -409,7 +402,7 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
     - OFF
     - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD}
     - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
-val import_3d : ?convexity:int -> string -> three_d t
+val import_3d : ?convexity:int -> string -> d3
 
 (** [t |>> p]
 
