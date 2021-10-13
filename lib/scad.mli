@@ -19,6 +19,9 @@ type scad
     boolean operations. *)
 type 'space t
 
+type d2 = two_d t
+type d3 = three_d t
+
 (** {1 A note on special facet parameters}
 
     The optional parameters ?fa, ?fs, and ?fn correspond to the OpenSCAD

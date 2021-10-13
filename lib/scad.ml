@@ -96,6 +96,9 @@ type 'space t =
   | D2 : scad -> two_d t
   | D3 : scad -> three_d t
 
+type d2 = two_d t
+type d3 = three_d t
+
 let d2 scad = D2 scad
 let d3 scad = D3 scad
 
