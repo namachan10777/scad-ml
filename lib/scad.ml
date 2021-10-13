@@ -149,12 +149,18 @@ let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
+let empty_message n =
+  Printf.sprintf
+    "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
+    n
+    n
+
 let union : type a. a t list -> a t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> union_2d ts
   | D3 _ :: _ -> union_3d ts
-  | []        -> failwith "List must be non-empty."
+  | []        -> failwith (empty_message "union")
 
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
@@ -164,7 +170,7 @@ let minkowski : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> minkowski_2d ts
   | D3 _ :: _ -> minkowski_3d ts
-  | []        -> failwith "List must be non-empty."
+  | []        -> failwith (empty_message "minkowski")
 
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
@@ -174,7 +180,7 @@ let hull : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> hull_2d ts
   | D3 _ :: _ -> hull_3d ts
-  | []        -> failwith "List must be non-empty."
+  | []        -> failwith (empty_message "hull")
 
 let difference (type a) (t : a t) (sub : a t list) =
   map (fun scad -> Difference (scad, List.map unpack sub)) t
@@ -187,7 +193,7 @@ let intersection : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> intersection_2d ts
   | D3 _ :: _ -> intersection_3d ts
-  | []        -> failwith "List must be non-empty."
+  | []        -> failwith (empty_message "intersection")
 
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
