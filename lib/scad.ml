@@ -224,7 +224,7 @@ let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_lay
 let legal_ext allowed file =
   let ext =
     let len = String.length file in
-    String.sub file (len - 3) (len - 1) |> String.uncapitalize_ascii
+    String.sub file (len - 3) 3 |> String.uncapitalize_ascii
   in
   let rec aux = function
     | h :: t -> if String.equal ext h then Ok () else aux t
