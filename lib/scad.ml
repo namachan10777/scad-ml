@@ -220,8 +220,32 @@ let scale factors = map (fun scad -> Scale (factors, scad))
 let resize new_dims = map (fun scad -> Resize (new_dims, scad))
 let offset ?(chamfer = false) offset (D2 src) = d2 @@ Offset { src; offset; chamfer }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
-let import_2d ?dxf_layer ?convexity file = d2 (import ?dxf_layer ?convexity file)
-let import_3d ?convexity file = d3 (import ?convexity file)
+
+let legal_ext allowed file =
+  let ext =
+    let len = String.length file in
+    String.sub file (len - 3) (len - 1) |> String.uncapitalize_ascii
+  in
+  let rec aux = function
+    | h :: t -> if String.equal ext h then Ok () else aux t
+    | []     -> Error ext
+  in
+  aux allowed
+
+let import_2d ?dxf_layer ?convexity file =
+  match legal_ext [ "dxf"; "svg" ] file with
+  | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
+  | Error ext ->
+    failwith
+      (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
+
+let import_3d ?convexity file =
+  match legal_ext [ "stl"; "off"; "amf"; "3mf" ] file with
+  | Ok ()     -> d3 (import ?convexity file)
+  | Error ext ->
+    failwith
+      (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
+
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
 let ( |>> ) t p = translate p t
 let ( |@> ) t r = rotate r t

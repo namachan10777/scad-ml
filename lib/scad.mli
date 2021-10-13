@@ -389,26 +389,23 @@ val rotate_extrude
 
 (** [import_2d ?dxf_layer ?convexity file]
 
-    Imports a [file] for use in the current OpenSCAD model. The file extension is
-    used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be used
-    to indicate a specific layer for import.
-
-    Supported 2D formats include:
+    Imports a [file] for use in the current OpenSCAD model. The file extension
+    is used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be
+    used to indicate a specific layer for import. Throws exception if the
+    extension does not match (case insensitive) one of the following 3D formats:
     - DXF
-    - SVG {b Note: } {i Requires version 2019.05} *)
-
+    - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
 val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> two_d t
 
 (** [import_3d  ?convexity file]
 
     Imports [file] for use in the current OpenSCAD model. The file extension is
-    used to determine which type.
-
-    Supported 3D formats include:
+    used to determine which type. Throws exception if the extension does not
+    match (case insensitive) one of the following 3D formats:
     - STL (both ASCII and Binary)
     - OFF
-    - AMF {b Note: } {i Requires version 2019.05}
-    - 3MF {b Note: } {i Requires version 2019.05} *)
+    - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD}
+    - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
 val import_3d : ?convexity:int -> string -> three_d t
 
 (** [t |>> p]
