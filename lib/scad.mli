@@ -19,7 +19,10 @@ type scad
     boolean operations. *)
 type 'space t
 
+(** Two-dimensional scad *)
 type d2 = two_d t
+
+(** Three-dimensional scad *)
 type d3 = three_d t
 
 (** {1 A note on special facet parameters}
@@ -150,7 +153,9 @@ val text
   -> string
   -> d2
 
-(** {1 Transformations} *)
+(** {1 Transformations}
+
+    These functions can be applied freely to both 2d and 3d shapes. *)
 
 (** [translate p t]
 
@@ -247,16 +252,20 @@ val color : ?alpha:float -> Color.t -> 's t -> 's t
 
 (** {1 Boolean Combination}
 
-    Note that the polymorphic versions of {!union}, {!minkowski}, {!hull}, and
-    {!intersection}, throw exceptions when the input list is empty. *)
+    Perform boolean operations between shapes of the same dimension (non-mixing
+    of 2d and 3d shapes is enforced by the the GADT {!type:t}. {!Note that the
+    polymorphic versions of {!union}, {!minkowski}, {!hull}, and
+    {!intersection}, throw exceptions when the input list is empty. If empty
+    list inputs are expected, then use the appropriate [_2d] or [_3d]
+    variant. *)
 
 (** [union ts]
 
-    Creates the union/sum (logical {b or}) [ts]. Throws an exception if [ts] is
+    Creates the union/sum (logical {b or }) [ts]. Throws an exception if [ts] is
     empty, use {!union_2d} or {!union_3d} if you would like empty unions to pass
     silently.
 
-    {b Note:} It is mandatory for all unions, explicit or implicit, that
+    {b Note: } It is mandatory for all unions, explicit or implicit, that
     external faces to be merged not be coincident. Failure to follow this rule
     results in a design with undefined behavior, and can result in a render
     which is not manifold (with zero volume portions, or portions inside out),
@@ -302,9 +311,9 @@ val hull_3d : d3 list -> d3
 
 (** [difference t sub]
 
-    Subracts the shapes of [sub] from [t] (logical {b and not}).
+    Subracts the shapes of [sub] from [t] (logical {b and not }).
 
-    {b Note:} It is mandatory that surfaces that are to be removed by a
+    {b Note: } It is mandatory that surfaces that are to be removed by a
     difference operation have an overlap, and that the negative piece being
     removed extends fully outside of the volume it is removing that surface
     from. Failure to follow this rule can cause preview artifacts and can result
@@ -316,7 +325,7 @@ val difference : 's t -> 's t list -> 's t
 (** [intersection ts]
 
     Creates an in intersection of [ts]. This keeps the overlapping portion
-    (logical {b and}). Only the area which is common or shared by {b all} shapes
+    (logical {b and }). Only the area which is common or shared by {b all } shapes
     are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
     or {!intersection_3d} if you would like empty intersections to pass
     silently. *)
@@ -369,8 +378,8 @@ val linear_extrude
     to form a solid which has rotational symmetry. Since [t] is actually 2D (and
     does not really exist in Z), it is more like it is spun around the Y-axis to
     form the solid, which is then placed so that its axis of rotation lies along
-    the Z-axis. For this reason, [t] {b must} lie completely on either the right
-    (recommended) or the left side of the Y-axis. Further explaination and
+    the Z-axis. For this reason, [t] {b must } lie completely on either the
+    right (recommended) or the left side of the Y-axis. Further explaination and
     examples can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Rotate_Extrude}
     here}. *)
@@ -390,7 +399,7 @@ val rotate_extrude
     used to indicate a specific layer for import. Throws exception if the
     extension does not match (case insensitive) one of the following 3D formats:
     - DXF
-    - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
+    - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
 val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
 
 (** [import_3d  ?convexity file]
@@ -400,19 +409,9 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     match (case insensitive) one of the following 3D formats:
     - STL (both ASCII and Binary)
     - OFF
-    - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD}
-    - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD} *)
+    - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD }
+    - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
 val import_3d : ?convexity:int -> string -> d3
-
-(** [t |>> p]
-
-    Infix {!translate} *)
-val ( |>> ) : 's t -> Vec3.t -> 's t
-
-(** [t |@> r]
-
-    Infix {!rotate} *)
-val ( |@> ) : 's t -> Vec3.t -> 's t
 
 (** [to_string t]
 
@@ -424,3 +423,15 @@ val to_string : 's t -> string
     Write the scad [t] to the given [out_channel] (typically a file), as an
     OpenSCAD script (using {!to_string}). *)
 val write : out_channel -> 's t -> unit
+
+module Infix : sig
+  (** [t |>> p]
+
+    Infix {!translate} *)
+  val ( |>> ) : 's t -> Vec3.t -> 's t
+
+  (** [t |@> r]
+
+    Infix {!rotate} *)
+  val ( |@> ) : 's t -> Vec3.t -> 's t
+end

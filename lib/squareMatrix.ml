@@ -1,4 +1,6 @@
 module type Ops = sig
+  (** Matrix Arithmetic *)
+
   type t
 
   val mul : t -> t -> t

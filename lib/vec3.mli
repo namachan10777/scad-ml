@@ -1,6 +1,6 @@
 type t = float * float * float
 
-(** Zero vector = (0., 0., 0.) *)
+(** Zero vector = [(0., 0., 0.)] *)
 val zero : t
 
 val equal : t -> t -> bool
@@ -27,7 +27,10 @@ val dot : t -> t -> float
 val cross : t -> t -> t
 val mean : t list -> t
 
-(** {1 Transformations} *)
+(** {1 Transformations}
+
+    Equivalent to those found in {!module:Scad}. Quaternion operations are
+    provided when this module is included in {!module:Scad_ml}. *)
 
 val rotate_x : float -> t -> t
 val rotate_y : float -> t -> t

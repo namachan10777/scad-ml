@@ -250,8 +250,6 @@ let import_3d ?convexity file =
       (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
 
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
-let ( |>> ) t p = translate p t
-let ( |@> ) t r = rotate r t
 
 let to_string t =
   let value_map f ~default = function
@@ -462,3 +460,8 @@ let to_string t =
 let write oc t =
   Printf.fprintf oc "%s" (to_string t);
   flush oc
+
+module Infix = struct
+  let ( |>> ) t p = translate p t
+  let ( |@> ) t r = rotate r t
+end
