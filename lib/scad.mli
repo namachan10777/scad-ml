@@ -11,7 +11,7 @@ type two_d = TwoD
 type three_d = ThreeD
 
 (** The scad type is kept abstract, as the available constructor functions
-    provide much less cumbersome means of building up models.*)
+    provide much less cumbersome means of building up models. *)
 type scad
 
 (** This GADT allows scads to be tagged as 2D or 3D, restricting usage of functions
@@ -19,10 +19,10 @@ type scad
     boolean operations. *)
 type 'space t
 
-(** Two-dimensional scad *)
+(** Two-dimensional shape *)
 type d2 = two_d t
 
-(** Three-dimensional scad *)
+(** Three-dimensional shape *)
 type d3 = three_d t
 
 (** {1 A note on special facet parameters}
@@ -31,12 +31,12 @@ type d3 = three_d t
     "special parameters" governing the number of facets used to generate arcs
     ($fa, $fs, and $fn respectively). Where present, they govern the following:
 
-    - ?fa is the minimum angle for a fragment. Note that this should be given in
-      radians here (as opposed to degrees in the OpenSCAD language).
-    - ?fs is the minimum size/length of a fragment. Even if ?fa is given, and
+    - [?fa] is the minimum angle for a fragment. Note that this should be given
+      in radians here (as opposed to degrees in the OpenSCAD language).
+    - [?fs] is the minimum size/length of a fragment. Even if ?fa is given, and
       very small, this parameter will limit how small the generated fragments
       can be.
-    - ?fn will set the absolute number of fragments to be used (causing the
+    - [?fn] will set the absolute number of fragments to be used (causing the
       previous two parameters to be ignored. *)
 
 (** {1 3d shape primitives} *)
