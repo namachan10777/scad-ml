@@ -116,7 +116,7 @@ let rotate_vec3 t (x, y, z) =
   let r = x, y, z, 0. in
   mul (mul t r) (conj t) |> fun (x', y', z', _) -> x', y', z'
 
-let rotate_vec3_about_pt t pt vec = Vec3.(rotate_vec3 t (vec <+> pt) <-> pt)
+let rotate_vec3_about_pt t p v = Vec3.(rotate_vec3 t (v <+> p) <-> p)
 
 let alignment v1 v2 =
   let dp = Vec3.dot v1 v2 in
