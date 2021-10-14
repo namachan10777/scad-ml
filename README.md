@@ -3,9 +3,15 @@
 ## Overview
 This library provides an OCaml front-end to the
 [OpenSCAD](https://openscad.org/) solid modelling language. All SCAD primitives
-and transformation functions are made available, with the major notable
-difference being that angles are represented in radians (and converted to
-degrees when compiling to OpenSCAD).
+and transformation functions are made available.
+
+## Notable differences from the OpenSCAD language.
+- Angles are represented in radians (and converted to degrees when compiling to
+  OpenSCAD).
+- The dimensional system (2D or 3D) each shape inhabits is tracked by the type
+  system. This is used to restrict the operations that can be legally applied
+  (e.g. `linear_extrude` can only be applied to 2D shapes) and enforcing
+  non-mixing of 2D and 3D shapes during boolean operations.
 
 ## Usage
 ``` ocaml
@@ -34,13 +40,13 @@ viewer](https://openscad.org/downloads.html) as you normally would.
 
 ## Documentation
 Online documentation is available
-[here](https://geoffder.github.io/scad-ml/scad_ml/Scad_ml/index.html).
+[here](https://namachan10777.github.io/scad-ml/scad_ml/Scad_ml/index.html).
 
 ## Companion PPX
 There is a companion ppx, [\[@@deriving
 scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
-transformation functions for user defined records made up of the `Scad.t` and
-`Vec3.t` types provided in this library.
+transformation functions for user-defined records and abstract types made up of
+the `Scad.t` and `Vec3.t` types provided in this library.
 
 # License
 BSL-1.0
