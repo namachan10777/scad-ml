@@ -14,26 +14,47 @@ jobs:
       - run: opam install dune ppx_inline_test odoc ocamlformat
 
       - run: opam exec -- dune runtest
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/circle.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/hello.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/linear_extrude_circle.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/mat_mul_cube.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/quat_cube.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/quat_slerp.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/rotate_extrude_triangle.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/square.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/triangle_polygon.scad }
-      - uses: flat35hd99/openscad-actions@v1.2
-        with: { scad_file: _build/default/test/vertical_text.scad }
+
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/circle.scad
+          output: circle.dxf
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/hello.scad
+          output: hello.dxf
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/linear_extrude_circle.scad
+          output: linear_extrude_circle.stl
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/mat_mul_cube.scad
+          output: mat_mul_cube.stl
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/quat_cube.scad
+          output: quat_cube.stl
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/quat_slerp.scad
+          output: quat_slerp.stl
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/rotate_extrude_triangle.scad
+          output: rotate_extrude_triangle.stl
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/square.scad
+          output: square.dxf
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/triangle_polygon.scad
+          output: triangle_polygon.dxf
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/vertical_text.scad
+          output: vertical_text.dxf
 
       - run: opam exec -- dune build
       - run: opam exec -- dune build @fmt
