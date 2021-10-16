@@ -1,4 +1,5 @@
 _build/
+docs/
 .merlin
 *.opam
 _esy/
