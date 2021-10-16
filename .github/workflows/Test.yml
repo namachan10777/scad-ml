@@ -12,7 +12,29 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ocaml/setup-ocaml@v2
       - run: opam install dune ppx_inline_test odoc ocamlformat
+
       - run: opam exec -- dune runtest
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/circle.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/hello.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/linear_extrude_circle.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/mat_mul_cube.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/quat_cube.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/quat_slerp.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/rotate_extrude_triangle.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/square.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/triangle_polygon.scad }
+      - uses: flat35hd99/openscad-actions@v1.2
+        with: { scad_file: _build/default/test/vertical_text.scad }
+
       - run: opam exec -- dune build
       - run: opam exec -- dune build @fmt
       - run: opam exec -- dune build @doc
