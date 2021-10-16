@@ -48,5 +48,10 @@ scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
 transformation functions for user-defined records and abstract types made up of
 the `Scad.t` and `Vec3.t` types provided in this library.
 
+## Authors
+
+* [@namachan10777](https://github.com/namachan10777)
+* [@geoffder](https://github.com/geoffder)
+
 # License
 BSL-1.0
