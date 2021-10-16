@@ -11,6 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ocaml/setup-ocaml@v2
-      - run: opam install dune ppx_inline_test 
+      - run: opam install dune ppx_inline_test odoc ocamlformat
       - run: dune build
       - run: dune runtest
+      - run: dune build @fmt
+      - run: dune build @doc
