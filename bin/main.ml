@@ -1,2 +1,1 @@
-let () =
-    Printf.printf "%f" Scad_ml.Core.pi
+let () = Printf.printf "%f" Float.pi

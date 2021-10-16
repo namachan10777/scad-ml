@@ -1,3 +1,52 @@
 # OpenSCAD DSL for OCaml
+
+## Overview
+This library provides an OCaml front-end to the
+[OpenSCAD](https://openscad.org/) solid modelling language. All SCAD primitives
+and transformation functions are made available.
+
+## Notable differences from the OpenSCAD language.
+- Angles are represented in radians (and converted to degrees when compiling to
+  OpenSCAD).
+- The dimensional system (2D or 3D) each shape inhabits is tracked by the type
+  system. This is used to restrict the operations that can be legally applied
+  (e.g. `linear_extrude` can only be applied to 2D shapes) and enforcing
+  non-mixing of 2D and 3D shapes during boolean operations.
+
+## Usage
+``` ocaml
+open Scad_ml
+
+let scad_logo =
+  let rad = 5.
+  and fn = 720 in
+  let cyl = Scad.cylinder ~fn ~center:true (rad /. 2.) (rad *. 2.3) in
+  let cross_cyl = Scad.rotate (0., Float.pi /. 2., 0.) cyl in
+  Scad.union
+    [ Scad.difference
+        (Scad.sphere ~fn rad)
+        [ cyl; cross_cyl; Scad.rotate (0., 0., Float.pi /. 2.) cross_cyl ]
+    ; Scad.color ~alpha:0.25 Color.Magenta cross_cyl
+    ]
+
+let () =
+  let oc = open_out "/path/to/things/scad_logo.scad"
+  Scad.write oc scad_logo;
+  close_out oc
+```
+![OpenSCAD logo](images/scad_logo.png)
+Generated scads can then be viewed with the [OpenSCAD
+viewer](https://openscad.org/downloads.html) as you normally would.
+
+## Documentation
+Online documentation is available
+[here](https://namachan10777.github.io/scad-ml/scad_ml/Scad_ml/index.html).
+
+## Companion PPX
+There is a companion ppx, [\[@@deriving
+scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
+transformation functions for user-defined records and abstract types made up of
+the `Scad.t` and `Vec3.t` types provided in this library.
+
 # License
 BSL-1.0

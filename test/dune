@@ -1,2 +1,6 @@
-(test
- (name scad_ml))
+(library
+ (name scad_test)
+ (inline_tests)
+ (libraries scad_ml)
+ (preprocess
+  (pps ppx_inline_test)))
