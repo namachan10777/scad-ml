@@ -1,7 +1,7 @@
 #!/bin/bash
 
-dune build
-dune build @doc
+opam exec -- dune build
+opam exec -- dune build @doc
 if [ -d "_build/default/_doc/_html" ]
 then
     rm -rf "docs"
