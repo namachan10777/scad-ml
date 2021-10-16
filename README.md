@@ -1,11 +1,13 @@
 # OpenSCAD DSL for OCaml
 
 ## Overview
+
 This library provides an OCaml front-end to the
 [OpenSCAD](https://openscad.org/) solid modelling language. All SCAD primitives
 and transformation functions are made available.
 
-## Notable differences from the OpenSCAD language.
+## Notable differences from the OpenSCAD language
+
 - Angles are represented in radians (and converted to degrees when compiling to
   OpenSCAD).
 - The dimensional system (2D or 3D) each shape inhabits is tracked by the type
@@ -14,6 +16,7 @@ and transformation functions are made available.
   non-mixing of 2D and 3D shapes during boolean operations.
 
 ## Usage
+
 ``` ocaml
 open Scad_ml
 
@@ -34,15 +37,18 @@ let () =
   Scad.write oc scad_logo;
   close_out oc
 ```
+
 ![OpenSCAD logo](images/scad_logo.png)
 Generated scads can then be viewed with the [OpenSCAD
 viewer](https://openscad.org/downloads.html) as you normally would.
 
 ## Documentation
+
 Online documentation is available
 [here](https://namachan10777.github.io/scad-ml/scad_ml/Scad_ml/index.html).
 
 ## Companion PPX
+
 There is a companion ppx, [\[@@deriving
 scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
 transformation functions for user-defined records and abstract types made up of
@@ -50,8 +56,11 @@ the `Scad.t` and `Vec3.t` types provided in this library.
 
 ## Authors
 
-* [@namachan10777](https://github.com/namachan10777)
-* [@geoffder](https://github.com/geoffder)
+- [@namachan10777](https://github.com/namachan10777)
+  - Original author
+- [@geoffder](https://github.com/geoffder)
+  - Overhaul and add many functions
 
-# License
+## License
+
 BSL-1.0
