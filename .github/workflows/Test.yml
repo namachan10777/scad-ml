@@ -1,0 +1,82 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Test
+
+# Controls when the workflow will run
+on: [push, pull_request]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        ocaml-compiler:
+          - 4.13.x
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - run: opam install dune ppx_inline_test odoc ocamlformat
+
+      - run: opam exec -- dune runtest
+
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/circle.scad
+          output: circle.dxf
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/hello.scad
+          output: hello.dxf
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/linear_extrude_circle.scad
+          output: linear_extrude_circle.stl
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/mat_mul_cube.scad
+          output: mat_mul_cube.stl
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/quat_cube.scad
+          output: quat_cube.stl
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/quat_slerp.scad
+          output: quat_slerp.stl
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/rotate_extrude_triangle.scad
+          output: rotate_extrude_triangle.stl
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/square.scad
+          output: square.dxf
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/triangle_polygon.scad
+          output: triangle_polygon.dxf
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - uses: ./actions/openscad
+        with:
+          input: _build/default/test/vertical_text.scad
+          output: vertical_text.dxf
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+
+      - run: opam exec -- dune build
+      - run: opam exec -- dune build @fmt
+      - run: opam exec -- dune build @doc
