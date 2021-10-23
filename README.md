@@ -33,7 +33,7 @@ let scad_logo =
     ]
 
 let () =
-  let oc = open_out "/path/to/things/scad_logo.scad"
+  let oc = open_out "/path/to/things/scad_logo.scad" in
   Scad.write oc scad_logo;
   close_out oc
 ```
