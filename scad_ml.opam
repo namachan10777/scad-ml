@@ -19,6 +19,7 @@ bug-reports: "https://github.com/namachan10777/scad-ml/issues"
 depends: [
   "ocaml" {>= "4.08.0"}
   "dune" {>= "2.6" & > "2.0"}
+  "ppx_inline_test" {with-test}
 ]
 build: [
   ["dune" "subst"] {pinned}

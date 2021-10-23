@@ -31,4 +31,5 @@
   (ocaml
    (>= 4.08.0))
   (dune
-   (> 2.0))))
+   (> 2.0))
+  (ppx_inline_test :with-test)))
