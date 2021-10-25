@@ -8,7 +8,7 @@
  (github namachan10777/scad-ml))
 
 (documentation
- https://namachan10777.github.io/scad-ml/scad_ml/Scad_ml/index.html)
+ https://namachan10777.github.io/scad-ml)
 
 (license BSL-1.0)
 
