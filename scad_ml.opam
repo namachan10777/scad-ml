@@ -18,7 +18,7 @@ doc: "https://namachan10777.github.io/scad-ml/scad_ml/Scad_ml/index.html"
 bug-reports: "https://github.com/namachan10777/scad-ml/issues"
 depends: [
   "ocaml" {>= "4.08.0"}
-  "dune" {>= "2.9" & > "2.0"}
+  "dune" {>= "2.9" & >= "2.9"}
   "ppx_inline_test" {with-test}
   "odoc" {with-doc}
 ]
