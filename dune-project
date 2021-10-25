@@ -2,8 +2,6 @@
 
 (name scad_ml)
 
-(version 1.0)
-
 (generate_opam_files true)
 
 (source
@@ -30,6 +28,4 @@
  (depends
   (ocaml
    (>= 4.08.0))
-  (dune
-   (>= 2.9))
   (ppx_inline_test :with-test)))
