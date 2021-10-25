@@ -1,6 +1,5 @@
-profile = janestreet
-
-exp-grouping = preserve
-let-binding-spacing = compact
-indicate-multiline-delimiters = space
-align-cases = true
+version=0.19.0
+profile=conventional
+break-infix=fit-or-vertical
+parse-docstrings=true
+module-item-spacing=compact
