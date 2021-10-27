@@ -1,5 +1,7 @@
 (lang dune 2.9)
 
+(cram enable)
+
 (name scad_ml)
 
 (generate_opam_files true)
@@ -7,8 +9,7 @@
 (source
  (github namachan10777/scad-ml))
 
-(documentation
- https://namachan10777.github.io/scad-ml)
+(documentation https://namachan10777.github.io/scad-ml)
 
 (license BSL-1.0)
 
@@ -27,5 +28,4 @@
   "Scad_ml is an OCaml front-end to the OpenSCAD CAD programming language.")
  (depends
   (ocaml
-   (>= 4.08.0))
-  (ppx_inline_test :with-test)))
+   (>= 4.08.0))))
