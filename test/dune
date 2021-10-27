@@ -1,6 +1,34 @@
-(library
- (name scad_test)
- (inline_tests)
- (libraries scad_ml)
- (preprocess
-  (pps ppx_inline_test)))
+(executables
+ (names
+  circle
+  hello
+  linear_extrude_circle
+  quat_cube
+  quat_slerp
+  rotate_extrude_triangle
+  square
+  triangle_polygon
+  vertical_text)
+ (public_names
+  circle
+  hello
+  linear_extrude_circle
+  quat_cube
+  quat_slerp
+  rotate_extrude_triangle
+  square
+  triangle_polygon
+  vertical_text)
+ (libraries scad_ml))
+
+(cram
+ (deps
+  %{bin:circle}
+  %{bin:hello}
+  %{bin:linear_extrude_circle}
+  %{bin:quat_cube}
+  %{bin:quat_slerp}
+  %{bin:rotate_extrude_triangle}
+  %{bin:square}
+  %{bin:triangle_polygon}
+  %{bin:vertical_text}))
