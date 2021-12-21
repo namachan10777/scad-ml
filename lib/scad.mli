@@ -402,7 +402,7 @@ val rotate_extrude
     - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
 val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
 
-(** [import_3d  ?convexity file]
+(** [import_3d ?convexity file]
 
     Imports [file] for use in the current OpenSCAD model. The file extension is
     used to determine which type. Throws exception if the extension does not
@@ -412,6 +412,15 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD }
     - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
 val import_3d : ?convexity:int -> string -> d3
+
+(** [render ?convexity t]
+
+    Forces OpenSCAD to render and cache the mesh produced by the given [t]. This
+    can help to speed up previewing (F5) when the cached shape is used many times.
+    Note that this does however remove any colouration applied previously with
+    {!color}, or resulting from boolean operations such as {!difference}.
+    Output rendering (F6) performance is unaffected. *)
+val render : ?convexity:int -> 'a t -> 'a t
 
 (** [to_string t]
 

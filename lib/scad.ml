@@ -91,6 +91,10 @@ type scad =
       ; convexity : int
       ; dxf_layer : string option
       }
+  | Render of
+      { src : scad
+      ; convexity : int
+      }
 
 type 'space t =
   | D2 : scad -> two_d t
@@ -250,6 +254,7 @@ let import_3d ?convexity file =
       (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
 
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
+let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
 
 let to_string t =
   let value_map f ~default = function
@@ -453,6 +458,12 @@ let to_string t =
         indent
         (Color.to_string color)
         (maybe_fmt ", alpha=%f" alpha)
+        (print (indent ^ "\t") src)
+    | Render { src; convexity } ->
+      Printf.sprintf
+        "%srender(convexity=%i)\n%s"
+        indent
+        convexity
         (print (indent ^ "\t") src)
   in
   print "" (unpack t)

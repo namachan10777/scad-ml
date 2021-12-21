@@ -8,7 +8,8 @@
   rotate_extrude_triangle
   square
   triangle_polygon
-  vertical_text)
+  vertical_text
+  rendered_sphere)
  (public_names
   circle
   hello
@@ -18,7 +19,8 @@
   rotate_extrude_triangle
   square
   triangle_polygon
-  vertical_text)
+  vertical_text
+  rendered_sphere)
  (libraries scad_ml))
 
 (cram
@@ -31,4 +33,5 @@
   %{bin:rotate_extrude_triangle}
   %{bin:square}
   %{bin:triangle_polygon}
-  %{bin:vertical_text}))
+  %{bin:vertical_text}
+  %{bin:rendered_sphere}))
