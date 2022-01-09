@@ -4,6 +4,7 @@ module Color = Color
 module MultMatrix = MultMatrix
 module RotMatrix = RotMatrix
 module Quaternion = Quaternion
+module Sweep = Sweep
 
 (** 3-dimensional vector type.
 
