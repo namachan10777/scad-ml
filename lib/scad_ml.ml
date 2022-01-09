@@ -14,6 +14,11 @@ module Quaternion = Quaternion
 module Vec3 = struct
   include Vec3
 
+  (** [multmatrix m t]
+
+      Apply affine transformation matrix [m] to the vector [t]. *)
+  let multmatrix = MultMatrix.transform
+
   (** [quaternion q t]
 
       Rotate [t] with the quaternion [q]. *)

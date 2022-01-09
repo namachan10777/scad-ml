@@ -58,8 +58,22 @@ let to_euler t =
   let z = Float.atan2 t.(1).(0) t.(0).(0) in
   x, y, z
 
-let trace t = t.(0).(0) +. t.(1).(1) +. t.(2).(2)
-let get t r c = t.(r).(c)
+let transform t (x, y, z) =
+  let v = [| x; y; z |]
+  and a = Array.make 3 0. in
+  for i = 0 to 2 do
+    for j = 0 to 2 do
+      a.(i) <- a.(i) +. (t.(i).(j) *. v.(j))
+    done
+  done;
+  a.(0), a.(1), a.(2)
+
+let to_string t =
+  let row i =
+    let comma = if i < 2 then "," else "" in
+    Printf.sprintf "[%f, %f, %f]%s" t.(i).(0) t.(i).(1) t.(i).(2) comma
+  in
+  Printf.sprintf "[ %s\n %s\n %s ]" (row 0) (row 1) (row 2)
 
 include (
   SquareMatrix.Make (struct

@@ -26,6 +26,26 @@ let of_row_list l =
   try Ok (of_row_list_exn l) with
   | Failure e -> Error e
 
+let of_rot_matrix r (x, y, z) =
+  let g = RotMatrix.get r in
+  [| [| g 0 0; g 0 1; g 0 2; x |]
+   ; [| g 1 0; g 1 1; g 1 2; y |]
+   ; [| g 2 0; g 2 1; g 2 2; z |]
+   ; [| 0.; 0.; 0.; 1. |]
+  |]
+
+let transform t (x, y, z) =
+  let v = [| x; y; z; 1. |]
+  and a = Array.make 4 0. in
+  for i = 0 to 3 do
+    for j = 0 to 3 do
+      a.(i) <- a.(i) +. (t.(i).(j) *. v.(j))
+    done
+  done;
+  let w = a.(3) in
+  (* project from cartesian to homogenous coordinates *)
+  a.(0) /. w, a.(1) /. w, a.(2) /. w
+
 let to_string t =
   let row i =
     let comma = if i < 3 then "," else "" in

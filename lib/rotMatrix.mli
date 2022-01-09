@@ -34,14 +34,11 @@ val align : Vec3.t -> Vec3.t -> (t, string) result
     Convert [t] to an equivalent (x, y, z) euler rotation vector. *)
 val to_euler : t -> Vec3.t
 
-(** [trace t]
+(** [transform t v]
 
-    Sum the elements on the main diagonal (upper left to lower right) of [t]. *)
-val trace : t -> float
+    Apply rotation to the vector [v] via matrix multiplication with [t]. *)
+val transform : t -> Vec3.t -> Vec3.t
 
-(** [get t r c]
-
-    Get the element at [r]ow and [c]olumn of [t]. Equivalent to [t.(r).(c)]. *)
-val get : t -> int -> int -> float
+val to_string : t -> string
 
 include SquareMatrix.Ops with type t := t
