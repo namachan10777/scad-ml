@@ -19,7 +19,17 @@ val of_row_list : (float * float * float * float) list -> (t, string) result
 
     Create an affine transformation matrix from a 3x3 rotation matrix [r] and a
     translation vector [v]. *)
-val of_rot_matrix : RotMatrix.t -> Vec3.t -> t
+val of_rotmatrix : RotMatrix.t -> Vec3.t -> t
+
+(** [scaling v]
+
+    Create an affine transformation matrix from the xyz scaling vector [v]. *)
+val scaling : Vec3.t -> t
+
+(** [translation v]
+
+    Create an affine transformation matrix from the xyz translation vector [v]. *)
+val translation : Vec3.t -> t
 
 (** [transform t v]
 

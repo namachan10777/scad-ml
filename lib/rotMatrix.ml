@@ -34,20 +34,6 @@ let of_col_list l =
   try Ok (of_col_list_exn l) with
   | Failure e -> Error e
 
-let align_exn a b =
-  if Vec3.(
-       equal a b || equal a (negate b) || equal a (0., 0., 0.) || equal b (0., 0., 0.))
-  then failwith "Vectors must not be equal or zero."
-  else (
-    let x = Vec3.normalize a
-    and z = Vec3.(normalize (cross a b)) in
-    let y = Vec3.(normalize (cross z x)) in
-    of_col_list_exn [ x; y; z ] )
-
-let align a b =
-  try Ok (align_exn a b) with
-  | Failure e -> Error e
-
 let to_euler t =
   let x = Float.atan2 t.(2).(1) t.(2).(2) in
   let y =

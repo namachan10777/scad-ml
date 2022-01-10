@@ -21,14 +21,6 @@ val of_col_list_exn : (float * float * float) list -> t
 
 val of_col_list : (float * float * float) list -> (t, string) result
 
-(** [align_exn a b]
-
-    Calculate a rotation matrix that would bring [a] into alignment with [b].
-    Throws an exception if the vectors are equal or zero. *)
-val align_exn : Vec3.t -> Vec3.t -> t
-
-val align : Vec3.t -> Vec3.t -> (t, string) result
-
 (** [to_euler t]
 
     Convert [t] to an equivalent (x, y, z) euler rotation vector. *)

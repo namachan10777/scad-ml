@@ -1,10 +1,46 @@
 module Scad = Scad
 module Text = Text
 module Color = Color
-module MultMatrix = MultMatrix
-module RotMatrix = RotMatrix
 module Quaternion = Quaternion
 module Sweep = Sweep
+
+(** A rotation matrix.
+
+    Used in conjunction with {!module:Quaternion} to provide an additional means
+    of rotating OpenSCAD objects and vectors ({!Vec3.t}). *)
+module RotMatrix = struct
+  include RotMatrix
+
+  (** [align a b]
+
+    Calculate a rotation matrix that would bring [a] into alignment with [b]. *)
+  let align a b = Quaternion.(to_rotmatrix @@ alignment a b)
+end
+
+(** An affine transformation matrix.
+
+    To be used with OpenSCADs
+    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
+    which is applied in this library with {!Scad.multmatrix}. *)
+module MultMatrix = struct
+  include MultMatrix
+
+  (** [rotation r]
+
+    Create an affine transformation matrix from the euler angle vector [r]. *)
+  let rotation r = Quaternion.(to_multmatrix @@ of_euler r)
+
+  (** [vector_rotation ax r]
+
+    Create an affine transformation matrix representing a rotation of the angle
+    [r] around the axis [ax]. *)
+  let vector_rotation ax r = Quaternion.(to_multmatrix @@ make ax r)
+
+  (** [of_quaternion q]
+
+    Create an affine transformation matrix equivalent to the quaternion [q]. *)
+  let of_quaternion q = Quaternion.to_multmatrix q
+end
 
 (** 3-dimensional vector type.
 

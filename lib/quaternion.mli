@@ -14,6 +14,16 @@ val id : t
     the vector [ax]. *)
 val make : Vec3.t -> float -> t
 
+(** [of_euler v]
+
+    Create a quaternion equivalent to the Euler angle rotations represented by [v]. *)
+val of_euler : Vec3.t -> t
+
+(** [to_euler t]
+
+    Convert the quaternion [t] to equivalent Euler angles. *)
+val to_euler : t -> Vec3.t
+
 (** {1 Basic Arithmetic} *)
 
 (** [add a b]
@@ -96,7 +106,13 @@ val distance : t -> t -> float
 (** {1 Matrix Conversions} *)
 
 val of_rotmatrix : RotMatrix.t -> t
-val to_multmatrix : t -> MultMatrix.t
+val to_rotmatrix : t -> RotMatrix.t
+
+(** [to_multmatrix ?trans t]
+
+    Convert quaternion [t] into a {!MultMatrix.t}, optionally providing a
+    translation vector [trans] to tack on. *)
+val to_multmatrix : ?trans:Vec3.t -> t -> MultMatrix.t
 
 (** {1 Utilities} *)
 

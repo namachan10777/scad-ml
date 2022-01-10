@@ -68,7 +68,21 @@ let of_rotmatrix m =
     and z = 0.25 *. s in
     x, y, z, w
 
-let to_multmatrix (x, y, z, w) =
+let of_euler (x_roll, y_pitch, z_yaw) =
+  let open Float in
+  let cy = cos (z_yaw *. 0.5)
+  and sy = sin (z_yaw *. 0.5)
+  and cp = cos (y_pitch *. 0.5)
+  and sp = sin (y_pitch *. 0.5)
+  and cr = cos (x_roll *. 0.5)
+  and sr = sin (x_roll *. 0.5) in
+  let w = (cr *. cp *. cy) +. (sr *. sp *. sy)
+  and x = (sr *. cp *. cy) -. (cr *. sp *. sy)
+  and y = (cr *. sp *. cy) +. (sr *. cp *. sy)
+  and z = (cr *. cp *. sy) -. (sr *. sp *. cy) in
+  x, y, z, w
+
+let to_rotmatrix (x, y, z, w) =
   let s =
     let len_sqr = (x *. x) +. (y *. y) +. (z *. z) +. (w *. w) in
     if len_sqr != 0. then 2. /. len_sqr else 0.
@@ -78,13 +92,14 @@ let to_multmatrix (x, y, z, w) =
   let xsx, ysx, zsx = Vec3.map (( *. ) x) xyzs
   and _, ysy, zsy = Vec3.map (( *. ) y) xyzs
   and zsz = z *. zs in
-  MultMatrix.of_row_list_exn
-    [ 1. -. ysy -. zsz, ysx -. zsw, zsx +. ysw, 0.
-    ; ysx +. zsw, 1. -. xsx -. zsz, zsy -. xsw, 0.
-    ; zsx -. ysw, zsy +. xsw, 1. -. xsx -. ysy, 0.
-    ; 0., 0., 0., 1.
+  RotMatrix.of_row_list_exn
+    [ 1. -. ysy -. zsz, ysx -. zsw, zsx +. ysw
+    ; ysx +. zsw, 1. -. xsx -. zsz, zsy -. xsw
+    ; zsx -. ysw, zsy +. xsw, 1. -. xsx -. ysy
     ]
 
+let to_euler t = RotMatrix.to_euler (to_rotmatrix t)
+let to_multmatrix ?(trans = Vec3.zero) t = MultMatrix.of_rotmatrix (to_rotmatrix t) trans
 let to_string (x, y, z, w) = Printf.sprintf "[%f, %f, %f, %f]" x y z w
 let get_x (x, _, _, _) = x
 let get_y (_, y, _, _) = y
