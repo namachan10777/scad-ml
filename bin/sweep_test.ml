@@ -1,16 +1,7 @@
 open Scad_ml
 
 let path () =
-  let shape =
-    [ -10., -1., 0.
-    ; -10., 6., 0.
-    ; -7., 6., 0.
-    ; -7., 1., 0.
-    ; 7., 1., 0.
-    ; 7., 6., 0.
-    ; 10., 6., 0.
-    ; 10., -1., 0.
-    ]
+  let shape = [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
   and step = 0.005 in
   let f i =
     let t = Float.of_int i *. step in
@@ -29,7 +20,7 @@ let path () =
 let spiral_2d () =
   let square =
     let s = 5. in
-    [ -.s, -.s, 0.; -.s, s, 0.; s, s, 0.; s, -.s, 0. ]
+    [ -.s, -.s; -.s, s; s, s; s, -.s ]
   and step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
@@ -50,7 +41,7 @@ let wave_cylinder () =
   and s = 2.
   and step = 4.
   and rad d = d *. Float.pi /. 180. in
-  let shape = [ 0., 0., 0.; w, 0., 0.; w, 1., 0.; 0., 1., 0. ] in
+  let shape = [ 0., 0.; w, 0.; w, 1.; 0., 1. ] in
   let f i =
     let t = Float.of_int i *. step in
     MultMatrix.(

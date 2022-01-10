@@ -20,7 +20,7 @@ let sweep ?(closed = false) ?convexity ~transforms shape =
   and facets = List.length shape
   and pts =
     List.concat_map
-      (fun m -> List.map (fun p -> MultMatrix.transform m p) shape)
+      (fun m -> List.map (fun (x, y) -> MultMatrix.transform m (x, y, 0.)) shape)
       transforms
   in
   let faces =
