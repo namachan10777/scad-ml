@@ -1,25 +1,3 @@
-(* NOTE: Relevant OpenSCAD utilities
-    https://github.com/openscad/scad-utils/blob/master/lists.scad
-    https://github.com/openscad/scad-utils/blob/master/transformations.scad
-    https://github.com/openscad/scad-utils/blob/master/linalg.scad
-    https://github.com/openscad/list-comprehension-demos/blob/master/sweep.scad
-*)
-
-let rotate_from_to ?ax a b =
-  let ax = Option.value ~default:Vec3.(normalize (cross a b)) ax in
-  if Vec3.dot ax ax >= 0.99
-  then (
-    let ma =
-      let a' = Vec3.normalize a in
-      RotMatrix.of_row_list_exn [ a'; ax; Vec3.cross ax a' ]
-    and mb =
-      let b' = Vec3.normalize b in
-      (* from cols, so transposed *)
-      RotMatrix.of_col_list_exn [ b'; ax; Vec3.cross ax b' ]
-    in
-    RotMatrix.mul mb ma )
-  else RotMatrix.id
-
 let transforms_of_path path =
   let p = Array.of_list path in
   let len = Array.length p in
@@ -33,7 +11,7 @@ let transforms_of_path path =
       else p.(i + 1) <-> p.(i - 1) )
       |> normalize
     in
-    MultMatrix.of_rot_matrix (rotate_from_to (0., 0., 1.) tangent) p.(i)
+    Quaternion.(to_multmatrix ~trans:p.(i) @@ alignment (0., 0., 1.) tangent)
   in
   List.init len f
 
