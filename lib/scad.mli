@@ -253,7 +253,7 @@ val color : ?alpha:float -> Color.t -> 's t -> 's t
 (** {1 Boolean Combination}
 
     Perform boolean operations between shapes of the same dimension (non-mixing
-    of 2d and 3d shapes is enforced by the the GADT {!type:t}. {!Note that the
+    of 2d and 3d shapes is enforced by the the GADT {!type:t}. Note that the
     polymorphic versions of {!union}, {!minkowski}, {!hull}, and
     {!intersection}, throw exceptions when the input list is empty. If empty
     list inputs are expected, then use the appropriate [_2d] or [_3d]
