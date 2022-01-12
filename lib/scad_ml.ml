@@ -3,6 +3,7 @@ module Text = Text
 module Color = Color
 module Quaternion = Quaternion
 module Sweep = Sweep
+module CubicSpline = CubicSpline
 
 (** A rotation matrix.
 

@@ -53,3 +53,21 @@ let wave_cylinder () =
   and oc = open_out "ml_wave_cylinder.scad" in
   Scad.write oc scad;
   close_out oc
+
+let spline_path () =
+  let control_pts = [ 0., 10.; 10., 40.; 20., 40.; 30., -20.; 40., -40. ]
+  and square =
+    let s = 0.25 in
+    [ -.s, -.s; -.s, s; s, s; s, -.s ]
+  in
+  let marks =
+    let s = Scad.color Color.Red @@ Scad.sphere 1. in
+    List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
+  and line =
+    let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
+    Sweep.sweep ~transforms:(Sweep.transforms_of_path path) square
+  in
+  let scad = Scad.union (line :: marks)
+  and oc = open_out "spline.scad" in
+  Scad.write oc scad;
+  close_out oc
