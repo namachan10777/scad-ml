@@ -5,6 +5,12 @@ type boundary =
   | `Natural
   ]
 
+type plane =
+  [ `XY
+  | `YZ
+  | `XZ
+  ]
+
 type coefs =
   { a : float
   ; b : float
@@ -26,4 +32,5 @@ val coefs_to_string : coefs -> string
 val fit : ?boundary:boundary -> (float * float) list -> t
 val extrapolate : t -> float -> float option
 val extrapolate_path : t -> float list -> (float * float) list
-val interpolate : t -> int -> (float * float) list
+val interpolate_path : t -> int -> (float * float) list
+val path_to_3d : ?plane:plane -> (float * float) list -> (float * float * float) list
