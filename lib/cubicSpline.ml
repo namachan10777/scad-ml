@@ -5,6 +5,12 @@ type boundary =
   | `Natural
   ]
 
+type plane =
+  [ `XY
+  | `YZ
+  | `XZ
+  ]
+
 type coefs =
   { a : float
   ; b : float
@@ -12,17 +18,17 @@ type coefs =
   ; d : float
   }
 
-let zero_coefs = { a = 0.; b = 0.; c = 0.; d = 0. }
-
-let coefs_to_string { a; b; c; d } =
-  Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
-
 type t =
   { len : int
   ; xmins : float array
   ; xmaxs : float array
   ; coefs : coefs array
   }
+
+let zero_coefs = { a = 0.; b = 0.; c = 0.; d = 0. }
+
+let coefs_to_string { a; b; c; d } =
+  Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
 
 let len t = t.len
 let xmins t = Array.to_list t.xmins
@@ -66,10 +72,9 @@ let fit ?(boundary = `Natural) ps =
   and row = ref 0 in
   let len = Array.length ps in
   let solution_idx = (len - 1) * 4 in
-  let nth = solution_idx - 1
-  and m = Array.make_matrix solution_idx solution_idx 0. in
+  let m = Array.make_matrix solution_idx (solution_idx + 1) 0. in
   (* splines through p equations *)
-  for n = 0 to len - 1 do
+  for n = 0 to len - 2 do
     let r = m.(!row)
     and n4 = n * 4
     and x0, y0 = ps.(n)
@@ -91,7 +96,7 @@ let fit ?(boundary = `Natural) ps =
     incr row
   done;
   (* first derivative *)
-  for n = 0 to len - 2 do
+  for n = 0 to len - 3 do
     let x1, _ = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
@@ -104,7 +109,7 @@ let fit ?(boundary = `Natural) ps =
     incr row
   done;
   (* second derivative *)
-  for n = 0 to len - 2 do
+  for n = 0 to len - 3 do
     let x1, _ = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
@@ -169,15 +174,15 @@ let fit ?(boundary = `Natural) ps =
   and xmaxs = Array.make (len - 1) 0.
   and coefs = Array.make (len - 1) zero_coefs in
   rref m;
-  for i = 0 to len - 1 do
+  for i = 0 to len - 2 do
     let idx = i * 4 in
     xmins.(i) <- fst ps.(i);
     xmaxs.(i) <- fst ps.(i + 1);
     coefs.(i)
-      <- { a = m.(idx).(nth)
-         ; b = m.(idx + 1).(nth)
-         ; c = m.(idx + 2).(nth)
-         ; d = m.(idx + 3).(nth)
+      <- { a = m.(idx).(solution_idx)
+         ; b = m.(idx + 1).(solution_idx)
+         ; c = m.(idx + 2).(solution_idx)
+         ; d = m.(idx + 3).(solution_idx)
          }
   done;
   { len = len - 1; xmins; xmaxs; coefs }
@@ -191,7 +196,7 @@ let extrapolate { len; xmins; xmaxs; coefs } x =
     if x >= xmins.(idx) && x <= xmaxs.(idx)
     then (
       let { a; b; c; d } = coefs.(idx) in
-      y := Some ((a *. x *. x *. x *. +.b *. x *. x) +. (c *. x) +. d);
+      y := Some ((a *. x *. x *. x) +. (b *. x *. x) +. (c *. x) +. d);
       continue := false )
     else incr i
   done;
@@ -200,7 +205,7 @@ let extrapolate { len; xmins; xmaxs; coefs } x =
 let extrapolate_path t xs =
   List.filter_map (fun x -> Option.map (fun y -> x, y) (extrapolate t x)) xs
 
-let interpolate t n =
+let interpolate_path t n =
   let xmin = t.xmins.(0)
   and xmax = t.xmaxs.(t.len - 1) in
   let step = (xmax -. xmin) /. Float.of_int (n - 1) in
@@ -214,3 +219,12 @@ let interpolate t n =
     else pts
   in
   List.rev @@ aux 0 []
+
+let path_to_3d ?(plane = `XY) ps =
+  let f =
+    match plane with
+    | `XY -> fun (x, y) -> x, y, 0.
+    | `YZ -> fun (y, z) -> 0., y, z
+    | `XZ -> fun (x, z) -> x, 0., z
+  in
+  List.map f ps
