@@ -11,7 +11,7 @@ type plane =
   | `XZ
   ]
 
-type coefs =
+type coef =
   { a : float
   ; b : float
   ; c : float
@@ -24,11 +24,11 @@ type t
 val len : t -> int
 val xmins : t -> float list
 val xmaxs : t -> float list
-val coefs : t -> coefs list
+val coefs : t -> coef list
 val get_xmin : t -> int -> float
 val get_xmax : t -> int -> float
-val get_coefs : t -> int -> coefs
-val coefs_to_string : coefs -> string
+val get_coef : t -> int -> coef
+val coef_to_string : coef -> string
 val fit : ?boundary:boundary -> (float * float) list -> t
 val extrapolate : t -> float -> float option
 val extrapolate_path : t -> float list -> (float * float) list

@@ -11,7 +11,7 @@ type plane =
   | `XZ
   ]
 
-type coefs =
+type coef =
   { a : float
   ; b : float
   ; c : float
@@ -22,21 +22,20 @@ type t =
   { len : int
   ; xmins : float array
   ; xmaxs : float array
-  ; coefs : coefs array
+  ; coefs : coef array
   }
 
 let zero_coefs = { a = 0.; b = 0.; c = 0.; d = 0. }
-
-let coefs_to_string { a; b; c; d } =
-  Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
-
 let len t = t.len
 let xmins t = Array.to_list t.xmins
 let xmaxs t = Array.to_list t.xmaxs
 let coefs t = Array.to_list t.coefs
 let get_xmin t i = Array.get t.xmins i
 let get_xmax t i = Array.get t.xmaxs i
-let get_coefs t i = Array.get t.coefs i
+let get_coef t i = Array.get t.coefs i
+
+let coef_to_string { a; b; c; d } =
+  Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
 
 (* Reduced row echelon form
    Taken from https://rosettacode.org/wiki/Reduced_row_echelon_form *)
