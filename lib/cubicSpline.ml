@@ -1,5 +1,3 @@
-(* https://github.com/Simsso/Online-Tools/blob/master/src/page/adapter/cubic-spline-interpolation.js#L252 *)
-
 type boundary =
   [ `Quadratic
   | `NotAKnot
@@ -14,13 +12,25 @@ type coefs =
   ; d : float
   }
 
-module RangeMap = Map.Make (struct
-  type t = float * float
+let zero_coefs = { a = 0.; b = 0.; c = 0.; d = 0. }
 
-  let compare (x1, _) (x2, _) = Float.compare x1 x2
-end)
+let coefs_to_string { a; b; c; d } =
+  Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
 
-type t = coefs RangeMap.t
+type t =
+  { len : int
+  ; xmins : float array
+  ; xmaxs : float array
+  ; coefs : coefs array
+  }
+
+let len t = t.len
+let xmins t = Array.to_list t.xmins
+let xmaxs t = Array.to_list t.xmaxs
+let coefs t = Array.to_list t.coefs
+let get_xmin t i = Array.get t.xmins i
+let get_xmax t i = Array.get t.xmaxs i
+let get_coefs t i = Array.get t.coefs i
 
 (* Reduced row echelon form
    Taken from https://rosettacode.org/wiki/Reduced_row_echelon_form *)
@@ -155,30 +165,52 @@ let fit ?(boundary = `Natural) ps =
       r.(solution_idx - 4) <- 6. *. xn;
       r.(solution_idx - 3) <- 2.
   in
-  let f (i, t) (x, _) =
-    let idx = i * 4
-    and next = i + 1 in
-    let coefs =
-      { a = m.(idx).(nth)
-      ; b = m.(idx + 1).(nth)
-      ; c = m.(idx + 2).(nth)
-      ; d = m.(idx + 3).(nth)
-      }
-    in
-    next, RangeMap.add (x, fst ps.(next)) coefs t
-  in
-  snd @@ Array.fold_left f (0, RangeMap.empty) ps
+  let xmins = Array.make (len - 1) 0.
+  and xmaxs = Array.make (len - 1) 0.
+  and coefs = Array.make (len - 1) zero_coefs in
+  rref m;
+  for i = 0 to len - 1 do
+    let idx = i * 4 in
+    xmins.(i) <- fst ps.(i);
+    xmaxs.(i) <- fst ps.(i + 1);
+    coefs.(i)
+      <- { a = m.(idx).(nth)
+         ; b = m.(idx + 1).(nth)
+         ; c = m.(idx + 2).(nth)
+         ; d = m.(idx + 3).(nth)
+         }
+  done;
+  { len = len - 1; xmins; xmaxs; coefs }
 
-let extrapolate t xs =
-  let f x =
-    RangeMap.find_first_opt (fun (xmin, xmax) -> x >= xmin && x <= xmax) t
-    |> Option.map (fun _ { a; b; c; d } ->
-           (a *. x *. x *. x *. +.b *. x *. x) +. (c *. x) +. d )
-  in
-  List.filter_map f xs
+let extrapolate { len; xmins; xmaxs; coefs } x =
+  let continue = ref true
+  and i = ref 0
+  and y = ref None in
+  while !continue && !i < len do
+    let idx = !i in
+    if x >= xmins.(idx) && x <= xmaxs.(idx)
+    then (
+      let { a; b; c; d } = coefs.(idx) in
+      y := Some ((a *. x *. x *. x *. +.b *. x *. x) +. (c *. x) +. d);
+      continue := false )
+    else incr i
+  done;
+  !y
+
+let extrapolate_path t xs =
+  List.filter_map (fun x -> Option.map (fun y -> x, y) (extrapolate t x)) xs
 
 let interpolate t n =
-  let (xmin, _), _ = RangeMap.min_binding t
-  and (_, xmax), _ = RangeMap.max_binding t in
+  let xmin = t.xmins.(0)
+  and xmax = t.xmaxs.(t.len - 1) in
   let step = (xmax -. xmin) /. Float.of_int (n - 1) in
-  extrapolate t (List.init n (fun i -> xmin +. (Float.of_int i *. step)))
+  let rec aux i pts =
+    if i < n
+    then (
+      let x = xmin +. (Float.of_int i *. step) in
+      match extrapolate t x with
+      | Some y -> aux (i + 1) ((x, y) :: pts)
+      | None   -> aux (i + 1) pts )
+    else pts
+  in
+  List.rev @@ aux 0 []
