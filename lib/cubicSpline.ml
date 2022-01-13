@@ -30,9 +30,13 @@ let len t = t.len
 let xmins t = Array.to_list t.xmins
 let xmaxs t = Array.to_list t.xmaxs
 let coefs t = Array.to_list t.coefs
-let get_xmin t i = Array.get t.xmins i
-let get_xmax t i = Array.get t.xmaxs i
-let get_coef t i = Array.get t.coefs i
+let get_xmin_exn t i = Array.get t.xmins i
+let get_xmax_exn t i = Array.get t.xmaxs i
+let get_coef_exn t i = Array.get t.coefs i
+let in_bounds t i = i >= 0 && i < t.len
+let get_xmin t i = if in_bounds t i then Some (Array.get t.xmins i) else None
+let get_xmax t i = if in_bounds t i then Some (Array.get t.xmaxs i) else None
+let get_coef t i = if in_bounds t i then Some (Array.get t.coefs i) else None
 
 let coef_to_string { a; b; c; d } =
   Printf.sprintf "{ a = %f; b = %f; c = %f; d = %f }" a b c d
@@ -65,7 +69,8 @@ let rref m =
       done )
   done
 
-(* https://github.com/Simsso/Online-Tools/blob/master/src/page/logic/cubic-spline-interpolation.js *)
+(* Implementation based on:
+   https://github.com/Simsso/Online-Tools/blob/master/src/page/logic/cubic-spline-interpolation.js *)
 let fit ?(boundary = `Natural) ps =
   let ps = List.sort_uniq (fun (x1, _) (x2, _) -> Float.compare x1 x2) ps |> Array.of_list
   and row = ref 0 in
