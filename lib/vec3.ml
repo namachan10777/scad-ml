@@ -48,24 +48,24 @@ let to_vec2 (x, y, _) = x, y
 let of_vec2 (x, y) = x, y, 0.
 
 let rotate_x theta (x, y, z) =
-  let s = Float.sin theta in
-  let c = Float.cos theta in
-  let y' = (y *. c) -. (z *. s) in
-  let z' = (z *. c) +. (y *. s) in
+  let s = Float.sin theta
+  and c = Float.cos theta in
+  let y' = (y *. c) -. (z *. s)
+  and z' = (z *. c) +. (y *. s) in
   x, y', z'
 
 let rotate_y theta (x, y, z) =
-  let s = Float.sin theta in
-  let c = Float.cos theta in
-  let x' = (x *. c) +. (z *. s) in
-  let z' = (z *. c) -. (x *. s) in
+  let s = Float.sin theta
+  and c = Float.cos theta in
+  let x' = (x *. c) +. (z *. s)
+  and z' = (z *. c) -. (x *. s) in
   x', y, z'
 
 let rotate_z theta (x, y, z) =
-  let s = Float.sin theta in
-  let c = Float.cos theta in
-  let x' = (x *. c) -. (y *. s) in
-  let y' = (y *. c) +. (x *. s) in
+  let s = Float.sin theta
+  and c = Float.cos theta in
+  let x' = (x *. c) -. (y *. s)
+  and y' = (y *. c) +. (x *. s) in
   x', y', z
 
 let rotate (rx, ry, rz) t = rotate_x rx t |> rotate_y ry |> rotate_z rz
