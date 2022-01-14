@@ -1,8 +1,10 @@
 module Scad = Scad
 module Text = Text
 module Color = Color
+module Vec2 = Vec2
 module Quaternion = Quaternion
 module Sweep = Sweep
+module Bezier = Bezier
 module CubicSpline = CubicSpline
 
 (** A rotation matrix.
