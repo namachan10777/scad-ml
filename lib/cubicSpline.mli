@@ -6,6 +6,7 @@ type boundary =
   | `Natural
   ]
 
+(** 2-dimensional workplanes *)
 type plane =
   [ `XY
   | `YZ
@@ -23,6 +24,8 @@ type coef =
 (** Calculated coefficients along with the X ranges that they apply to.
     Abstracted to protect array access *)
 type t
+
+(** {1 Immutable access to contents of {!type:t} } *)
 
 (** [len t]
 
@@ -44,7 +47,7 @@ val xmaxs : t -> float list
     Coefficients describing a cubic spline, as calculated by {!fit}. *)
 val coefs : t -> coef list
 
-(** {1 Index getters } *)
+(** {2 Index getters} *)
 
 val get_xmin : t -> int -> float option
 val get_xmax : t -> int -> float option
@@ -53,16 +56,15 @@ val get_xmin_exn : t -> int -> float
 val get_xmax_exn : t -> int -> float
 val get_coef_exn : t -> int -> coef
 
-(** [coef_to_string c]
-
-    Show contents of [c] as a string. *)
-val coef_to_string : coef -> string
+(** {1 Fitting} *)
 
 (** [fit ?boundary ps]
 
     Calculate cubic spline coefficients with the [boundary] condition (defaults
     to [`Natural]) for the 2-dimensional control points [ps]. *)
-val fit : ?boundary:boundary -> (float * float) list -> t
+val fit : ?boundary:boundary -> Vec2.t list -> t
+
+(** {1 Extrapolation} *)
 
 (** [extrapolate t x]
 
@@ -75,16 +77,23 @@ val extrapolate : t -> float -> float option
 (** [extrapolate_path t xs]
 
     Use [t] to extrapolate [xs] into a 2-dimensional cubic spline path. *)
-val extrapolate_path : t -> float list -> (float * float) list
+val extrapolate_path : t -> float list -> Vec2.t list
 
 (** [interpolate_path t n]
 
     Use [t] to interpolate 2-dimensional cubic spline path with [n] evently
     spaced points. *)
-val interpolate_path : t -> int -> (float * float) list
+val interpolate_path : t -> int -> Vec2.t list
+
+(** {1 Utility} *)
 
 (** [path_to_3d ?plane ps]
 
     Project the 2-dimensional path [ps] from [plane] (defaults to [`XY]) into
     three dimensions. *)
-val path_to_3d : ?plane:plane -> (float * float) list -> (float * float * float) list
+val path_to_3d : ?plane:plane -> Vec2.t list -> Vec3.t list
+
+(** [coef_to_string c]
+
+    Show contents of [c] as a string. *)
+val coef_to_string : coef -> string
