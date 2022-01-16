@@ -1,3 +1,9 @@
+let colinear p1 p2 p3 =
+  let a = Vec2.distance p1 p2
+  and b = Vec2.distance p2 p3
+  and c = Vec2.distance p3 p1 in
+  a +. b < c || b +. c < a || c +. a < b
+
 let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
   let f i =
@@ -22,11 +28,7 @@ let arc
     ((x2, y2) as p2)
     ((x3, y3) as p3)
   =
-  if let a = Vec2.distance p1 p2
-     and b = Vec2.distance p2 p3
-     and c = Vec2.distance p3 p1 in
-     a +. b < c || b +. c < a || c +. a < b
-  then failwith "Arc points must form a valid triangle.";
+  if colinear p1 p2 p3 then failwith "Arc points must form a valid triangle.";
   let ((cx, cy) as centre) =
     let d = (2. *. (x1 -. x3) *. (y3 -. y2)) +. (2. *. (x2 -. x3) *. (y1 -. y3))
     and m1 = Vec2.dot p1 p1 -. Vec2.dot p3 p3
