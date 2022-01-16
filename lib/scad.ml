@@ -314,11 +314,11 @@ let to_string t =
         "%stext(\"%s\"%s%s%s%s%s%s%s%s%s);\n"
         indent
         text
-        (maybe_fmt ", size=\"%f\"" size)
+        (maybe_fmt ", size=%f" size)
         (maybe_fmt ", font=\"%s\"" font)
         (Option.map Text.h_align_to_string halign |> maybe_fmt ", halign=\"%s\"")
         (Option.map Text.v_align_to_string valign |> maybe_fmt ", valign=\"%s\"")
-        (maybe_fmt ", spacing=\"%f\"" spacing)
+        (maybe_fmt ", spacing=%f" spacing)
         (Option.map Text.direction_to_string direction |> maybe_fmt ", direction=\"%s\"")
         (maybe_fmt ", language=\"%s\"" language)
         (maybe_fmt ", script=\"%s\"" script)
