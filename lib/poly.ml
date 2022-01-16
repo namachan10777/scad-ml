@@ -6,8 +6,8 @@ let circle ?(fn = 30) r =
   in
   List.init fn f
 
-let square ?(centre = false) (x, y) =
-  if centre
+let square ?(center = false) (x, y) =
+  if center
   then (
     let x' = x /. 2.
     and y' = y /. 2. in
@@ -45,15 +45,6 @@ let arc
   in
   let start_a = Float.atan2 dy dx
   and step_a = central_angle /. Float.of_int (fn - 1) *. if rev then 1. else -1. in
-  (* let f i =
-   *   let a = start_a +. (step_a *. Float.of_int i) in
-   *   (Float.cos a *. r) +. cx, (Float.sin a *. r) +. cy
-   * in *)
-  (* List.init fn f *)
-  (* let f i =
-   *   let a = start_a +. (step_a *. Float.of_int i) in
-   *   (Float.cos a *. r) +. cx, (Float.sin a *. r) +. cy
-   * in *)
   let rec loop acc i a =
     if i < fn
     then

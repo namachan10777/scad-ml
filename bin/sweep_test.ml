@@ -18,9 +18,7 @@ let path () =
   close_out oc
 
 let spiral_2d () =
-  let square =
-    let s = 5. in
-    [ -.s, -.s; -.s, s; s, s; s, -.s ]
+  let square = Poly.square ~center:true (10., 10.)
   and step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
@@ -56,10 +54,7 @@ let wave_cylinder () =
 
 let spline_path () =
   let control_pts = [ 0., 10.; 10., 40.; 20., 40.; 30., -20.; 40., -40. ]
-  and square =
-    let s = 0.25 in
-    [ -.s, -.s; -.s, s; s, s; s, -.s ]
-  in
+  and square = Poly.square ~center:true (0.5, 0.5) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 1. in
     List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
