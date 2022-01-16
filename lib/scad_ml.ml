@@ -6,6 +6,7 @@ module Quaternion = Quaternion
 module Sweep = Sweep
 module Bezier = Bezier
 module CubicSpline = CubicSpline
+module Poly = Poly
 
 (** A rotation matrix.
 

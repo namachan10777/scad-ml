@@ -13,7 +13,7 @@ let path () =
     let path = List.init (Int.of_float (1. /. step)) f in
     let transforms = Sweep.transforms_of_path path in
     Sweep.sweep ~convexity:5 ~transforms shape
-  and oc = open_out "ml_sweep.scad" in
+  and oc = open_out "ml_sweep_path.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -69,5 +69,21 @@ let spline_path () =
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let bezier_path () = ()
+
+let arc_points () =
+  let arc = Poly.arc ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
+  let scad =
+    List.mapi
+      (fun i (x, y) ->
+        Scad.text ~size:5. (Printf.sprintf "%i" i)
+        |> Scad.color Color.Red
+        |> Scad.translate (x, y, 0.) )
+      arc
+    |> Scad.union
+  and oc = open_out "arc_points.scad" in
   Scad.write oc scad;
   close_out oc
