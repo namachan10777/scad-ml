@@ -46,9 +46,9 @@ let arc
     +. Float.acos Vec2.(dot v2 v3 /. (norm v2 *. norm v3))
   in
   let start_a = Float.atan2 dy dx
-  and step_a = central_angle /. Float.of_int (fn - 1) *. if rev then 1. else -1. in
+  and step_a = central_angle /. Float.of_int fn *. if rev then 1. else -1. in
   let rec loop acc i a =
-    if i < fn
+    if i <= fn
     then
       loop
         (((Float.cos a *. r) +. cx, (Float.sin a *. r) +. cy) :: acc)
