@@ -7,6 +7,7 @@ module Sweep = Sweep
 module Bezier = Bezier
 module CubicSpline = CubicSpline
 module Poly = Poly
+module PolyRound = PolyRound
 
 (** A rotation matrix.
 

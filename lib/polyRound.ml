@@ -40,7 +40,9 @@ let invtan run rise =
   | -1, 1  -> (2. *. Float.pi) -. a
   | _      -> failwith "PolyRound: inverse tan error, both args = 0."
 
-let get_angle (x1, y1) (x2, y2) = if Float.(equal x1 x2 && equal y1 y2) then 0. else 0.
+let get_angle (x1, y1) (x2, y2) =
+  if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
+
 let get_gradient (x1, y1) (x2, y2) = (y2 -. y1) /. (x2 -. x1)
 
 let parallel_follow
@@ -215,13 +217,17 @@ let round_3_points (x1, y1, _) (x2, y2, r2) (x3, y3, _) =
 let poly_round ?(rad_limit = true) ?(fn = 5) rps =
   let pruned =
     let rps = Array.of_list rps in
-    let w = index_wrap ~len:(Array.length rps)
+    let len = Array.length rps in
+    let w = index_wrap ~len
     and ps = Array.map Vec2.of_vec3 rps in
     let rec aux i acc =
-      let ((x, y, r) as rp) = rps.(i) in
-      if (not (Poly.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
-      then aux (i + 1) (rp :: acc)
-      else aux (i + 1) acc
+      if i < len
+      then (
+        let ((x, y, r) as rp) = rps.(i) in
+        if (not (Poly.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+        then aux (i + 1) (rp :: acc)
+        else aux (i + 1) acc )
+      else acc
     in
     aux 0 [] |> List.rev |> Array.of_list
   in

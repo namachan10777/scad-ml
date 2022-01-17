@@ -82,3 +82,64 @@ let arc_points () =
   and oc = open_out "arc_points.scad" in
   Scad.write oc scad;
   close_out oc
+
+let rounded_poly () =
+  let radii_pts = [ 0., 0., 0.5; 10., 0., 0.5; 0., 10., 0.5 ] in
+  let scad = Scad.polygon (PolyRound.poly_round ~fn:10 radii_pts)
+  and oc = open_out "polyround_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let polyround_basic () =
+  let radii_pts =
+    [ -4., 0., 1.; 5., 3., 1.5; 0., 7., 0.1; 8., 7., 10.; 20., 20., 0.8; 10., 0., 10. ]
+  in
+  let scad =
+    let rounded =
+      Scad.polygon (PolyRound.poly_round ~fn:30 radii_pts)
+      |> Scad.linear_extrude ~height:1.
+    and pointy =
+      Scad.polygon (List.map Vec2.of_vec3 radii_pts)
+      |> Scad.linear_extrude ~height:1.
+      |> Scad.translate (0., 0., -0.5)
+      |> Scad.color ~alpha:0.5 Color.Silver
+    in
+    Scad.union [ rounded; pointy ]
+  and oc = open_out "polyround_basic_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let polyround_parametric () =
+  let w = 20.
+  and h = 25.
+  and slot_w = 8.
+  and slot_h = 15.
+  and slot_pos = 8.
+  and min_r = 1.5
+  and far_corner_r = 6.
+  and internal_r = 3. in
+  let radii_pts =
+    [ 0., 0., far_corner_r
+    ; 0., h, min_r
+    ; slot_pos, h, min_r
+    ; slot_pos, h -. slot_h, internal_r
+    ; slot_pos +. slot_w, h -. slot_h, internal_r
+    ; slot_pos +. slot_w, h, min_r
+    ; w, h, min_r
+    ; w, 0., min_r
+    ]
+  in
+  let scad =
+    let rounded =
+      Scad.polygon (PolyRound.poly_round ~fn:10 radii_pts)
+      |> Scad.linear_extrude ~height:1.
+    and pointy =
+      Scad.polygon (List.map Vec2.of_vec3 radii_pts)
+      |> Scad.linear_extrude ~height:1.
+      |> Scad.translate (0., 0., -0.5)
+      |> Scad.color ~alpha:0.5 Color.Silver
+    in
+    Scad.union [ rounded; pointy ]
+  and oc = open_out "polyround_parametric_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
