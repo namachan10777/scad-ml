@@ -1,13 +1,3 @@
-(* NOTE: most of the functions in here will be pretty specialized so I think
-    they'll be hidden by the interface, if not just included in the only place
-    that turns out to use them.
-
-   Top level functions:
-     - polyRound, radiipoints -> Vec2.t list
-     - polyRoundExtrude, radiipoints + params -> Scad.d3 (polyhedron)
-     - beamChain (if I do it)
- *)
-
 let index_wrap ~len i = ((i mod len) + len) mod len
 
 let rev_array arr =
@@ -57,8 +47,6 @@ let invtan run rise =
 
 let get_angle (x1, y1) (x2, y2) =
   if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
-
-let get_gradient (x1, y1) (x2, y2) = (y2 -. y1) /. (x2 -. x1)
 
 let parallel_follow
     ?(rmin = 1.)
@@ -295,14 +283,12 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
         ; start + next_offset + sub_idx
         ]
       in
-      List.concat_map g range
+      List.map g range
     in
     (* loop to second last layer *)
-    List.init (fn - 1) f
+    List.concat (List.init fn f)
   in
   (* bottom face indices offset *)
-  (* let top_faces = List.map List.rev (cap_faces 0)
-   * and bot_faces = cap_faces cap_len *)
   let top_faces = cap_faces 0
   and bot_faces = List.map List.rev (cap_faces cap_len)
   and side_faces =
@@ -325,11 +311,3 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
   Scad.polyhedron ?convexity pts faces
 
 let poly_round ?rad_limit ?fn rps = poly_round' ?rad_limit ?fn (`List rps)
-
-(* NOTE: offsetAllFacesBy is only used in this function, iterating over all
-    the faces of the bottom result from makeCurvedPartOfPolyHedron to increase
-    the face indices by an offset. Since makeCurved... is going to be a local
-    function in extrude_poly_w_radius (which is just extrude polyround
-    basically), if should just give the offset for the bottom at the time of
-    building. *)
-let extrude_poly_w_radius = ()
