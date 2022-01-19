@@ -86,7 +86,7 @@ let arc_points () =
 let rounded_poly () =
   let radii_pts = [ 0., 0., 0.5; 10., 0., 0.5; 0., 10., 0.5 ] in
   let scad = Scad.polygon (PolyRound.poly_round ~fn:10 radii_pts)
-  and oc = open_out "polyround_ml.scad" in
+  and oc = open_out "polyround_triangle_ml.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -141,5 +141,12 @@ let polyround_parametric () =
     in
     Scad.union [ rounded; pointy ]
   and oc = open_out "polyround_parametric_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let polyround_triangle_extrude () =
+  let radii_pts = [ 0., 0., 0.5; 10., 0., 0.5; 0., 10., 0.5 ] in
+  let scad = PolyRound.poly_round_extrude ~fn:4 ~h:4. ~r1:1. ~r2:1. radii_pts
+  and oc = open_out "polyround_triangle_extrude_ml.scad" in
   Scad.write oc scad;
   close_out oc
