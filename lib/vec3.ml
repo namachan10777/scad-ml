@@ -45,7 +45,7 @@ let ( <-> ) = sub
 let ( <*> ) = mul
 let ( </> ) = div
 let to_vec2 (x, y, _) = x, y
-let of_vec2 (x, y) = x, y, 0.
+let of_vec2 ?(z = 0.) (x, y) = x, y, z
 
 let rotate_x theta (x, y, z) =
   let s = Float.sin theta

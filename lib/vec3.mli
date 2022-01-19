@@ -168,7 +168,7 @@ val rad_of_deg : t -> t
 (** {1 2d - 3d conversion} *)
 
 val to_vec2 : t -> float * float
-val of_vec2 : float * float -> t
+val of_vec2 : ?z:float -> float * float -> t
 
 (** {1 Infix operations} *)
 

@@ -140,7 +140,7 @@ val rad_of_deg : t -> t
 (** {1 2d - 3d conversion} *)
 
 val of_vec3 : float * float * float -> t
-val to_vec3 : t -> float * float * float
+val to_vec3 : ?z:float -> t -> float * float * float
 
 (** {1 Infix operations} *)
 
