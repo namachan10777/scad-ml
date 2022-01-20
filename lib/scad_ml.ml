@@ -3,10 +3,10 @@ module Text = Text
 module Color = Color
 module Vec2 = Vec2
 module Quaternion = Quaternion
-module Sweep = Sweep
 module Bezier = Bezier
 module CubicSpline = CubicSpline
-module Poly = Poly
+module Poly2d = Poly2d
+module Poly3d = Poly3d
 module PolyRound = PolyRound
 
 (** A rotation matrix.

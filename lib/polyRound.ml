@@ -96,20 +96,6 @@ let offset_poly ~offset rps =
   done;
   out
 
-(* NOTE: findPoint is only ever used in beamChain *)
-let intersect ?(r = 0.) a1 (x1, y1) a2 (x2, y2) =
-  let is_vertical a = Float.(equal a (pi /. 2.) || equal a (pi *. 1.5)) in
-  let m1 = Float.tan a1
-  and m2 = Float.tan a2 in
-  let c1 = y1 -. (m1 *. x1)
-  and c2 = y2 -. (m2 *. x2)
-  and a1_vert = is_vertical a1 in
-  let x =
-    if a1_vert then x1 else if is_vertical a2 then x2 else (c2 -. c1) /. (m1 -. m2)
-  in
-  let y = if a1_vert then (m2 *. x) +. c2 else (m1 *. x) +. c1 in
-  x, y, r
-
 let arc_about_centre
     ?(mode = `Shortest)
     ~fn
@@ -208,7 +194,7 @@ let prune_radii_points rps =
     if i < len
     then (
       let ((x, y, r) as rp) = rps.(i) in
-      if (not (Poly.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+      if (not (Poly2d.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
       then aux (i + 1) (rp :: acc)
       else aux (i + 1) acc )
     else acc
@@ -244,7 +230,7 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
   (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
   if Float.equal (clockwise_sign rps) 1. then rev_array rps;
   let radii = Array.map (fun (_, _, r) -> r) rps in
-  let cap_points ~top r =
+  let cap_points ?(init = []) ~top r =
     let s = if top then 1. else -1.
     and dir = Float.(of_int @@ compare r 0.)
     and abs_r = Float.abs r in
@@ -263,51 +249,13 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
       `Array (Array.init len adjust_radii)
       |> poly_round' ~fn
       |> List.map (Vec2.to_vec3 ~z)
+    and idx = if top then ( - ) fn else Fun.id in
+    let rec loop acc i =
+      if i < fn + 1 then loop (layer (idx i) :: acc) (i + 1) else acc
     in
-    List.concat (List.init (fn + 1) layer)
+    loop init 0
   in
-  let top_pts = cap_points ~top:true r1
-  and bot_pts = cap_points ~top:false r2 in
-  let cap_len = List.length top_pts in
-  let layer_len = cap_len / (fn + 1) in
-  let cap_faces start =
-    let range = List.init layer_len Fun.id in
-    let f i =
-      let curr_offset = i * layer_len
-      and next_offset = (i + 1) * layer_len in
-      let g sub_idx =
-        let next_sub = index_wrap ~len:layer_len (sub_idx + 1) in
-        [ start + curr_offset + sub_idx
-        ; start + curr_offset + next_sub
-        ; start + next_offset + next_sub
-        ; start + next_offset + sub_idx
-        ]
-      in
-      List.map g range
-    in
-    (* loop to second last layer *)
-    List.concat (List.init fn f)
-  in
-  (* bottom face indices offset *)
-  let top_faces = cap_faces 0
-  and bot_faces = List.map List.rev (cap_faces cap_len)
-  and side_faces =
-    let f i =
-      let next = index_wrap ~len:layer_len (i + 1) in
-      [ cap_len + i; cap_len + next; next; i ]
-    in
-    List.init layer_len f
-  and top_seal =
-    (* every point from the last layer of the radius cap *)
-    let start = cap_len - layer_len in
-    List.init layer_len (fun i -> start + i)
-  and bot_seal =
-    (* reverse order *)
-    let start = (cap_len * 2) - 1 in
-    List.init layer_len (fun i -> start - i)
-  in
-  let pts = List.append top_pts bot_pts
-  and faces = List.concat [ top_faces; bot_faces; side_faces; [ top_seal; bot_seal ] ] in
-  Scad.polyhedron ?convexity pts faces
+  let pts = cap_points ~init:(cap_points ~top:true r1) ~top:false r2 in
+  Poly3d.stitch_polyhedron ?convexity pts
 
 let poly_round ?rad_limit ?fn rps = poly_round' ?rad_limit ?fn (`List rps)
