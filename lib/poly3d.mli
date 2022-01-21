@@ -1,3 +1,20 @@
+(** [extrude_with_radius ?fn ~height ~r1 ~r2 scad]
+
+    Perform a linear extrusion of [scad], with the addition of rounded end caps
+    of radius [r1] (bottom) and [r2] (top), formed by [fn] steps of extrusions
+    on the radially offset [scad]. Negative radius values will flare out,
+    rather than rounding to a smaller face. Note that this function results in
+    a slower shape than polyround extrusions, and high [fn] values will be
+    required to achieve relatively smooth transitions. It can be useful though
+    if you have a 2d scad already. *)
+val extrude_with_radius
+  :  ?fn:int
+  -> height:float
+  -> r1:float
+  -> r2:float
+  -> Scad.d2
+  -> Scad.d3
+
 (** [transforms_of_path path]
 
     Generate list of transformations that can be applied to three-dimensional

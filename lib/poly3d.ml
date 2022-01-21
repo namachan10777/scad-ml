@@ -1,3 +1,35 @@
+let extrude_with_radius ?(fn = 30) ~height ~r1 ~r2 poly =
+  let n1 = Float.of_int @@ Float.compare r1 0.
+  and n2 = Float.of_int @@ Float.compare r2 0.
+  and r1 = Float.abs r1
+  and r2 = Float.abs r2
+  and frac = 1. /. Float.of_int fn in
+  let mid = Scad.translate (0., 0., r1) (Scad.linear_extrude ~height poly)
+  and bot_f s =
+    let r =
+      (n1 *. Float.sqrt ((r1 *. r1) -. Float.pow (r1 -. (s *. frac *. r1)) 2.))
+      -. (n1 *. r1)
+    in
+    Scad.offset (`Radius r) poly
+    |> Scad.linear_extrude ~height:((r1 *. frac) +. 0.01)
+    |> Scad.translate (0., 0., s *. frac *. r1)
+  and top_f s =
+    let r =
+      (n2 *. Float.sqrt ((r2 *. r2) -. Float.pow (s *. frac *. r2) 2.)) -. (n2 *. r2)
+    in
+    Scad.offset (`Radius r) poly
+    |> Scad.linear_extrude ~height:((r2 *. frac) +. 0.01)
+    |> Scad.translate (0., 0., r1 +. height +. (s *. frac *. r2))
+  in
+  let rec loop acc i =
+    if i < fn
+    then (
+      let s = Float.of_int i in
+      loop (bot_f s :: top_f s :: acc) (i + 1) )
+    else acc
+  in
+  Scad.union @@ loop [ mid ] 0
+
 let transforms_of_path path =
   let p = Array.of_list path in
   let len = Array.length p in
