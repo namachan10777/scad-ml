@@ -155,7 +155,14 @@ let polyround_basic_extrude () =
   let radii_pts =
     [ -4., 0., 1.; 5., 3., 1.5; 0., 7., 0.1; 8., 7., 10.; 20., 20., 0.8; 10., 0., 10. ]
   in
-  let scad = PolyRound.poly_round_extrude ~fn:10 ~h:4. ~r1:1. ~r2:(-2.) radii_pts
+  let scad = PolyRound.poly_round_extrude ~fn:10 ~h:0. ~r1:(-1.) ~r2:1. radii_pts
   and oc = open_out "polyround_basic_extrude_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let extrude_square_with_radius () =
+  let scad =
+    Poly3d.extrude_with_radius ~fn:60 ~height:2. ~r1:0.2 ~r2:0.2 (Scad.square (5., 5.))
+  and oc = open_out "extrude_square_with_radius_ml.scad" in
   Scad.write oc scad;
   close_out oc
