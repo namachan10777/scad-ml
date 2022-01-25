@@ -1,40 +1,4 @@
-let index_wrap ~len i = ((i mod len) + len) mod len
-
-let rev_array arr =
-  let open Array in
-  let swap i j =
-    let tmp = get arr i in
-    set arr i (get arr j);
-    set arr j tmp
-  in
-  let i = ref 0
-  and j = ref (length arr - 1) in
-  while !i < !j do
-    swap !i !j;
-    incr i;
-    decr j
-  done
-
-(* Negative = CCW *)
-let clockwise_sign ps =
-  let len = Array.length ps
-  and sum = ref 0. in
-  for i = 0 to len - 1 do
-    let x0, y0 = ps.(index_wrap ~len i)
-    and x1, y1 = ps.(index_wrap ~len (i + 1)) in
-    sum := !sum +. ((x0 -. x1) *. (y0 +. y1))
-  done;
-  Float.(of_int @@ compare !sum 0.)
-
-let clockwise_sign_v3 rps =
-  let len = Array.length rps
-  and sum = ref 0. in
-  for i = 0 to len - 1 do
-    let x0, y0, _ = rps.(index_wrap ~len i)
-    and x1, y1, _ = rps.(index_wrap ~len (i + 1)) in
-    sum := !sum +. ((x0 -. x1) *. (y0 +. y1))
-  done;
-  Float.(of_int @@ compare !sum 0.)
+open Util
 
 let cosine_rule_angle p1 p2 p3 =
   let d12 = Vec2.distance p1 p2
@@ -58,48 +22,42 @@ let invtan run rise =
 let get_angle (x1, y1) (x2, y2) =
   if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
 
-let parallel_follow ~offset ~mode (x1, y1) (x2, y2) (x3, y3) =
-  if Float.equal offset 0.
-  then x2, y2 (* return middle point if offset is zero *)
-  else (
-    let p1 = x1, y1
-    and p2 = x2, y2
-    and p3 = x3, y3 in
-    let path_angle = cosine_rule_angle p1 p2 p3
-    and sign = clockwise_sign [| p1; p2; p3 |] in
-    let radius = mode *. sign *. offset /. Float.sin (path_angle /. 2.)
-    and angle_to_centre =
-      let mid_tangent =
-        let tan_dist = offset /. Float.tan (path_angle /. 2.) in
-        let tangent_point a b =
-          let theta = get_angle a b in
-          x2 -. (Float.cos theta *. tan_dist), y2 -. (Float.sin theta *. tan_dist)
+let offset_poly ~offset ps =
+  let cw_sign = Float.(of_int @@ compare offset 0.) *. Poly2d.clockwise_sign' ps *. -1.
+  and len = Array.length ps in
+  let parallel_follow (x1, y1) (x2, y2) (x3, y3) =
+    if Float.equal offset 0.
+    then x2, y2 (* return middle point if offset is zero *)
+    else (
+      let p1 = x1, y1
+      and p2 = x2, y2
+      and p3 = x3, y3 in
+      let path_angle = cosine_rule_angle p1 p2 p3
+      and local_sign = Poly2d.clockwise_sign' [| p1; p2; p3 |] in
+      let radius = cw_sign *. local_sign *. offset /. Float.sin (path_angle /. 2.)
+      and angle_to_centre =
+        let mid_tangent =
+          let tan_dist = offset /. Float.tan (path_angle /. 2.) in
+          let tangent_point a b =
+            let theta = get_angle a b in
+            x2 -. (Float.cos theta *. tan_dist), y2 -. (Float.sin theta *. tan_dist)
+          in
+          Vec2.mean [ tangent_point p1 p2; tangent_point p3 p2 ]
         in
-        Vec2.mean [ tangent_point p1 p2; tangent_point p3 p2 ]
+        get_angle mid_tangent p2
       in
-      get_angle mid_tangent p2
-    in
-    let cx = x2 -. (Float.cos angle_to_centre *. radius)
-    and cy = y2 -. (Float.sin angle_to_centre *. radius) in
-    cx, cy )
-
-let offset_poly ~offset rps =
-  let cw_sign = Float.(of_int @@ compare offset 0.) *. clockwise_sign rps *. -1.
-  and len = Array.length rps in
-  let out = Array.make len Vec2.zero in
+      let cx = x2 -. (Float.cos angle_to_centre *. radius)
+      and cy = y2 -. (Float.sin angle_to_centre *. radius) in
+      cx, cy )
+  and out = Array.make len Vec2.zero in
   for i = 0 to len - 1 do
     out.(i)
-      <- parallel_follow
-           ~offset
-           ~mode:cw_sign
-           rps.(index_wrap ~len (i - 1))
-           rps.(i)
-           rps.(index_wrap ~len (i + 1))
+      <- parallel_follow ps.(index_wrap ~len (i - 1)) ps.(i) ps.(index_wrap ~len (i + 1))
   done;
   out
 
 let arc_about_centre ?(mode = `Shortest) ~fn p1 p2 ((cx, cy) as centre) =
-  let sign = clockwise_sign [| centre; p1; p2 |] in
+  let sign = Poly2d.clockwise_sign' [| centre; p1; p2 |] in
   let step_a =
     let path_angle = cosine_rule_angle p2 centre p1 in
     let arc_angle =
@@ -178,11 +136,6 @@ let round_3_points (x1, y1, _) (x2, y2, r2) (x3, y3, _) =
   t12, t23, centre
 
 let prune_radii_points rps =
-  let rps =
-    match rps with
-    | `List l  -> Array.of_list l
-    | `Array a -> a
-  in
   let len = Array.length rps in
   let w = index_wrap ~len
   and ps = Array.map Vec2.of_vec3 rps in
@@ -197,7 +150,7 @@ let prune_radii_points rps =
   in
   aux 0 [] |> List.rev |> Array.of_list
 
-let poly_round' ?(rad_limit = true) ?(fn = 5) rps =
+let polyround' ?(rad_limit = true) ?(fn = 5) rps =
   let pruned = prune_radii_points rps in
   let len = Array.length pruned in
   let f =
@@ -219,12 +172,10 @@ let poly_round' ?(rad_limit = true) ?(fn = 5) rps =
   in
   List.flatten @@ List.init len f
 
-let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
+let polyround_extrude_layers ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
   let rps = Array.of_list rps in
   let len = Array.length rps
   and frac_step = 1. /. Float.of_int fn in
-  (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
-  if Float.equal (clockwise_sign_v3 rps) 1. then rev_array rps;
   let ps = Array.make len Vec2.zero
   and radii = Array.make len 0. in
   for i = 0 to len - 1 do
@@ -232,6 +183,11 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
     Array.unsafe_set ps i (x, y);
     Array.unsafe_set radii i r
   done;
+  (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
+  if Float.equal (Poly2d.clockwise_sign' ps) 1.
+  then (
+    rev_array ps;
+    rev_array radii );
   let cap_points ?(init = []) top =
     let s, r = if top then 1., r2 else -1., r1 in
     let dir = Float.(of_int @@ compare r 0.)
@@ -242,23 +198,52 @@ let poly_round_extrude ?convexity ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
       let offset = (dir *. Float.sqrt ((r *. r) -. (step *. step))) -. (dir *. abs_r) in
       let get_op idx = Array.unsafe_get (offset_poly ~offset ps) (index_wrap ~len idx) in
       let adjust_radii j =
-        let local_sign = clockwise_sign [| get_op (j - 1); get_op j; get_op (j + 1) |] in
+        let local_sign =
+          Poly2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
+        in
         let x, y = get_op j in
         (* The overall polygon rotation is enforced to be CCW, so if the local
                sign is positive (CW), subtract from the radius instead *)
         let r' = Float.max min_r (radii.(j) +. (offset *. local_sign *. -1.)) in
         x, y, r'
       and z = (step *. s) +. z_start in
-      `Array (Array.init len adjust_radii)
-      |> poly_round' ~fn
-      |> List.map (Vec2.to_vec3 ~z)
+      Array.init len adjust_radii |> polyround' ~fn |> List.map (Vec2.to_vec3 ~z)
     and idx = if top then ( - ) fn else Fun.id in
     let rec loop acc i =
       if i < fn + 1 then loop (layer (idx i) :: acc) (i + 1) else acc
     in
     loop init 0
   in
-  let pts = cap_points ~init:(cap_points true) false in
-  Poly3d.stitch_polyhedron ?convexity pts
+  cap_points ~init:(cap_points true) false
 
-let poly_round ?rad_limit ?fn rps = poly_round' ?rad_limit ?fn (`List rps)
+let polyround_extrude ?convexity ?min_r ?fn ~h ~r1 ~r2 rps =
+  polyround_extrude_layers ?min_r ?fn ~h ~r1 ~r2 rps
+  |> Poly3d.stitch_polyhedron ?convexity
+
+let polyround_sweep ?convexity ?min_r ?(fn = 4) ~r1 ~r2 ~transforms rps =
+  let transorm_layer m = List.map (MultMatrix.transform m) in
+  (* peel off the bottom cap and XY plane shape from polyround extrusion *)
+  let bottom_layers, top_cap, shape =
+    let cap_layers = polyround_extrude_layers ?min_r ~fn ~h:0. ~r1 ~r2 rps
+    and m =
+      try List.hd transforms with
+      | _ -> failwith "Sweep cannot be performed without any transforms."
+    in
+    let rec capper take layers = function
+      | hd :: caps when take > 0 -> capper (take - 1) (transorm_layer m hd :: layers) caps
+      | hd :: shape :: caps -> transorm_layer m hd :: layers, caps, shape
+      | _ -> failwith "unreachable"
+    in
+    capper (fn + 1) [] cap_layers
+  in
+  let rec sweeper layers = function
+    | [ m ]      -> List.fold_left
+                      (fun acc cap -> transorm_layer m cap :: acc)
+                      layers
+                      top_cap
+    | m :: trans -> sweeper (transorm_layer m shape :: layers) trans
+    | []         -> failwith "Sweep cannot be performed without any transforms."
+  in
+  sweeper bottom_layers transforms |> List.rev |> Poly3d.stitch_polyhedron ?convexity
+
+let polyround ?rad_limit ?fn rps = polyround' ?rad_limit ?fn (Array.of_list rps)

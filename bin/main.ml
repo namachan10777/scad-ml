@@ -12,4 +12,5 @@ let () =
   Sweep_test.polyround_parametric ();
   Sweep_test.polyround_triangle_extrude ();
   Sweep_test.polyround_basic_extrude ();
-  Sweep_test.extrude_square_with_radius ()
+  Sweep_test.extrude_square_with_radius ();
+  Sweep_test.polyround_sweep ()

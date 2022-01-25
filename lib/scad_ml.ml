@@ -8,6 +8,7 @@ module CubicSpline = CubicSpline
 module Poly2d = Poly2d
 module Poly3d = Poly3d
 module PolyRound = PolyRound
+module Path = Path
 
 (** A rotation matrix.
 

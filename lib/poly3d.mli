@@ -15,15 +15,6 @@ val extrude_with_radius
   -> Scad.d2
   -> Scad.d3
 
-(** [transforms_of_path path]
-
-    Generate list of transformations that can be applied to three-dimensional
-    vectors ({!Vec3.t} via {!MultMatrix.transform}) or shapes ({!Scad.d3} via
-    {!Scad.multmatrix}), to move them along the [path] (intended to be applied to
-    the vector/shape from its original position each time). Tangents are used to
-    calculate appropriate rotations for each translation. *)
-val transforms_of_path : Vec3.t list -> MultMatrix.t list
-
 (** [stitch_polyhedron ?closed ?convexity layers]
 
     Create a polyhedron from a list of layers (counter_clockwise loops of 3d

@@ -1,8 +1,23 @@
+open Util
+
 let colinear p1 p2 p3 =
   let a = Vec2.distance p1 p2
   and b = Vec2.distance p2 p3
   and c = Vec2.distance p3 p1 in
   a +. b < c || b +. c < a || c +. a < b
+
+(* Negative = CCW *)
+let clockwise_sign' ps =
+  let len = Array.length ps
+  and sum = ref 0. in
+  for i = 0 to len - 1 do
+    let x0, y0 = ps.(index_wrap ~len i)
+    and x1, y1 = ps.(index_wrap ~len (i + 1)) in
+    sum := !sum +. ((x0 -. x1) *. (y0 +. y1))
+  done;
+  Float.(of_int @@ compare !sum 0.)
+
+let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 
 let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
@@ -20,7 +35,7 @@ let square ?(center = false) (x, y) =
     [ x', y'; -.x', y'; -.x', -.y'; x', -.y' ] )
   else [ 0., 0.; x, 0.; x, y; 0., y ]
 
-let arc
+let arc_through
     ?(init = [])
     ?(rev = false)
     ?(fn = 10)

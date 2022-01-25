@@ -30,23 +30,6 @@ let extrude_with_radius ?(fn = 30) ~height ~r1 ~r2 poly =
   in
   Scad.union @@ loop [ mid ] 0
 
-let transforms_of_path path =
-  let p = Array.of_list path in
-  let len = Array.length p in
-  let f i =
-    let open Vec3 in
-    let tangent =
-      ( if i = 0
-      then p.(1) <-> p.(0)
-      else if i = len - 1
-      then p.(i) <-> p.(i - 1)
-      else p.(i + 1) <-> p.(i - 1) )
-      |> normalize
-    in
-    Quaternion.(to_multmatrix ~trans:p.(i) @@ alignment (0., 0., 1.) tangent)
-  in
-  List.init len f
-
 let stitch_polyhedron ?(closed = false) ?convexity layers =
   let n_layers = List.length layers
   and n_facets = List.length (List.hd layers)
