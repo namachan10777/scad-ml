@@ -70,7 +70,7 @@ let spline_path () =
 let bezier_path () = ()
 
 let arc_points () =
-  let arc = Poly2d.arc ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
+  let arc = Poly2d.arc_through ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
   let scad =
     List.mapi
       (fun i (x, y) ->
