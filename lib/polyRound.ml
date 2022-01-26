@@ -172,7 +172,7 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
   in
   List.flatten @@ List.init len f
 
-let polyround_extrude_layers ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
+let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ~transforms ~r1 ~r2 rps =
   let rps = Array.of_list rps in
   let len = Array.length rps
   and frac_step = 1. /. Float.of_int fn in
@@ -186,13 +186,14 @@ let polyround_extrude_layers ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
   (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
   if Float.equal (Poly2d.clockwise_sign' ps) 1.
   then (
+    rev_array rps;
     rev_array ps;
     rev_array radii );
-  let cap_points ?(init = []) top =
-    let s, r = if top then 1., r2 else -1., r1 in
+  let shape = List.map Vec3.of_vec2 @@ polyround' ~fn rps
+  and cap_points ?(init = []) top m =
+    let r, z_sign = if top then r2, 1. else r1, -1. in
     let dir = Float.(of_int @@ compare r 0.)
     and abs_r = Float.abs r in
-    let z_start = if top then h +. Float.abs r1 else abs_r in
     let layer i =
       let step = Float.of_int i *. frac_step *. abs_r in
       let offset = (dir *. Float.sqrt ((r *. r) -. (step *. step))) -. (dir *. abs_r) in
@@ -206,44 +207,51 @@ let polyround_extrude_layers ?(min_r = 0.01) ?(fn = 4) ~h ~r1 ~r2 rps =
                sign is positive (CW), subtract from the radius instead *)
         let r' = Float.max min_r (radii.(j) +. (offset *. local_sign *. -1.)) in
         x, y, r'
-      and z = (step *. s) +. z_start in
-      Array.init len adjust_radii |> polyround' ~fn |> List.map (Vec2.to_vec3 ~z)
-    and idx = if top then ( - ) fn else Fun.id in
+      and z = z_sign *. step in
+      Array.init len adjust_radii
+      |> polyround' ~fn
+      |> List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ~z p)
+    and idx = if top then Fun.id else ( - ) (fn + 1) in
     let rec loop acc i =
       if i < fn + 1 then loop (layer (idx i) :: acc) (i + 1) else acc
     in
-    loop init 0
+    loop init 1
   in
-  cap_points ~init:(cap_points true) false
+  let layers =
+    match transforms with
+    | []      -> cap_points
+                   ~init:(shape :: cap_points false MultMatrix.id)
+                   true
+                   MultMatrix.id
+    | hd :: _ ->
+      let init, last_transform =
+        let f (acc, _last) m = List.map (MultMatrix.transform m) shape :: acc, m in
+        List.fold_left f (cap_points false hd, hd) transforms
+      in
+      cap_points ~init true last_transform
+  in
+  Poly3d.of_layers (List.rev layers)
 
-let polyround_extrude ?convexity ?min_r ?fn ~h ~r1 ~r2 rps =
-  polyround_extrude_layers ?min_r ?fn ~h ~r1 ~r2 rps
-  |> Poly3d.stitch_polyhedron ?convexity
-
-let polyround_sweep ?convexity ?min_r ?(fn = 4) ~r1 ~r2 ~transforms rps =
-  let transorm_layer m = List.map (MultMatrix.transform m) in
-  (* peel off the bottom cap and XY plane shape from polyround extrusion *)
-  let bottom_layers, top_cap, shape =
-    let cap_layers = polyround_extrude_layers ?min_r ~fn ~h:0. ~r1 ~r2 rps
-    and m =
-      try List.hd transforms with
-      | _ -> failwith "Sweep cannot be performed without any transforms."
-    in
-    let rec capper take layers = function
-      | hd :: caps when take > 0 -> capper (take - 1) (transorm_layer m hd :: layers) caps
-      | hd :: shape :: caps -> transorm_layer m hd :: layers, caps, shape
-      | _ -> failwith "unreachable"
-    in
-    capper (fn + 1) [] cap_layers
+let polyround_extrude
+    ?min_r
+    ?fn
+    ?slices
+    ?scale
+    ?(twist = 0.)
+    ?(center = false)
+    ~height
+    ~r1
+    ~r2
+    rps
+  =
+  let slices = helical_slices ?fn:slices twist in
+  let bot = if center then height /. -2. else Float.abs r1
+  and s = height /. Float.of_int slices
+  and twist = if Float.abs twist > 0. then Some twist else None in
+  let transforms =
+    List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
+    |> Path.to_transforms ?scale ?twist
   in
-  let rec sweeper layers = function
-    | [ m ]      -> List.fold_left
-                      (fun acc cap -> transorm_layer m cap :: acc)
-                      layers
-                      top_cap
-    | m :: trans -> sweeper (transorm_layer m shape :: layers) trans
-    | []         -> failwith "Sweep cannot be performed without any transforms."
-  in
-  sweeper bottom_layers transforms |> List.rev |> Poly3d.stitch_polyhedron ?convexity
+  polyround_sweep ?min_r ?fn ~r1 ~r2 ~transforms rps
 
 let polyround ?rad_limit ?fn rps = polyround' ?rad_limit ?fn (Array.of_list rps)
