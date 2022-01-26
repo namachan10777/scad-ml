@@ -192,16 +192,14 @@ let fit ?(boundary = `Natural) ps =
   { len = len - 1; xmins; xmaxs; coefs }
 
 let extrapolate { len; xmins; xmaxs; coefs } x =
-  let continue = ref true
-  and i = ref 0
+  let i = ref 0
   and y = ref None in
-  while !continue && !i < len do
+  while Option.is_none !y && !i < len do
     let idx = !i in
     if x >= xmins.(idx) && x <= xmaxs.(idx)
     then (
       let { a; b; c; d } = coefs.(idx) in
-      y := Some ((a *. x *. x *. x) +. (b *. x *. x) +. (c *. x) +. d);
-      continue := false )
+      y := Some ((a *. x *. x *. x) +. (b *. x *. x) +. (c *. x) +. d) )
     else incr i
   done;
   !y
