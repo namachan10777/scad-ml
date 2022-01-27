@@ -31,4 +31,15 @@ val linear_extrude
   -> (float * float) list
   -> t
 
+val rev_faces : t -> t
+val translate : Vec3.t -> t -> t
+val rotate : Vec3.t -> t -> t
+val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
+val quaternion : Quaternion.t -> t -> t
+val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
+val vector_rotate : Vec3.t -> float -> t -> t
+val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
+val multmatrix : MultMatrix.t -> t -> t
+val scale : Vec3.t -> t -> t
+val mirror : Vec3.t -> t -> t
 val to_scad : ?convexity:int -> t -> Scad.d3

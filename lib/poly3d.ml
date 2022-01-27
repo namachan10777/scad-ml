@@ -64,4 +64,21 @@ let linear_extrude ?slices ?scale ?(twist = 0.) ?(center = false) ~height shape 
   in
   sweep ~transforms shape
 
+let rev_faces t = { t with faces = List.map List.rev t.faces }
+let translate p t = { t with points = List.map (Vec3.translate p) t.points }
+let rotate r t = { t with points = List.map (Vec3.rotate r) t.points }
+
+let rotate_about_pt r p t =
+  { t with points = List.map (Vec3.rotate_about_pt r p) t.points }
+
+let quaternion q t = { t with points = List.map (Quaternion.rotate_vec3 q) t.points }
+
+let quaternion_about_pt q p t =
+  { t with points = List.map (Quaternion.rotate_vec3_about_pt q p) t.points }
+
+let vector_rotate ax r = quaternion (Quaternion.make ax r)
+let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
+let multmatrix m t = { t with points = List.map (MultMatrix.transform m) t.points }
+let scale s t = { t with points = List.map (Vec3.scale s) t.points }
+let mirror ax t = rev_faces { t with points = List.map (Vec3.mirror ax) t.points }
 let to_scad ?convexity { points; faces; _ } = Scad.polyhedron ?convexity points faces
