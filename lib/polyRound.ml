@@ -172,10 +172,11 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
   in
   List.flatten @@ List.init len f
 
-let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ~transforms ~r1 ~r2 rps =
-  let rps = Array.of_list rps in
+let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
+  let rps = Array.of_list rps
+  and cap_fn = Option.value ~default:fn cap_fn in
   let len = Array.length rps
-  and frac_step = 1. /. Float.of_int fn in
+  and frac_step = 1. /. Float.of_int cap_fn in
   let ps = Array.make len Vec2.zero
   and radii = Array.make len 0. in
   for i = 0 to len - 1 do
@@ -211,9 +212,9 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ~transforms ~r1 ~r2 rps =
       Array.init len adjust_radii
       |> polyround' ~fn
       |> List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ~z p)
-    and idx = if top then Fun.id else ( - ) (fn + 1) in
+    and idx = if top then Fun.id else ( - ) (cap_fn + 1) in
     let rec loop acc i =
-      if i < fn + 1 then loop (layer (idx i) :: acc) (i + 1) else acc
+      if i < cap_fn + 1 then loop (layer (idx i) :: acc) (i + 1) else acc
     in
     loop init 1
   in
@@ -235,6 +236,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ~transforms ~r1 ~r2 rps =
 let polyround_extrude
     ?min_r
     ?fn
+    ?cap_fn
     ?slices
     ?scale
     ?(twist = 0.)
@@ -252,6 +254,6 @@ let polyround_extrude
     List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
     |> Path.to_transforms ?scale ?twist
   in
-  polyround_sweep ?min_r ?fn ~r1 ~r2 ~transforms rps
+  polyround_sweep ?min_r ?fn ?cap_fn ~r1 ~r2 ~transforms rps
 
 let polyround ?rad_limit ?fn rps = polyround' ?rad_limit ?fn (Array.of_list rps)

@@ -219,6 +219,7 @@ let polyround_linear_extrude () =
     |> PolyRound.polyround_extrude
          ~slices:100
          ~fn:10
+         ~cap_fn:30
          ~scale:(4., 4.)
          ~twist:(2. *. Float.pi)
          ~center:false
