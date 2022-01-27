@@ -20,7 +20,12 @@ val of_layers : ?closed:bool -> layer list -> t
     polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn.
     Setting [closed] to true will connect the open faces of the beginning and
     end of the sweep (defaults to [false]). *)
-val sweep : ?closed:bool -> transforms:MultMatrix.t list -> Vec2.t list -> t
+val sweep
+  :  ?winding:[ `CCW | `CW | `NoCheck ]
+  -> ?closed:bool
+  -> transforms:MultMatrix.t list
+  -> Vec2.t list
+  -> t
 
 val linear_extrude
   :  ?slices:int
@@ -28,6 +33,20 @@ val linear_extrude
   -> ?twist:float
   -> ?center:bool
   -> height:float
+  -> (float * float) list
+  -> t
+
+val helix_extrude
+  :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale:float * float
+  -> ?twist:float
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
   -> (float * float) list
   -> t
 
