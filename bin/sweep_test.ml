@@ -230,3 +230,41 @@ let polyround_linear_extrude () =
   and oc = open_out "polyround_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc
+
+let helix_path () =
+  let scad =
+    let pts = Path.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
+    let s = Scad.color Color.Red @@ Scad.sphere 1. in
+    Scad.union @@ List.map (fun p -> Scad.translate p s) pts
+  and oc = open_out "helix_path.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let helix_sweep () =
+  let scad =
+    let shape =
+      [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
+    and path = Path.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
+    let transforms = Path.to_transforms ~euler:true path in
+    Poly3d.(to_scad @@ sweep ~transforms shape)
+  and oc = open_out "helix_sweep.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let helix_extrude () =
+  let scad =
+    let shape =
+      [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
+    in
+    Poly3d.helix_extrude
+      ~scale:(1., 1.)
+      ~left:true
+      ~pitch:30.
+      ~n_turns:10
+      ~r2:100.
+      50.
+      shape
+    |> Poly3d.to_scad
+  and oc = open_out "helix_extrude.scad" in
+  Scad.write oc scad;
+  close_out oc

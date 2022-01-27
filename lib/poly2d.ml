@@ -1,5 +1,7 @@
 open Util
 
+type t = Vec2.t list
+
 let colinear p1 p2 p3 =
   let a = Vec2.distance p1 p2
   and b = Vec2.distance p2 p3
