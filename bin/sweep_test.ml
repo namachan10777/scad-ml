@@ -56,13 +56,13 @@ let wave_cylinder () =
 
 let spline_path () =
   let control_pts = [ 0., 10.; 10., 40.; 20., 40.; 30., -20.; 40., -40. ]
-  and square = Poly2d.square ~center:true (0.5, 0.5) in
+  and square = Poly2d.square ~center:true (5., 10.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 1. in
     List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
-    Poly3d.(to_scad @@ sweep ~transforms:(Path.to_transforms path) square)
+    Poly3d.(to_scad @@ sweep ~transforms:(Path.to_transforms ~euler:true path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
