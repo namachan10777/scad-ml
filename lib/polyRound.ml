@@ -22,8 +22,10 @@ let invtan run rise =
 let get_angle (x1, y1) (x2, y2) =
   if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
 
+(* TODO: consider a check that notices when the shape implodes due to too great
+    of offset. This can lead to extrude errors that may be confusing. *)
 let offset_poly ~offset ps =
-  let cw_sign = Float.(of_int @@ compare offset 0.) *. Poly2d.clockwise_sign' ps *. -1.
+  let cw_sign = Util.sign offset *. Poly2d.clockwise_sign' ps *. -1.
   and len = Array.length ps in
   let parallel_follow (x1, y1) (x2, y2) (x3, y3) =
     if Float.equal offset 0.
