@@ -79,6 +79,7 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = MultMatrix.id in
+  if len < 2 then failwith "Invalid path (too few points).";
   let scale = Util.value_map_opt ~default:id (scaler ~len) scale
   and twist = Util.value_map_opt ~default:id (twister ~len) twist
   and transform =
@@ -95,47 +96,64 @@ let to_transforms ?(euler = false) ?scale ?twist path =
         in
         let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
         and az = Float.atan2 dy dx in
-        MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) (of_euler (0., ay, az))) m )
+        MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) (of_euler (0., -.ay, az))) m
+      )
     else (
       let accum_qs =
-        (* NOTE: not sure about this short path conditions, here and in the
-               match. Take a closer look. Consider asserting that a path has to
-               be at least 2 for this function at all tbh. *)
-        (* TODO: Update language in the doc comment to reflect the change in
-           calculations done here *)
-        if len < 2
-        then [| Quaternion.id |]
-        else (
-          let local i =
-            let p1 = p.(i)
-            and p2 = p.(i + 1)
-            and p3 = p.(i + 2) in
-            Quaternion.alignment Vec3.(normalize (p2 <-> p1)) Vec3.(normalize (p3 <-> p2))
+        let local i =
+          let p1 = p.(i)
+          and p2 = p.(i + 1)
+          and p3 = p.(i + 2) in
+          Quaternion.alignment Vec3.(normalize (p2 <-> p1)) Vec3.(normalize (p3 <-> p2))
+        in
+        match List.init (len - 2) local with
+        | []       -> [| Quaternion.id |]
+        | [ q ]    -> [| q; Quaternion.id |]
+        | hd :: tl ->
+          let f (acc, qs) m =
+            let q = Quaternion.mul m acc in
+            q, q :: qs
           in
-          match List.init (len - 2) local with
-          | []       -> [| Quaternion.id |]
-          | [ q ]    -> [| q; Quaternion.id |]
-          | hd :: tl ->
-            let f (acc, qs) m =
-              let q = Quaternion.mul m acc in
-              q, q :: qs
-            in
-            let _, qs = List.fold_left f (hd, [ hd; Quaternion.id ]) tl in
-            (* TODO: add an array of list rev to utils *)
-            Array.of_list (List.rev qs) )
+          let _, qs = List.fold_left f (hd, [ hd; Quaternion.id ]) tl in
+          Util.array_of_list_rev qs
       in
       let init =
-        let dx, dy, dz = Vec3.(p.(1) <-> p.(0)) in
-        let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
-        and az = Float.atan2 dy dx
-        and m = Quaternion.(to_multmatrix @@ of_euler Float.(pi /. 2., 0., pi /. -2.)) in
-        MultMatrix.mul Quaternion.(to_multmatrix (of_euler (0., -.ay, az))) m
+        let cardinal =
+          (* Determine an appropriate axis to pre-align the 2d shape with
+                 (from normal of (0., 0., 1.)), BEFORE alignment with the initial
+                 tangent of the path. Adjust for sign of major axes to prevent
+                 inconsistent flipping. *)
+          let similarity a b = Vec3.dot a b /. Vec3.(norm a *. norm b)
+          and n = Vec3.(normalize (p.(1) <-> p.(0))) in
+          let z = similarity n (0., 0., 1.)
+          and x = similarity n (1., 0., 0.)
+          and y = similarity n (0., 1., 0.) in
+          let abs_x = Float.abs x
+          and abs_y = Float.abs y
+          and abs_z = Float.abs z
+          and sgn_x = Util.sign x
+          and sgn_y = Util.sign y
+          and sgn_z = Util.sign z in
+          let comp a b =
+            if Float.compare (Float.abs (a -. b)) 0.01 = 1 then Float.compare a b else 0
+          in
+          match comp abs_x abs_y, comp abs_x abs_z, comp abs_y abs_z with
+          | 1, 1, _   -> sgn_x, 0., 0. (* x-axis *)
+          | -1, _, 1  -> 0., sgn_y, 0. (* y-axis *)
+          | 0, -1, -1 -> 0., 0., sgn_z (* xy equal, but less than z *)
+          | 0, _, _   -> 0., sgn_y, 0. (* xy equal, roughly following plane *)
+          | _         -> 0., 0., sgn_z
+        in
+        let d = Vec3.normalize Vec3.(p.(1) <-> p.(0)) in
+        MultMatrix.mul
+          Quaternion.(to_multmatrix @@ alignment cardinal d)
+          Quaternion.(to_multmatrix @@ alignment (0., 0., 1.) cardinal)
       in
       fun i ->
         if i = 0
         then MultMatrix.(mul (translation p.(0)) init)
-        else MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i + 1) accum_qs.(i)) init
+        else MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) accum_qs.(i - 1)) init
       )
   in
   let f i = scale i |> MultMatrix.mul (twist i) |> MultMatrix.mul (transform i) in
-  List.init (if euler then len else len - 1) f
+  List.init len f
