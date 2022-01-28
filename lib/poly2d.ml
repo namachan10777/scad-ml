@@ -74,3 +74,9 @@ let arc_through
     else acc
   in
   loop init 0 (if rev then start_a else start_a +. central_angle)
+
+let translate p = List.map (Vec2.translate p)
+let rotate r = List.map (Vec2.rotate r)
+let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)
+let scale s = List.map (Vec2.scale s)
+let mirror = List.map Vec2.mirror

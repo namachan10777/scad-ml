@@ -1,6 +1,7 @@
 let fa = 12. *. Float.pi /. 180.
 let fs = 2.
 let index_wrap ~len i = ((i mod len) + len) mod len
+let sign a = Float.(of_int @@ compare a 0.)
 
 let rev_array arr =
   let open Array in
@@ -16,6 +17,23 @@ let rev_array arr =
     incr i;
     decr j
   done
+
+let array_of_list_rev l =
+  match l with
+  | []       -> [||]
+  | hd :: tl ->
+    let len = 1 + List.length tl in
+    let a = Array.make len hd in
+    let r = ref tl in
+    (* Start at [len - 2] as [make] has placed [hd] at [t.(len - 1)]. *)
+    for i = len - 2 downto 0 do
+      match !r with
+      | []       -> assert false
+      | hd :: tl ->
+        a.(i) <- hd;
+        r := tl
+    done;
+    a
 
 let value_map_opt ~default f = function
   | Some a -> f a
