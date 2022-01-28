@@ -1,8 +1,10 @@
 open Scad_ml
 
+let elbow_shape =
+  [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
+
 let path () =
-  let shape = [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
-  and step = 0.005 in
+  let step = 0.005 in
   let f i =
     let t = Float.of_int i *. step in
     ( ((t /. 1.5) +. 0.5) *. 100. *. Float.cos (6. *. 360. *. t *. Float.pi /. 180.)
@@ -12,7 +14,7 @@ let path () =
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
     let transforms = Path.to_transforms path in
-    Poly3d.(to_scad @@ sweep ~transforms shape)
+    Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "ml_sweep_path.scad" in
   Scad.write oc scad;
   close_out oc
@@ -62,7 +64,7 @@ let spline_path () =
     List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
-    Poly3d.(to_scad @@ sweep ~transforms:(Path.to_transforms ~euler:true path) square)
+    Poly3d.(to_scad @@ sweep ~transforms:(Path.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
@@ -176,7 +178,7 @@ let polyround_sweep () =
   in
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path.to_transforms path in
+    let transforms = Path.to_transforms ~euler:false path in
     PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Poly3d.to_scad
   and oc = open_out "polyround_sweep.scad" in
   Scad.write oc scad;
@@ -216,6 +218,7 @@ let polyround_linear_extrude () =
   let scad =
     Poly2d.square ~center:true (3., 3.)
     |> List.map (Vec3.of_vec2 ~z:0.5)
+    |> List.map (Vec3.translate (1.5, 1.5, 0.))
     |> PolyRound.polyround_extrude
          ~slices:100
          ~fn:10
@@ -224,7 +227,7 @@ let polyround_linear_extrude () =
          ~twist:(2. *. Float.pi)
          ~center:false
          ~r1:0.5
-         ~r2:1.5
+         ~r2:1.4
          ~height:10.
     |> Poly3d.to_scad
   and oc = open_out "polyround_linear_extrude.scad" in
@@ -242,20 +245,18 @@ let helix_path () =
 
 let helix_sweep () =
   let scad =
-    let shape =
-      [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
-    and path = Path.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
-    let transforms = Path.to_transforms ~euler:true path in
-    Poly3d.(to_scad @@ sweep ~transforms shape)
+    let path = Path.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
+    (* let transforms = Path.to_transforms ~euler:true path in *)
+    let transforms =
+      Path.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
+    in
+    Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "helix_sweep.scad" in
   Scad.write oc scad;
   close_out oc
 
 let helix_extrude () =
   let scad =
-    let shape =
-      [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
-    in
     Poly3d.helix_extrude
       ~scale:(1., 1.)
       ~left:true
@@ -263,8 +264,32 @@ let helix_extrude () =
       ~n_turns:10
       ~r2:100.
       50.
-      shape
+      elbow_shape
     |> Poly3d.to_scad
   and oc = open_out "helix_extrude.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let sweep_starburst ~euler =
+  let scad =
+    let paths =
+      let d = 20.
+      and p (x, y, z) = [ x, y, z; x *. 2., y *. 2., z *. 2. ] in
+      let out = [ d, 0., 0.; d, 0., d; d, 0., -.d ] in
+      let f i =
+        List.map (fun s -> Vec3.rotate (0., 0., Float.(pi /. 4. *. i)) s |> p) out
+      in
+      p (0., 0., d) :: p (0., 0., -.d) :: List.concat_map f (List.init 8 Float.of_int)
+    in
+    let flat = Scad.polygon elbow_shape |> Scad.linear_extrude ~height:1.
+    and f path =
+      let transforms = Path.to_transforms ~euler path in
+      Poly3d.sweep ~transforms elbow_shape |> Poly3d.to_scad
+    in
+    Scad.union @@ (flat :: List.map f paths)
+  and oc =
+    open_out
+      (Printf.sprintf "sweep_starburst_%s.scad" (if euler then "euler" else "standard"))
+  in
   Scad.write oc scad;
   close_out oc
