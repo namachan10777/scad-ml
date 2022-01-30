@@ -2,6 +2,7 @@ let fa = 12. *. Float.pi /. 180.
 let fs = 2.
 let index_wrap ~len i = ((i mod len) + len) mod len
 let sign a = Float.(of_int @@ compare a 0.)
+let clamp ~min ~max a = Float.min (Float.max min a) max
 
 let rev_array arr =
   let open Array in

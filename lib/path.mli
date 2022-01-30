@@ -3,7 +3,6 @@ type t = Vec3.t list
 val total_travel : t -> float
 val cummulative_travel : t -> float list
 val to_continuous : t -> float -> Vec3.t
-val of_continuous : ?init:t -> ?rev:bool -> ?fn:int -> (float -> Vec3.t) -> t
 val resample : freq:[< `N of int | `Spacing of float ] -> t -> t
 
 val helix

@@ -41,8 +41,6 @@ let to_continuous path =
   in
   extrapolate
 
-let of_continuous = Bezier.curve
-
 let resample ~freq path =
   let n =
     match freq with
