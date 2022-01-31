@@ -46,7 +46,15 @@ let bezier_matrix =
       Tbl.add tbl n m;
       m
 
-module Make (V : Sigs.Vec) = struct
+module type S = sig
+  type vec
+
+  val make : vec list -> float -> vec
+  val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
+  val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
+end
+
+module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   open Path.Make (V)
 
   let make ps =
