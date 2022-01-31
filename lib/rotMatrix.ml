@@ -11,7 +11,7 @@ let of_row_list_exn l =
     in
     List.iteri set_row l;
     mat )
-  else failwith "Rotation matrix must have 3 rows."
+  else raise (Invalid_argument "Rotation matrix must have 3 rows.")
 
 let of_row_list l =
   try Ok (of_row_list_exn l) with
@@ -28,7 +28,7 @@ let of_col_list_exn l =
     in
     List.iteri set_col l;
     mat )
-  else failwith "Rotation matrix must have 3 columns."
+  else raise (Invalid_argument "Rotation matrix must have 3 columns.")
 
 let of_col_list l =
   try Ok (of_col_list_exn l) with
