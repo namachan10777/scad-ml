@@ -34,6 +34,14 @@ let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
   map (fun a -> a /. Float.of_int n) sum
 
+let lerp a b u = add (mul_scalar a (1. -. u)) (mul_scalar b u)
+
+let lerpn ?(endpoint = true) a b n =
+  let d = Float.of_int @@ if endpoint then n - 1 else n in
+  List.init n (fun i ->
+      let u = Float.of_int i /. d in
+      lerp a b u )
+
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y
 let get_z (_, _, z) = z
