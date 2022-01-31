@@ -64,7 +64,7 @@ let linear_extrude ?slices ?scale ?twist ?(center = false) ~height shape =
   and s = height /. Float.of_int slices in
   let transforms =
     List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
-    |> Path.to_transforms ?scale ?twist
+    |> Path3d.to_transforms ?scale ?twist
   in
   sweep ~transforms shape
 
@@ -78,11 +78,11 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
     (a *. rot_sign) +. (Float.pi /. 2.)
   in
   let transforms =
-    let path = Path.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
+    let path = Path3d.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
     let len = List.length path
     and id _ = MultMatrix.id in
-    let scale = Util.value_map_opt ~default:id (Path.scaler ~len) scale
-    and twist = Util.value_map_opt ~default:id (Path.twister ~len) twist in
+    let scale = Util.value_map_opt ~default:id (Path3d.scaler ~len) scale
+    and twist = Util.value_map_opt ~default:id (Path3d.twister ~len) twist in
     let f i trans =
       scale i
       |> MultMatrix.mul (twist i)

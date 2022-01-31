@@ -80,18 +80,6 @@ let travel
     ?(max_deflect = 0.01)
     (ps : a list)
   =
-  let total_travel path =
-    let len = Array.length path
-    and p = Array.unsafe_get path in
-    if len < 2
-    then 0.
-    else (
-      let sum = ref 0. in
-      for i = 0 to len - 2 do
-        sum := !sum +. V.distance (p i) (p (i + 1))
-      done;
-      !sum )
-  in
   let n_segs = List.length ps * 2
   and bz = bez (module V) ps in
   let d = Float.of_int n_segs in
@@ -111,7 +99,7 @@ let travel
       !mx
     in
     if deflection <= max_deflect
-    then total_travel path
+    then Path.total_travel' (module V) path
     else (
       let sum = ref 0. in
       for i = 0 to n_segs - 1 do

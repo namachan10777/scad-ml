@@ -145,7 +145,7 @@ let prune_radii_points rps =
     if i < len
     then (
       let ((x, y, r) as rp) = rps.(i) in
-      if (not (Poly2d.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+      if (not (Path2d.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
       then aux (i + 1) (rp :: acc)
       else aux (i + 1) acc )
     else acc
@@ -254,7 +254,7 @@ let polyround_extrude
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
     List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
-    |> Path.to_transforms ?scale ?twist
+    |> Path3d.to_transforms ?scale ?twist
   in
   polyround_sweep ?min_r ?fn ?cap_fn ~r1 ~r2 ~transforms rps
 

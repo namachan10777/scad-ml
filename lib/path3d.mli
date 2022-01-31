@@ -1,5 +1,6 @@
 type t = Vec3.t list
 
+val total_travel' : Vec3.t array -> float
 val total_travel : t -> float
 val cummulative_travel : t -> float list
 val to_continuous : t -> float -> Vec3.t

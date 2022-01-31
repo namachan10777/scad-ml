@@ -13,7 +13,7 @@ let path () =
   in
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path.to_transforms path in
+    let transforms = Path3d.to_transforms path in
     Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "ml_sweep_path.scad" in
   Scad.write oc scad;
@@ -64,7 +64,7 @@ let spline_path () =
     List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
-    Poly3d.(to_scad @@ sweep ~transforms:(Path.to_transforms ~euler:false path) square)
+    Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
@@ -74,7 +74,7 @@ let spline_path () =
 let bezier_path () = ()
 
 let arc_points () =
-  let arc = Poly2d.arc_through ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
+  let arc = Path2d.arc_through ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
   let scad =
     List.mapi
       (fun i (x, y) ->
@@ -178,7 +178,7 @@ let polyround_sweep () =
   in
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path.to_transforms ~euler:false path in
+    let transforms = Path3d.to_transforms ~euler:false path in
     PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Poly3d.to_scad
   and oc = open_out "polyround_sweep.scad" in
   Scad.write oc scad;
@@ -186,8 +186,8 @@ let polyround_sweep () =
 
 let resample_path () =
   let path = [ 0., 0., 0.; 5., 5., 5.; 5., 5., 15. ] in
-  (* let resampled = Path.resample ~freq:(`N 10) path in *)
-  let resampled = Path.resample ~freq:(`Spacing 1.) path in
+  (* let resampled = Path3d.resample ~freq:(`N 10) path in *)
+  let resampled = Path3d.resample ~freq:(`Spacing 1.) path in
   let old_marks =
     let s = Scad.color Color.Red @@ Scad.sphere 0.5 in
     List.map (fun p -> Scad.translate p s) path
@@ -236,7 +236,7 @@ let polyround_linear_extrude () =
 
 let helix_path () =
   let scad =
-    let pts = Path.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
+    let pts = Path3d.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
     let s = Scad.color Color.Red @@ Scad.sphere 1. in
     Scad.union @@ List.map (fun p -> Scad.translate p s) pts
   and oc = open_out "helix_path.scad" in
@@ -245,10 +245,10 @@ let helix_path () =
 
 let helix_sweep () =
   let scad =
-    let path = Path.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
-    (* let transforms = Path.to_transforms ~euler:true path in *)
+    let path = Path3d.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
+    (* let transforms = Path3d.to_transforms ~euler:true path in *)
     let transforms =
-      Path.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
+      Path3d.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
     in
     Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "helix_sweep.scad" in
@@ -283,7 +283,7 @@ let sweep_starburst ~euler =
     in
     let flat = Scad.polygon elbow_shape |> Scad.linear_extrude ~height:1.
     and f path =
-      let transforms = Path.to_transforms ~euler path in
+      let transforms = Path3d.to_transforms ~euler path in
       Poly3d.sweep ~transforms elbow_shape |> Poly3d.to_scad
     in
     Scad.union @@ (flat :: List.map f paths)
