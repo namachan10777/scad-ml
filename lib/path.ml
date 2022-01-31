@@ -129,9 +129,9 @@ let to_transforms ?(euler = false) ?scale ?twist path =
           let abs_x = Float.abs x
           and abs_y = Float.abs y
           and abs_z = Float.abs z
-          and sgn_x = Util.sign x
-          and sgn_y = Util.sign y
-          and sgn_z = Util.sign z in
+          and sgn_x = Math.sign x
+          and sgn_y = Math.sign y
+          and sgn_z = Math.sign z in
           let comp a b =
             if Float.compare (Float.abs (a -. b)) 0.01 = 1 then Float.compare a b else 0
           in
