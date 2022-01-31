@@ -1,11 +1,6 @@
 type t = Vec2.t list
 
-let colinear = Path.colinear (module Vec2)
-let total_travel' = Path.total_travel' (module Vec2)
-let total_travel = Path.total_travel (module Vec2)
-let cummulative_travel = Path.cummulative_travel (module Vec2)
-let to_continuous = Path.to_continuous (module Vec2)
-let resample ~freq = Path.resample (module Vec2) ~freq
+include Path.Make (Vec2)
 
 let arc_through
     ?(init = [])
@@ -15,7 +10,8 @@ let arc_through
     ((x2, y2) as p2)
     ((x3, y3) as p3)
   =
-  if colinear p1 p2 p3 then failwith "Arc points must form a valid triangle.";
+  if colinear p1 p2 p3
+  then raise (Invalid_argument "Arc points must form a valid triangle.");
   let ((cx, cy) as centre) =
     let d = (2. *. (x1 -. x3) *. (y3 -. y2)) +. (2. *. (x2 -. x3) *. (y1 -. y3))
     and m1 = Vec2.dot p1 p1 -. Vec2.dot p3 p3

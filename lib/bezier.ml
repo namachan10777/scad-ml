@@ -46,74 +46,67 @@ let bezier_matrix =
       Tbl.add tbl n m;
       m
 
-let bez (type a) (module V : Sigs.Vec with type t = a) ps : float -> a =
-  let ps = Array.of_list ps in
-  let n = Array.length ps - 1 in
-  let bm = bezier_matrix n
-  and m = Array.make (n + 1) V.zero in
-  for i = 0 to n do
-    let row = bm.(i) in
-    for j = 0 to n do
-      m.(i) <- V.add m.(i) (V.mul_scalar ps.(j) row.(j))
-    done
-  done;
-  fun u ->
-    let pt = ref V.zero in
+module Make (V : Sigs.Vec) = struct
+  open Path.Make (V)
+
+  let make ps =
+    let ps = Array.of_list ps in
+    let n = Array.length ps - 1 in
+    let bm = bezier_matrix n
+    and m = Array.make (n + 1) V.zero in
     for i = 0 to n do
-      pt := V.add !pt (V.mul_scalar m.(i) (Float.pow u (Float.of_int i)))
+      let row = bm.(i) in
+      for j = 0 to n do
+        m.(i) <- V.add m.(i) (V.mul_scalar ps.(j) row.(j))
+      done
     done;
-    !pt
-
-let vec2 = bez (module Vec2)
-let vec3 = bez (module Vec3)
-
-let curve ?(init = []) ?(rev = false) ?(fn = 16) bez =
-  let dt = 1. /. Float.of_int fn *. if rev then 1. else -1. in
-  let rec loop acc i t = if i <= fn then loop (bez t :: acc) (i + 1) (t +. dt) else acc in
-  loop init 0 (if rev then 0. else 1.)
-
-let travel
-    (type a)
-    (module V : Sigs.Vec with type t = a)
-    ?(start_u = 0.)
-    ?(end_u = 1.)
-    ?(max_deflect = 0.01)
-    (ps : a list)
-  =
-  let n_segs = List.length ps * 2
-  and bz = bez (module V) ps in
-  let d = Float.of_int n_segs in
-  let rec aux su eu =
-    let path =
-      let f i = bz (Math.lerp su eu (Float.of_int i /. d)) in
-      Array.init (n_segs + 1) f
-    in
-    (* maximum deviation from a straight line *)
-    let deflection =
-      let mx = ref Float.min_float
-      and p = Array.unsafe_get path in
-      for i = 0 to n_segs - 2 do
-        let mid_point = V.div_scalar (V.add (p i) (p (i + 2))) 2. in
-        mx := Float.max !mx (V.distance (p (i + 1)) mid_point)
+    fun u ->
+      let pt = ref V.zero in
+      for i = 0 to n do
+        pt := V.add !pt (V.mul_scalar m.(i) (Float.pow u (Float.of_int i)))
       done;
-      !mx
-    in
-    if deflection <= max_deflect
-    then Path.total_travel' (module V) path
-    else (
-      let sum = ref 0. in
-      for i = 0 to n_segs - 1 do
-        let i = Float.of_int i in
-        let su' = Math.lerp su eu (i /. d)
-        and eu' = Math.lerp su eu ((i +. 1.) /. d) in
-        sum := !sum +. aux su' eu'
-      done;
-      !sum )
-  in
-  aux start_u end_u
+      !pt
 
-let travel_vec2 = travel (module Vec2)
-let travel_vec3 = travel (module Vec3)
+  let curve ?(init = []) ?(rev = false) ?(fn = 16) bez =
+    let dt = 1. /. Float.of_int fn *. if rev then 1. else -1. in
+    let rec loop acc i t =
+      if i <= fn then loop (bez t :: acc) (i + 1) (t +. dt) else acc
+    in
+    loop init 0 (if rev then 0. else 1.)
+
+  let travel ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
+    let n_segs = List.length ps * 2
+    and bz = make ps in
+    let d = Float.of_int n_segs in
+    let rec aux su eu =
+      let path =
+        let f i = bz (Math.lerp su eu (Float.of_int i /. d)) in
+        Array.init (n_segs + 1) f
+      in
+      (* maximum deviation from a straight line *)
+      let deflection =
+        let mx = ref Float.min_float
+        and p = Array.unsafe_get path in
+        for i = 0 to n_segs - 2 do
+          let mid_point = V.div_scalar (V.add (p i) (p (i + 2))) 2. in
+          mx := Float.max !mx (V.distance (p (i + 1)) mid_point)
+        done;
+        !mx
+      in
+      if deflection <= max_deflect
+      then total_travel' path
+      else (
+        let sum = ref 0. in
+        for i = 0 to n_segs - 1 do
+          let i = Float.of_int i in
+          let su' = Math.lerp su eu (i /. d)
+          and eu' = Math.lerp su eu ((i +. 1.) /. d) in
+          sum := !sum +. aux su' eu'
+        done;
+        !sum )
+    in
+    aux start_u end_u
+end
 
 (* TODO: bezier_degenerate_vnf (and its dependencies) are the last required
     piece from beziers required to work on rounded. Some others would be nice

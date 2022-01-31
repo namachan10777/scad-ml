@@ -1,10 +1,6 @@
 type t = Vec3.t list
 
-let total_travel' = Path.total_travel' (module Vec3)
-let total_travel = Path.total_travel (module Vec3)
-let cummulative_travel = Path.cummulative_travel (module Vec3)
-let to_continuous = Path.to_continuous (module Vec3)
-let resample ~freq = Path.resample (module Vec3) ~freq
+include Path.Make (Vec3)
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in
@@ -32,7 +28,7 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = MultMatrix.id in
-  if len < 2 then failwith "Invalid path (too few points).";
+  if len < 2 then raise (Invalid_argument "Invalid path (too few points).");
   let scale = Util.value_map_opt ~default:id (scaler ~len) scale
   and twist = Util.value_map_opt ~default:id (twister ~len) twist
   and transform =
@@ -110,3 +106,14 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   in
   let f i = scale i |> MultMatrix.mul (twist i) |> MultMatrix.mul (transform i) in
   List.init len f
+
+let translate p = List.map (Vec3.translate p)
+let rotate r = List.map (Vec3.rotate r)
+let rotate_about_pt r p = List.map (Vec3.rotate_about_pt r p)
+let quaternion q = List.map (Quaternion.rotate_vec3 q)
+let quaternion_about_pt q p = List.map (Quaternion.rotate_vec3_about_pt q p)
+let vector_rotate ax r = quaternion (Quaternion.make ax r)
+let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
+let multmatrix m = List.map (MultMatrix.transform m)
+let scale s = List.map (Vec3.scale s)
+let mirror ax = List.map (Vec3.mirror ax)

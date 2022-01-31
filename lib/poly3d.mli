@@ -1,18 +1,16 @@
-type layer = Vec3.t list
+type t
 
-type t =
-  { n_layers : int
-  ; n_facets : int
-  ; points : Vec3.t list
-  ; faces : int list list
-  }
+val empty : t
+val n_points : t -> int
+val points : t -> Vec3.t list
+val faces : t -> int list list
 
 (** [of_layers ?closed layers]
 
     Create a polyhedron from a list of layers (counter_clockwise loops of 3d
     points). Setting [closed] to true will connect the open faces of the first
     and last layers (defaults to [false]). *)
-val of_layers : ?closed:bool -> layer list -> t
+val of_layers : ?closed:bool -> Vec3.t list list -> t
 
 (** [sweep ?closed ?convexity ~transforms shape]
 
@@ -50,6 +48,7 @@ val helix_extrude
   -> (float * float) list
   -> t
 
+val join : t list -> t
 val rev_faces : t -> t
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t

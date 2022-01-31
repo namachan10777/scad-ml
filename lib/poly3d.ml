@@ -1,13 +1,15 @@
 open Util
 
-type layer = Vec3.t list
-
 type t =
-  { n_layers : int
-  ; n_facets : int
+  { n_points : int
   ; points : Vec3.t list
   ; faces : int list list
   }
+
+let empty = { n_points = 0; points = []; faces = [] }
+let n_points t = t.n_points
+let points t = t.points
+let faces t = t.faces
 
 let of_layers ?(closed = false) layers =
   let n_layers = List.length layers
@@ -40,7 +42,7 @@ let of_layers ?(closed = false) layers =
       and top_cap = List.init n_facets (fun i -> i + (n_facets * (n_layers - 1))) in
       List.rev @@ (top_cap :: bottom_cap :: looped_faces) )
   in
-  { n_layers; n_facets; points; faces }
+  { n_points = n_layers * n_facets; points; faces }
 
 let enforce_winding w shape =
   let reverse =
@@ -93,21 +95,29 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
   in
   sweep ~winding ~transforms shape
 
+let join = function
+  | [] -> empty
+  | [ t ] -> t
+  | { n_points; points; faces } :: ts ->
+    let f (n, ps, fs) t =
+      let offset = List.map (List.map (( + ) n)) t.faces in
+      n + t.n_points, t.points :: ps, offset :: fs
+    in
+    let n_points, ps, fs = List.fold_left f (n_points, [ points ], [ faces ]) ts in
+    { n_points; points = List.concat (List.rev ps); faces = List.concat (List.rev fs) }
+
 let rev_faces t = { t with faces = List.map List.rev t.faces }
-let translate p t = { t with points = List.map (Vec3.translate p) t.points }
-let rotate r t = { t with points = List.map (Vec3.rotate r) t.points }
-
-let rotate_about_pt r p t =
-  { t with points = List.map (Vec3.rotate_about_pt r p) t.points }
-
-let quaternion q t = { t with points = List.map (Quaternion.rotate_vec3 q) t.points }
+let translate p t = { t with points = Path3d.translate p t.points }
+let rotate r t = { t with points = Path3d.rotate r t.points }
+let rotate_about_pt r p t = { t with points = Path3d.rotate_about_pt r p t.points }
+let quaternion q t = { t with points = Path3d.quaternion q t.points }
 
 let quaternion_about_pt q p t =
-  { t with points = List.map (Quaternion.rotate_vec3_about_pt q p) t.points }
+  { t with points = Path3d.quaternion_about_pt q p t.points }
 
 let vector_rotate ax r = quaternion (Quaternion.make ax r)
 let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
-let multmatrix m t = { t with points = List.map (MultMatrix.transform m) t.points }
-let scale s t = { t with points = List.map (Vec3.scale s) t.points }
-let mirror ax t = rev_faces { t with points = List.map (Vec3.mirror ax) t.points }
+let multmatrix m t = { t with points = Path3d.multmatrix m t.points }
+let scale s t = { t with points = Path3d.scale s t.points }
+let mirror ax t = rev_faces { t with points = Path3d.mirror ax t.points }
 let to_scad ?convexity { points; faces; _ } = Scad.polyhedron ?convexity points faces

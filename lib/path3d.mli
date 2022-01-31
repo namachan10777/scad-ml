@@ -42,3 +42,14 @@ val twister : len:int -> float -> int -> MultMatrix.t
    applied to along the path, analogous to the parameters of the same names in
    {!Scad.linear_extrude}. *)
 val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMatrix.t list
+
+val translate : Vec3.t -> t -> t
+val rotate : Vec3.t -> t -> t
+val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
+val quaternion : Quaternion.t -> t -> t
+val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
+val vector_rotate : Vec3.t -> float -> t -> t
+val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
+val multmatrix : MultMatrix.t -> t -> t
+val scale : Vec3.t -> t -> t
+val mirror : Vec3.t -> t -> t
