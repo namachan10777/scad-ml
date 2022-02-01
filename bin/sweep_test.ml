@@ -294,12 +294,12 @@ let sweep_starburst ~euler =
   Scad.write oc scad;
   close_out oc
 
-let ragged_tri_poly () =
+let tri_mesh_poly () =
   let scad =
     List.init 10 (fun y ->
         let y = y + 1 in
         List.init y (fun x -> Float.(of_int x, of_int y, of_int y)) )
-    |> Poly3d.of_ragged_layers
+    |> Poly3d.tri_mesh
     |> Poly3d.to_scad
   and oc = open_out "tri_array.scad" in
   Scad.write oc scad;

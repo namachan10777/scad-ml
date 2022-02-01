@@ -12,46 +12,52 @@ let points t = t.points
 let faces t = t.faces
 
 let of_layers ?(closed = false) layers =
-  let n_layers = List.length layers
-  and n_facets = List.length (List.hd layers)
-  and points = List.concat layers in
-  let faces =
-    let last_seg = n_layers - (if closed then 0 else 1) - 1
-    and last_face = n_facets - 1 in
-    let rec loop acc seg face =
-      let acc =
-        let s0 = seg mod n_layers
-        and s1 = (seg + 1) mod n_layers
-        and f1 = (face + 1) mod n_facets in
-        [ (s0 * n_facets) + face
-        ; (s0 * n_facets) + f1
-        ; (s1 * n_facets) + f1
-        ; (s1 * n_facets) + face
-        ]
-        :: acc
+  match layers with
+  | []       -> empty
+  | [ _ ]    -> raise (Invalid_argument "Only one layer provided.")
+  | hd :: tl ->
+    let n_layers = List.length layers
+    and n_facets = List.length hd
+    and points = List.concat layers in
+    if not (List.for_all (fun l -> List.length l = n_facets) tl)
+    then raise (Invalid_argument "Inconsistent layer length.");
+    let faces =
+      let last_seg = n_layers - (if closed then 0 else 1) - 1
+      and last_face = n_facets - 1 in
+      let rec loop acc seg face =
+        let acc =
+          let s0 = seg mod n_layers
+          and s1 = (seg + 1) mod n_layers
+          and f1 = (face + 1) mod n_facets in
+          [ (s0 * n_facets) + face
+          ; (s0 * n_facets) + f1
+          ; (s1 * n_facets) + f1
+          ; (s1 * n_facets) + face
+          ]
+          :: acc
+        in
+        if face = last_face
+        then if seg = last_seg then acc else loop acc (seg + 1) 0
+        else loop acc seg (face + 1)
       in
-      if face = last_face
-      then if seg = last_seg then acc else loop acc (seg + 1) 0
-      else loop acc seg (face + 1)
+      let looped_faces = loop [] 0 0 in
+      if closed
+      then List.rev looped_faces
+      else (
+        let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
+        and top_cap = List.init n_facets (fun i -> i + (n_facets * (n_layers - 1))) in
+        List.rev @@ (top_cap :: bottom_cap :: looped_faces) )
     in
-    let looped_faces = loop [] 0 0 in
-    if closed
-    then List.rev looped_faces
-    else (
-      let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
-      and top_cap = List.init n_facets (fun i -> i + (n_facets * (n_layers - 1))) in
-      List.rev @@ (top_cap :: bottom_cap :: looped_faces) )
-  in
-  { n_points = n_layers * n_facets; points; faces }
+    { n_points = n_layers * n_facets; points; faces }
 
-let of_ragged_layers ?(closed = false) layers =
+let tri_mesh ?(closed = false) rows =
   let starts_lenghts, points =
-    let f (start, starts_lengths, points) layer =
+    let f (start, starts_lengths, points) row =
       let g (i, ps) p = i + 1, p :: ps in
-      let len, points = List.fold_left g (0, points) layer in
+      let len, points = List.fold_left g (0, points) row in
       start + len, (start, len) :: starts_lengths, points
     in
-    let _, starts_lengths, points = List.fold_left f (0, [], []) layers in
+    let _, starts_lengths, points = List.fold_left f (0, [], []) rows in
     List.rev starts_lengths, List.rev points
   in
   match starts_lenghts with
@@ -118,6 +124,12 @@ let of_ragged_layers ?(closed = false) layers =
       | _              -> failwith "unreachable"
     in
     { n_points = Array.length verts; points; faces = List.filter cull_degenerate faces }
+
+let mesh_of_layer ?(reverse = false) layer =
+  let n_points, points, face =
+    List.fold_left (fun (n, ps, fs) p -> n + 1, p :: ps, n :: fs) (0, [], []) layer
+  in
+  { n_points; points; faces = [ (if reverse then List.rev face else face) ] }
 
 let enforce_winding w shape =
   let reverse =
