@@ -49,15 +49,16 @@ let bezier_matrix =
 module type S = sig
   type vec
 
-  val make : vec list -> float -> vec
+  val bez : vec list -> float -> vec
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
+  val patch : vec list list -> float -> float -> vec
 end
 
 module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   open Path.Make (V)
 
-  let make ps =
+  let bez ps =
     let ps = Array.of_list ps in
     let n = Array.length ps - 1 in
     let bm = bezier_matrix n
@@ -84,7 +85,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
 
   let travel ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
     let n_segs = List.length ps * 2
-    and bz = make ps in
+    and bz = bez ps in
     let d = Float.of_int n_segs in
     let rec aux su eu =
       let path =
@@ -114,6 +115,14 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         !sum )
     in
     aux start_u end_u
+
+  let patch grid =
+    let horizontal_bezs = List.map bez grid in
+    fun u ->
+      let vertical_bez = bez @@ List.map (fun bz -> bz u) horizontal_bezs in
+      vertical_bez
+
+  (* let degenerate_patch_to_poly3d = () *)
 end
 
 (* TODO: bezier_degenerate_vnf (and its dependencies) are the last required

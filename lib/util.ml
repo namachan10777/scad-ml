@@ -1,5 +1,6 @@
 let fa = 12. *. Float.pi /. 180.
 let fs = 2.
+let epsilon = 1e-9
 let index_wrap ~len i = ((i mod len) + len) mod len
 
 let rev_array arr =
@@ -37,6 +38,18 @@ let array_of_list_rev l =
 let value_map_opt ~default f = function
   | Some a -> f a
   | None   -> default
+
+let transpose_row_list l =
+  let m = Array.of_list (List.map Array.of_list l) in
+  let col_len = Array.length m
+  and row_len = Array.length m.(0) in
+  if Array.for_all (fun r -> Array.length r = row_len) m
+  then List.init row_len (fun c -> List.init col_len (fun r -> m.(r).(c)))
+  else raise (Invalid_argument "Input lists are ragged (not a matrix).")
+
+let prepend_init n f init =
+  let rec loop acc i = if i < n then loop (f i :: acc) (i + 1) else acc in
+  loop init 0
 
 (* TODO: Add support for fa and fs where applicable and update this accordingly?
 https://github.com/openscad/openscad/blob/dd7f6c0256ccfbd1e6efa6c06b9a12ef3565c29c/src/GeometryEvaluator.cc#L1075

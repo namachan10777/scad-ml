@@ -44,6 +44,81 @@ let of_layers ?(closed = false) layers =
   in
   { n_points = n_layers * n_facets; points; faces }
 
+let of_ragged_layers ?(closed = false) layers =
+  let starts_lenghts, points =
+    let f (start, starts_lengths, points) layer =
+      let g (i, ps) p = i + 1, p :: ps in
+      let len, points = List.fold_left g (0, points) layer in
+      start + len, (start, len) :: starts_lengths, points
+    in
+    let _, starts_lengths, points = List.fold_left f (0, [], []) layers in
+    List.rev starts_lengths, List.rev points
+  in
+  match starts_lenghts with
+  | [] | [ _ ] -> empty
+  | hd :: tl   ->
+    let f ((start, len), faces) ((next_start, next_len) as next) =
+      let faces =
+        match next_len - len with
+        | 0     ->
+          let a i = [ i + start; i + start + 1; i + next_start ]
+          and b i = [ i + start + 1; i + next_start + 1; i + next_start ] in
+          Util.prepend_init (len - 1) a faces |> Util.prepend_init (len - 1) b
+        | 1     ->
+          let a i = [ i + start; i + start + 1; i + next_start + 1 ]
+          and b i = [ i + start; i + next_start + 1; i + next_start ] in
+          Util.prepend_init (len - 1) a faces |> Util.prepend_init len b
+        | -1    ->
+          let a i = [ i + start + 1; i + next_start + 1; i + next_start ]
+          and b i = [ i + start; i + start + 1; i + next_start ] in
+          Util.prepend_init (len - 2) a faces |> Util.prepend_init (len - 1) b
+        | 2     ->
+          let count = Float.(to_int @@ floor @@ ((of_int len -. 1.) /. 2.)) in
+          let a i = [ i + start; i + start + 1; i + next_start + 1 ]
+          and b i =
+            let i = i + count in
+            [ i + start; i + start + 1; i + next_start + 2 ]
+          and c i = [ i + start; i + next_start + 1; i + next_start ]
+          and d i =
+            let i = i + count + 1 in
+            [ i + start - 1; i + next_start + 1; i + next_start ]
+          in
+          Util.prepend_init count a faces
+          |> Util.prepend_init (len - count - 1) b
+          |> Util.prepend_init (count + 1) c
+          |> Util.prepend_init (next_len - 2 - count) d
+        | -2    ->
+          let count = Float.(to_int @@ floor @@ ((of_int len -. 1.) /. 2.)) in
+          let a i = [ i + next_start; i + start + 1; i + next_start + 1 ]
+          and b i =
+            let i = i + count - 1 in
+            [ i + next_start; i + start + 2; i + next_start + 1 ]
+          and c i = [ i + next_start; i + start; i + start + 1 ]
+          and d i =
+            let i = i + count in
+            [ i + next_start - 1; i + start; i + start + 1 ]
+          in
+          Util.prepend_init (count - 1) a faces
+          |> Util.prepend_init (len - count - 2) b
+          |> Util.prepend_init count c
+          |> Util.prepend_init (next_len + 1 - count) d
+        | delta ->
+          let s = Printf.sprintf "Unsupported layer length difference of %i" delta in
+          raise (Invalid_argument s)
+      in
+      next, faces
+    in
+    let _, faces = List.fold_left f (hd, []) (if closed then tl @ [ hd ] else tl)
+    and verts = Array.of_list points in
+    let cull_degenerate =
+      let v = Array.unsafe_get verts in
+      let not_degen a b = Float.compare (Vec3.distance (v a) (v b)) Util.epsilon = 1 in
+      function
+      | [ i0; i1; i2 ] -> not_degen i0 i1 && not_degen i1 i2 && not_degen i2 i0
+      | _              -> failwith "unreachable"
+    in
+    { n_points = Array.length verts; points; faces = List.filter cull_degenerate faces }
+
 let enforce_winding w shape =
   let reverse =
     match w with

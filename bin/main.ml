@@ -20,4 +20,5 @@ let () =
   Sweep_test.helix_sweep ();
   Sweep_test.helix_extrude ();
   Sweep_test.sweep_starburst ~euler:true;
-  Sweep_test.sweep_starburst ~euler:false
+  Sweep_test.sweep_starburst ~euler:false;
+  Sweep_test.ragged_tri_poly ()

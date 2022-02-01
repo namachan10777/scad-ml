@@ -12,6 +12,8 @@ val faces : t -> int list list
     and last layers (defaults to [false]). *)
 val of_layers : ?closed:bool -> Vec3.t list list -> t
 
+val of_ragged_layers : ?closed:bool -> Vec3.t list list -> t
+
 (** [sweep ?closed ?convexity ~transforms shape]
 
     Create a polyhedron by sweeping the given [shape], described as a 2d
