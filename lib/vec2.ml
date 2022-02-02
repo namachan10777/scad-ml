@@ -20,6 +20,7 @@ let equal a b =
 
 let norm (x, y) = Float.sqrt ((x *. x) +. (y *. y))
 let distance a b = norm (sub a b)
+let approx ?(eps = Util.epsilon) a b = Float.(compare (distance a b) eps) < 1
 
 let normalize ((x, y) as t) =
   let n = norm t in
@@ -38,6 +39,15 @@ let lerpn ?(endpoint = true) a b n =
   List.init n (fun i ->
       let u = Float.of_int i /. d in
       lerp a b u )
+
+let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
+let angle_points a b c = angle (sub a b) (sub c b)
+
+let colinear p1 p2 p3 =
+  let a = distance p1 p2
+  and b = distance p2 p3
+  and c = distance p3 p1 in
+  a +. b < c || b +. c < a || c +. a < b
 
 let get_x (x, _) = x
 let get_y (_, y) = y

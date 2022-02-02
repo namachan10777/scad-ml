@@ -145,7 +145,7 @@ let prune_radii_points rps =
     if i < len
     then (
       let ((x, y, r) as rp) = rps.(i) in
-      if (not (Path2d.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+      if (not (Vec2.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
       then aux (i + 1) (rp :: acc)
       else aux (i + 1) acc )
     else acc

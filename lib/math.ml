@@ -11,3 +11,4 @@ let lerpn ?(endpoint = true) a b n =
 let quant v q = Float.floor (v /. (q +. 0.5)) *. q
 let quant_down v q = Float.floor (v /. q) *. q
 let quant_up v q = Float.ceil (v /. q) *. q
+let approx ?(eps = Util.epsilon) a b = Float.(compare (abs (a -. b)) eps) < 1

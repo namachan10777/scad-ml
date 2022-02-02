@@ -6,6 +6,12 @@ module type Vec = sig
 
   val equal : t -> t -> bool
 
+  (** [approx ?eps a b]
+
+    Returns true if the distance between vectors [a] and [b] is less than or
+    equal to the epsilon [eps]. *)
+  val approx : ?eps:float -> t -> t -> bool
+
   (** {1 Basic Arithmetic} *)
 
   (** [horizontal_op f a b]
@@ -88,16 +94,31 @@ module type Vec = sig
     Calculate the mean / average of all vectors in [l]. *)
   val mean : t list -> t
 
+  (** [angle a b]
+
+    Calculate the angle between the vectors [a] and [b]. *)
+  val angle : t -> t -> float
+
+  (** [angle_points a b]
+
+    Calculate the angle between the points [a], [b], and [c]. *)
+  val angle_points : t -> t -> t -> float
+
+  (** [colinear p1 p2 p3]
+
+    Returns [true] if [p2] lies on the line between [p1] and [p3]. *)
+  val colinear : t -> t -> t -> bool
+
   (** [lerp a b u]
 
-      Linearly interpolate between vectors [a] and [b]. *)
+    Linearly interpolate between vectors [a] and [b]. *)
   val lerp : t -> t -> float -> t
 
   (** [lerpn a b n]
 
-      Linearly interpolate [n] vectors between vectors [a] and [b]. If
-      [endpoint] is [true], the last vector will be equal to [b], otherwise, it
-      will be about [a + (b - a) * (1 - 1 / n)]. *)
+    Linearly interpolate [n] vectors between vectors [a] and [b]. If [endpoint]
+    is [true], the last vector will be equal to [b], otherwise, it will be about
+    [a + (b - a) * (1 - 1 / n)]. *)
   val lerpn : ?endpoint:bool -> t -> t -> int -> t list
 
   (** {1 Utilities} *)

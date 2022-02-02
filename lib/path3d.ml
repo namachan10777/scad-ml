@@ -2,6 +2,15 @@ type t = Vec3.t list
 
 include Path.Make (Vec3)
 
+let project_plane (a, b, c) p =
+  let open Vec3 in
+  if colinear a b c then raise (Invalid_argument "Plane points must not be colinear.");
+  let v = sub c a
+  and ((yx, yy, yz) as y_ax) = normalize (sub b a) in
+  let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in
+  let x, y, z = sub p a in
+  (x *. xx) +. (y *. xy) +. (z *. xz), (x *. yx) +. (y *. yy) +. (z *. yz)
+
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in
   let n_frags = Util.helical_fragments ?fn ?fa ?fs (Float.max r1 r2) in

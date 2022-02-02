@@ -20,6 +20,7 @@ let equal a b =
 
 let norm (x, y, z) = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
 let distance a b = norm (sub a b)
+let approx ?(eps = Util.epsilon) a b = Float.(compare (distance a b) eps) < 1
 
 let normalize ((x, y, z) as t) =
   let n = norm t in
@@ -33,6 +34,15 @@ let cross (x1, y1, z1) (x2, y2, z2) =
 let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
   map (fun a -> a /. Float.of_int n) sum
+
+let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
+let angle_points a b c = angle (sub a b) (sub c b)
+
+let colinear p1 p2 p3 =
+  let a = distance p1 p2
+  and b = distance p2 p3
+  and c = distance p3 p1 in
+  a +. b < c || b +. c < a || c +. a < b
 
 let lerp a b u = add (mul_scalar a (1. -. u)) (mul_scalar b u)
 

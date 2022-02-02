@@ -1,10 +1,4 @@
 module Make (V : Sigs.Vec) = struct
-  let colinear p1 p2 p3 =
-    let a = V.distance p1 p2
-    and b = V.distance p2 p3
-    and c = V.distance p3 p1 in
-    a +. b < c || b +. c < a || c +. a < b
-
   let total_travel' path =
     let len = Array.length path
     and p = Array.unsafe_get path in
