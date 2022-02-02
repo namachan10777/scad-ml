@@ -27,6 +27,7 @@ let normalize ((x, y) as t) =
   if n > 0. then x /. n, y /. n else t
 
 let dot (x1, y1) (x2, y2) = (x1 *. x2) +. (y1 *. y2)
+let cross (x1, y1) (x2, y2) = 0., 0., (x1 *. y2) -. (y1 *. x2)
 
 let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in

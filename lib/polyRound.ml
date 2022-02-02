@@ -1,11 +1,5 @@
 open Util
 
-let cosine_rule_angle p1 p2 p3 =
-  let d12 = Vec2.distance p1 p2
-  and d13 = Vec2.distance p1 p3
-  and d23 = Vec2.distance p2 p3 in
-  Float.acos (((d23 *. d23) +. (d12 *. d12) -. (d13 *. d13)) /. (2. *. d23 *. d12))
-
 let invtan run rise =
   let a = Float.(abs @@ atan (rise /. run)) in
   match Float.(compare rise 0., compare run 0.) with
@@ -17,7 +11,7 @@ let invtan run rise =
   | -1, -1 -> Float.pi +. a
   | -1, 0  -> Float.pi *. 1.5
   | -1, 1  -> (2. *. Float.pi) -. a
-  | _      -> raise (Invalid_argument "PolyRound: inverse tan error, both args = 0.")
+  | _      -> raise (Invalid_argument "Run and rise cannot both = 0.")
 
 let get_angle (x1, y1) (x2, y2) =
   if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
@@ -34,7 +28,7 @@ let offset_poly ~offset ps =
       let p1 = x1, y1
       and p2 = x2, y2
       and p3 = x3, y3 in
-      let path_angle = cosine_rule_angle p1 p2 p3
+      let path_angle = Vec2.angle_points p1 p2 p3
       and local_sign = Poly2d.clockwise_sign' [| p1; p2; p3 |] in
       let radius = cw_sign *. local_sign *. offset /. Float.sin (path_angle /. 2.)
       and angle_to_centre =
@@ -61,7 +55,7 @@ let offset_poly ~offset ps =
 let arc_about_centre ?(mode = `Shortest) ~fn p1 p2 ((cx, cy) as centre) =
   let sign = Poly2d.clockwise_sign' [| centre; p1; p2 |] in
   let step_a =
-    let path_angle = cosine_rule_angle p2 centre p1 in
+    let path_angle = Vec2.angle_points p2 centre p1 in
     let arc_angle =
       match mode with
       | `Shortest -> path_angle
@@ -87,9 +81,9 @@ let round_5_points (x1, y1, _) (x2, y2, r2) (x3, y3, r3) (x4, y4, r4) (x5, y5, _
   and p3 = x3, y3
   and p4 = x4, y4
   and p5 = x5, y5 in
-  let half_a2 = cosine_rule_angle p1 p2 p3 /. 2.
-  and half_a3 = cosine_rule_angle p2 p3 p4 /. 2.
-  and half_a4 = cosine_rule_angle p3 p4 p5 /. 2.
+  let half_a2 = Vec2.angle_points p1 p2 p3 /. 2.
+  and half_a3 = Vec2.angle_points p2 p3 p4 /. 2.
+  and half_a4 = Vec2.angle_points p3 p4 p5 /. 2.
   and d23 = Vec2.distance p2 p3
   and d34 = Vec2.distance p3 p4 in
   let new_r =
@@ -121,7 +115,7 @@ let round_3_points (x1, y1, _) (x2, y2, r2) (x3, y3, _) =
   let p1 = x1, y1
   and p2 = x2, y2
   and p3 = x3, y3 in
-  let path_angle = cosine_rule_angle p1 p2 p3 in
+  let path_angle = Vec2.angle_points p1 p2 p3 in
   let tan_dist = r2 /. Float.tan (path_angle /. 2.)
   and radius = r2 /. Float.sin (path_angle /. 2.) in
   let tangent_point a b =

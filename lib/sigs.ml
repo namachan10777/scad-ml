@@ -89,6 +89,12 @@ module type Vec = sig
     Vector dot product of [a] and [b]. *)
   val dot : t -> t -> float
 
+  (** [cross a b]
+
+    Vector cross product of [a] and [b]. In the case of 2d vectors, the cross
+    product is performed with an assumed z = 0. *)
+  val cross : t -> t -> float * float * float
+
   (** [mean l]
 
     Calculate the mean / average of all vectors in [l]. *)

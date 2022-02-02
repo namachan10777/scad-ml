@@ -1,12 +1,5 @@
 include Sigs.Vec with type t = float * float * float
 
-(** {1 3d arithmatic (not defined in 2D)}*)
-
-(** [cross a b]
-
-    Vector cross product of [a] and [b]. *)
-val cross : t -> t -> t
-
 (** {1 Transformations}
 
     Equivalent to those found in {!module:Scad}. Quaternion operations are
