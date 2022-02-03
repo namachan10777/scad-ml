@@ -1,4 +1,7 @@
 module Make (V : Sigs.Vec) = struct
+  type vec = V.t
+  type t = vec list
+
   let total_travel' path =
     let len = Array.length path
     and p = Array.unsafe_get path in

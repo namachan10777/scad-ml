@@ -35,6 +35,15 @@ let array_of_list_rev l =
     done;
     a
 
+let deduplicate list ~equal =
+  let rec loop acc last = function
+    | []       -> last :: acc
+    | hd :: tl -> if equal hd last then loop acc last tl else loop (last :: acc) hd tl
+  in
+  match list with
+  | []       -> []
+  | hd :: tl -> List.rev (loop [] hd tl)
+
 let value_map_opt ~default f = function
   | Some a -> f a
   | None   -> default

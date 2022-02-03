@@ -9,6 +9,7 @@ module CubicSpline = CubicSpline
 module Poly2d = Poly2d
 module Poly3d = Poly3d
 module PolyRound = PolyRound
+module Rounding2d = Rounding2d
 module Path2d = Path2d
 module Path3d = Path3d
 

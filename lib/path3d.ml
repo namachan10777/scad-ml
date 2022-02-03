@@ -1,5 +1,3 @@
-type t = Vec3.t list
-
 include Path.Make (Vec3)
 
 let project_plane (a, b, c) p =
@@ -10,6 +8,23 @@ let project_plane (a, b, c) p =
   let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in
   let x, y, z = sub p a in
   (x *. xx) +. (y *. xy) +. (z *. xz), (x *. yx) +. (y *. yy) +. (z *. yz)
+
+let lift_plane (a, b, c) (px, py) =
+  let open Vec3 in
+  if colinear a b c then raise (Invalid_argument "Plane points must not be colinear.");
+  let v = sub c a
+  and ((yx, yy, yz) as y_ax) = normalize (sub b a) in
+  let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in
+  let p = (px *. xx) +. (py *. yx), (px *. xy) +. (py *. yy), (px *. xz) +. (py *. yz) in
+  add a p
+
+let arc_through ?(init = []) ?(rev = false) ?(fn = 10) p1 p2 p3 =
+  let plane = p3, p1, p2 in
+  let p1' = project_plane plane p1
+  and p2' = project_plane plane p2
+  and p3' = project_plane plane p3
+  and init = List.map (project_plane plane) init in
+  Path2d.arc_through ~init ~rev ~fn p1' p2' p3' |> List.map (lift_plane plane)
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in

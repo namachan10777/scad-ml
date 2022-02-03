@@ -166,3 +166,16 @@ module type Vec = sig
     Hadamard (element-wise) division of [a] by [b]. *)
   val ( </> ) : t -> t -> t
 end
+
+module type ArcProvider = sig
+  type vec
+
+  val arc_through
+    :  ?init:vec list
+    -> ?rev:bool
+    -> ?fn:int
+    -> vec
+    -> vec
+    -> vec
+    -> vec list
+end

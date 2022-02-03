@@ -21,4 +21,5 @@ let () =
   Sweep_test.helix_extrude ();
   Sweep_test.sweep_starburst ~euler:true;
   Sweep_test.sweep_starburst ~euler:false;
-  Sweep_test.tri_mesh_poly ()
+  Sweep_test.tri_mesh_poly ();
+  Sweep_test.rounding_basic ()

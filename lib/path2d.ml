@@ -1,15 +1,4 @@
-type t = Vec2.t list
-
 include Path.Make (Vec2)
-
-let lift_plane (a, b, c) (px, py) =
-  let open Vec3 in
-  if colinear a b c then raise (Invalid_argument "Plane points must not be colinear.");
-  let v = sub c a
-  and ((yx, yy, yz) as y_ax) = normalize (sub b a) in
-  let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in
-  let p = (px *. xx) +. (py *. yx), (px *. xy) +. (py *. yy), (px *. xz) +. (py *. yz) in
-  add a p
 
 let arc_through
     ?(init = [])

@@ -304,3 +304,38 @@ let tri_mesh_poly () =
   and oc = open_out "tri_array.scad" in
   Scad.write oc scad;
   close_out oc
+
+let rounding_basic () =
+  let shape = [ -4., 0.; 5., 3.; 0., 7.; 8., 7.; 20., 20.; 10., 0. ]
+  and specs =
+    let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
+    `List (List.map (fun r -> Some (Rounding2d.Specs.Circle { spec = `Radius r })) radii)
+    (* `Flat (Rounding2d.Specs.Circle { spec = `Joint 1. }) *)
+    (* `Flat (Rounding2d.Specs.Circle { spec = `Cut 0.5 }) *)
+    (* `Flat (Rounding2d.Specs.Chamfer { spec = `Width 0.5 }) *)
+    (* `Flat (Rounding2d.Specs.Smooth { spec = `Joint 3.; curv = Some 0.8 }) *)
+  in
+  let scad =
+    let rounded =
+      let poly =
+        Scad.polygon (Rounding2d.round_corners ~fn:30 ~specs shape)
+        |> Scad.linear_extrude ~height:1.
+      in
+      poly
+    (* let marks = *)
+    (*   let mark = Scad.color Color.Red (Scad.sphere 0.5) in *)
+    (*   Rounding2d.round_corners ~fn:30 ~specs shape *)
+    (*   |> List.map (fun (x, y) -> Scad.translate (x, y, 0.) mark) *)
+    (*   |> Scad.union *)
+    (* in *)
+    (* Scad.union [ poly; marks ] *)
+    and pointy =
+      Scad.polygon shape
+      |> Scad.linear_extrude ~height:1.
+      |> Scad.translate (0., 0., -0.5)
+      |> Scad.color ~alpha:0.5 Color.Silver
+    in
+    Scad.union [ rounded; pointy ]
+  and oc = open_out "rounding_basic_ml.scad" in
+  Scad.write oc scad;
+  close_out oc
