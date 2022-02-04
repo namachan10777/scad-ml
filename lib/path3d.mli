@@ -1,4 +1,4 @@
-type t = Vec3.t list
+include Path.S with type vec := Vec3.t
 
 (** [project_plane plane p]
 
@@ -18,17 +18,22 @@ val project_plane : Vec3.t * Vec3.t * Vec3.t -> Vec3.t -> Vec2.t
  Throws [Invalid_argument] if the points of [plane] are colinear. *)
 val lift_plane : Vec3.t * Vec3.t * Vec3.t -> float * float -> Vec3.t
 
+val arc
+  :  ?init:Vec3.t list
+  -> ?rev:bool
+  -> ?fn:int
+  -> centre:Vec3.t
+  -> radius:float
+  -> start:float
+  -> float
+  -> Vec3.t list
+
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec3.t -> Vec3.t -> Vec3.t -> t
-val total_travel' : Vec3.t array -> float
-val total_travel : t -> float
-val cummulative_travel : t -> float list
-val to_continuous : t -> float -> Vec3.t
-val resample : freq:[< `N of int | `Spacing of float ] -> t -> t
 
 val helix
   :  ?fn:int
   -> ?fa:float
-  -> ?fs:float (* -> ?up:bool *)
+  -> ?fs:float
   -> ?left:bool
   -> n_turns:int
   -> pitch:float

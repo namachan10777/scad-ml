@@ -18,13 +18,22 @@ let lift_plane (a, b, c) (px, py) =
   let p = (px *. xx) +. (py *. yx), (px *. xy) +. (py *. yy), (px *. xz) +. (py *. yz) in
   add a p
 
-let arc_through ?(init = []) ?(rev = false) ?(fn = 10) p1 p2 p3 =
+let arc ?init ?rev ?fn ~centre ~radius ~start angle =
+  let arc =
+    Path2d.arc ?rev ?fn ~centre:(Vec3.to_vec2 centre) ~radius ~start angle
+    |> List.map (Vec3.of_vec2 ~z:(Vec3.get_z centre))
+  in
+  match init with
+  | Some init -> List.concat [ arc; init ]
+  | None      -> arc
+
+let arc_through ?init ?rev ?fn p1 p2 p3 =
   let plane = p3, p1, p2 in
   let p1' = project_plane plane p1
   and p2' = project_plane plane p2
   and p3' = project_plane plane p3
-  and init = List.map (project_plane plane) init in
-  Path2d.arc_through ~init ~rev ~fn p1' p2' p3' |> List.map (lift_plane plane)
+  and init = Option.map (List.map (project_plane plane)) init in
+  Path2d.arc_through ?init ?rev ?fn p1' p2' p3' |> List.map (lift_plane plane)
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in

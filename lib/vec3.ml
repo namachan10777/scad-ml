@@ -37,6 +37,7 @@ let mean l =
 
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
+let clockwise_sign a b c = Math.sign @@ dot a (cross (sub b a) (sub c b))
 
 let colinear p1 p2 p3 =
   let a = distance p1 p2
@@ -55,6 +56,7 @@ let lerpn ?(endpoint = true) a b n =
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y
 let get_z (_, _, z) = z
+let get_xy (x, y, _) = x, y
 let to_string (x, y, z) = Printf.sprintf "[%f, %f, %f]" x y z
 let deg_of_rad t = map (fun r -> 180.0 *. r /. Float.pi) t
 let rad_of_deg t = map (fun d -> d *. Float.pi /. 180.) t
@@ -62,7 +64,7 @@ let ( <+> ) = add
 let ( <-> ) = sub
 let ( <*> ) = mul
 let ( </> ) = div
-let to_vec2 (x, y, _) = x, y
+let to_vec2 = get_xy
 let of_vec2 ?(z = 0.) (x, y) = x, y, z
 
 let rotate_x theta (x, y, z) =

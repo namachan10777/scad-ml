@@ -1,10 +1,15 @@
-type t = Vec2.t list
+include Path.S with type vec := Vec2.t
 
-val total_travel' : Vec2.t array -> float
-val total_travel : t -> float
-val cummulative_travel : t -> float list
-val to_continuous : t -> float -> Vec2.t
-val resample : freq:[< `N of int | `Spacing of float ] -> t -> t
+val arc
+  :  ?init:Vec2.t list
+  -> ?rev:bool
+  -> ?fn:int
+  -> centre:Vec2.t
+  -> radius:float
+  -> start:float
+  -> float
+  -> Vec2.t list
+
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec2.t -> Vec2.t -> Vec2.t -> t
 val translate : Vec2.t -> t -> t
 val rotate : float -> t -> t

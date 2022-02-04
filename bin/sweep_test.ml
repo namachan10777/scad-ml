@@ -306,29 +306,19 @@ let tri_mesh_poly () =
   close_out oc
 
 let rounding_basic () =
-  let shape = [ -4., 0.; 5., 3.; 0., 7.; 8., 7.; 20., 20.; 10., 0. ]
-  and specs =
+  let shape = [ -4., 0.; 5., 3.; 0., 7.; 8., 7.; 20., 20.; 10., 0. ] in
+  let shape_spec =
     let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
-    `List (List.map (fun r -> Some (Rounding2d.Specs.Circle { spec = `Radius r })) radii)
-    (* `Flat (Rounding2d.Specs.Circle { spec = `Joint 1. }) *)
-    (* `Flat (Rounding2d.Specs.Circle { spec = `Cut 0.5 }) *)
-    (* `Flat (Rounding2d.Specs.Chamfer { spec = `Width 0.5 }) *)
-    (* `Flat (Rounding2d.Specs.Smooth { spec = `Joint 3.; curv = Some 0.8 }) *)
+    Rounding2d.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
+    (* Rounding2d.(flat ~spec:(circ (`Joint 2.))) shape *)
+    (* Rounding2d.(flat ~spec:(circ (`Cut 0.5))) shape *)
+    (* Rounding2d.(flat ~spec:(chamf (`Width 0.5))) shape *)
+    (* Rounding2d.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
   in
   let scad =
     let rounded =
-      let poly =
-        Scad.polygon (Rounding2d.round_corners ~fn:30 ~specs shape)
-        |> Scad.linear_extrude ~height:1.
-      in
-      poly
-    (* let marks = *)
-    (*   let mark = Scad.color Color.Red (Scad.sphere 0.5) in *)
-    (*   Rounding2d.round_corners ~fn:30 ~specs shape *)
-    (*   |> List.map (fun (x, y) -> Scad.translate (x, y, 0.) mark) *)
-    (*   |> Scad.union *)
-    (* in *)
-    (* Scad.union [ poly; marks ] *)
+      Scad.polygon (Rounding2d.round_corners ~fn:30 shape_spec)
+      |> Scad.linear_extrude ~height:1.
     and pointy =
       Scad.polygon shape
       |> Scad.linear_extrude ~height:1.

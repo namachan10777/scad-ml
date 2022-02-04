@@ -144,7 +144,7 @@ let prune_radii_points rps =
       else aux (i + 1) acc )
     else acc
   in
-  aux 0 [] |> List.rev |> Array.of_list
+  aux 0 [] |> Util.array_of_list_rev
 
 let polyround' ?(rad_limit = true) ?(fn = 5) rps =
   let pruned = prune_radii_points rps in

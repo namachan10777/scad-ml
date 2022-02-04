@@ -44,6 +44,10 @@ let lerpn ?(endpoint = true) a b n =
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
 
+let clockwise_sign a b c =
+  let _, _, z = cross (sub b a) (sub c b) in
+  Math.sign z
+
 let colinear p1 p2 p3 =
   let a = distance p1 p2
   and b = distance p2 p3
@@ -52,6 +56,8 @@ let colinear p1 p2 p3 =
 
 let get_x (x, _) = x
 let get_y (_, y) = y
+let get_z _ = 0.
+let get_xy = Fun.id
 let to_string (x, y) = Printf.sprintf "[%f, %f]" x y
 let deg_of_rad t = map (fun r -> 180.0 *. r /. Float.pi) t
 let rad_of_deg t = map (fun d -> d *. Float.pi /. 180.) t

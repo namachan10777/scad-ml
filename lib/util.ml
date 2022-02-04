@@ -60,6 +60,13 @@ let prepend_init n f init =
   let rec loop acc i = if i < n then loop (f i :: acc) (i + 1) else acc in
   loop init 0
 
+let unzip l =
+  let rec loop l1 l2 = function
+    | []             -> l1, l2
+    | (h1, h2) :: tl -> loop (h1 :: l1) (h2 :: l2) tl
+  in
+  loop [] [] (List.rev l)
+
 (* TODO: Add support for fa and fs where applicable and update this accordingly?
 https://github.com/openscad/openscad/blob/dd7f6c0256ccfbd1e6efa6c06b9a12ef3565c29c/src/GeometryEvaluator.cc#L1075
 https://github.com/openscad/openscad/blob/5e1a7cddd26de6fcfee753ee1d0fde5c90f785cd/src/calc.cc#L72 *)

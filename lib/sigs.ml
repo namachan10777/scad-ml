@@ -105,10 +105,16 @@ module type Vec = sig
     Calculate the angle between the vectors [a] and [b]. *)
   val angle : t -> t -> float
 
-  (** [angle_points a b]
+  (** [angle_points a b c]
 
     Calculate the angle between the points [a], [b], and [c]. *)
   val angle_points : t -> t -> t -> float
+
+  (** [clockwise_sign a b c]
+
+    Returns the rotational ordering of the points [a], [b], and [c] as a signed
+   float, [-1.] for clockwise, and [1.] for counter-clockwise. *)
+  val clockwise_sign : t -> t -> t -> float
 
   (** [colinear p1 p2 p3]
 
@@ -132,6 +138,8 @@ module type Vec = sig
   val map : (float -> float) -> t -> t
   val get_x : t -> float
   val get_y : t -> float
+  val get_z : t -> float
+  val get_xy : t -> float * float
   val to_string : t -> string
 
   (** [deg_of_rad t]
@@ -169,6 +177,16 @@ end
 
 module type ArcProvider = sig
   type vec
+
+  val arc
+    :  ?init:vec list
+    -> ?rev:bool
+    -> ?fn:int
+    -> centre:vec
+    -> radius:float
+    -> start:float
+    -> float
+    -> vec list
 
   val arc_through
     :  ?init:vec list

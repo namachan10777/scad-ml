@@ -1,5 +1,33 @@
-module Make (V : Sigs.Vec) (P : Sigs.ArcProvider with type vec := V.t) = struct
+module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struct
   module B = Bezier.Make (V)
+  module P = Path.Make (V)
+
+  type radius = [ `Radius of float ]
+  type joint = [ `Joint of float ]
+  type cut = [ `Cut of float ]
+  type width = [ `Width of float ]
+
+  type spec =
+    | Chamf of { spec : [ joint | cut | width ] }
+    | Circ of { spec : [ radius | joint | cut ] }
+    | Bez of
+        { spec : [ joint | cut ]
+        ; curv : float option
+        }
+
+  type shape_spec =
+    | Mix of (V.t * spec option) list
+    | Flat of
+        { shape : V.t list
+        ; spec : spec
+        ; closed : bool
+        }
+
+  let chamf spec = Chamf { spec }
+  let circ spec = Circ { spec }
+  let bez ?curv spec = Bez { spec; curv }
+  let mix ss = Mix ss
+  let flat ?(closed = true) ~spec shape = Flat { shape; spec; closed }
 
   (* NOTE: seems like it is backwards in bosl, be sure to test. *)
   let smooth_bez_fill ~curv p1 p2 p3 =
@@ -32,7 +60,7 @@ module Make (V : Sigs.Vec) (P : Sigs.ArcProvider with type vec := V.t) = struct
     in
     B.curve ~fn (B.bez ps)
 
-  let chamf_corner ~spec p1 p2 p3 =
+  let chamfer_corner ~spec p1 p2 p3 =
     let dist =
       match spec with
       | `Joint d -> d
@@ -45,84 +73,78 @@ module Make (V : Sigs.Vec) (P : Sigs.ArcProvider with type vec := V.t) = struct
   let circle_corner ?fn ?(fa = Util.fa) ?(fs = Util.fs) ~spec p1 p2 p3 =
     let half_angle = V.angle_points p1 p2 p3 /. 2. in
     let is_180 = Math.approx half_angle (Float.pi /. 2.) in
-    let dist, rad, cut =
+    let dist, rad =
       match spec with
       | `Joint d  ->
         let rad = d *. Float.tan half_angle in
-        d, rad, rad /. (Float.sin half_angle -. 1.)
-      | `Radius r ->
-        r /. Float.tan half_angle, r, r *. ((1. /. Float.sin half_angle) -. 1.)
+        d, rad
+      | `Radius r -> r /. Float.tan half_angle, r
       | `Cut c    ->
         let rad = c /. ((1. /. Float.sin half_angle) -. 1.) in
-        (if is_180 then Float.infinity else rad /. Float.tan half_angle), rad, c
+        (if is_180 then Float.infinity else rad /. Float.tan half_angle), rad
     in
-    let p1' = V.(add p2 (mul_scalar (normalize (sub p1 p2)) dist))
-    and p3' = V.(add p2 (mul_scalar (normalize (sub p3 p2)) dist)) in
+    let prev = V.(normalize (sub p1 p2))
+    and next = V.(normalize (sub p3 p2)) in
+    let p1' = V.(add p2 (mul_scalar prev dist))
+    and p3' = V.(add p2 (mul_scalar next dist)) in
     if is_180
     then [ p1'; p3' ]
     else (
-      let cut_vector = V.(normalize @@ sub (mean [ p1'; p3' ]) p2)
+      let is_ccw = V.clockwise_sign p1' p2 p3' > 0. in
+      let start_p = if is_ccw then p1' else p3'
+      and centre =
+        V.(add p2 (mul_scalar (normalize @@ add prev next) (rad /. Float.sin half_angle)))
       and fn =
         let frags = Float.of_int @@ Util.helical_fragments ?fn ~fa ~fs rad in
         Float.(to_int @@ max 3. @@ ceil (((pi /. 2.) -. half_angle) /. pi *. frags))
       in
-      P.arc_through ~fn p1' V.(add p2 (mul_scalar cut_vector cut)) p3' )
+      let angle = V.angle_points p1' centre p3'
+      and start =
+        let vx, vy = V.(get_xy @@ sub start_p centre) in
+        Float.atan2 vy vx
+      in
+      Arc.arc ~rev:(not is_ccw) ~fn ~centre ~radius:rad ~start angle )
 
-  module Specs = struct
-    type radius = [ `Radius of float ]
-    type joint = [ `Joint of float ]
-    type cut = [ `Cut of float ]
-    type width = [ `Width of float ]
+  let spec_to_corner ?fn ?fa ?fs t =
+    match t with
+    | Chamf { spec }     -> chamfer_corner ~spec
+    | Circ { spec }      -> circle_corner ?fn ?fa ?fs ~spec
+    | Bez { spec; curv } -> bez_corner ?fn ?fs ?curv ~spec
 
-    type t =
-      | Chamfer of { spec : [ joint | cut | width ] }
-      | Circle of { spec : [ radius | joint | cut ] }
-      | Smooth of
-          { spec : [ joint | cut ]
-          ; curv : float option
-          }
-
-    let to_corner ?fn ?fa ?fs t =
-      match t with
-      | Chamfer { spec }      -> chamf_corner ~spec
-      | Circle { spec }       -> circle_corner ?fn ?fa ?fs ~spec
-      | Smooth { spec; curv } -> bez_corner ?fn ?fs ?curv ~spec
-  end
-
-  let valid_specs ~closed ~specs shape =
-    let len_shape = Array.length shape
-    and len_specs = Array.length specs in
-    if closed && len_shape <> len_specs
-    then raise (Invalid_argument "When closed, lengths of shape and spec must be equal.");
-    if (not closed)
-       && ( (not
-               ( len_shape = len_specs
-               && Option.(is_none specs.(0) && is_none specs.(len_shape - 1)) ) )
-          || Array.length specs <> len_shape - 2 )
-    then
-      raise
-        (Invalid_argument
-           "When not closed (path), then the first and last points of specs must be \
-            None, or its length must be 2 shorter." )
-
-  let round_corners ?(closed = true) ?fn ?fa ?fs ~specs shape =
+  let prune_mixed_spec mix =
+    let shape, specs = Util.unzip mix in
     let shape = Array.of_list shape in
     let len = Array.length shape in
-    let specs =
-      match specs with
-      | `Flat spec  ->
-        let f i = if (not closed) && (i = 0 || i = len - 1) then None else Some spec in
-        Array.init len f
-      | `List specs ->
-        let specs = Array.of_list specs in
-        valid_specs ~closed ~specs shape;
-        specs
+    let w = Util.index_wrap ~len in
+    let f (i, pts, sps) sp =
+      let p = shape.(i) in
+      if (not (V.colinear shape.(w (i - 1)) p shape.(w (i + 1)))) || Option.is_none sp
+      then i + 1, p :: pts, sp :: sps
+      else i + 1, pts, sps
     in
+    let _, shape, specs = List.fold_left f (0, [], []) specs in
+    Util.array_of_list_rev shape, Array.get (Util.array_of_list_rev specs)
+
+  let round_corners ?fn ?fa ?fs shape_spec =
+    let shape, get_spec =
+      match shape_spec with
+      | Mix mix                      -> prune_mixed_spec mix
+      | Flat { shape; spec; closed } ->
+        let shape = P.prune_colinear' (Array.of_list shape) in
+        let len = Array.length shape in
+        let get_spec =
+          if closed
+          then fun _ -> Some spec
+          else fun i -> if i = 0 || i = len - 1 then None else Some spec
+        in
+        shape, get_spec
+    in
+    let len = Array.length shape in
     let wrap = Util.index_wrap ~len in
     let f i =
-      match specs.(i) with
+      match get_spec i with
       | Some spec ->
-        let corner = Specs.to_corner ?fn ?fa ?fs spec in
+        let corner = spec_to_corner ?fn ?fa ?fs spec in
         corner shape.(wrap (i - 1)) shape.(i) shape.(wrap (i + 1))
       | None      -> [ shape.(i) ]
     in

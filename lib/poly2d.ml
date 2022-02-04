@@ -3,6 +3,7 @@ open Util
 type t = Vec2.t list
 
 (* Negative = CCW *)
+(* TODO: CCW should be positive, check that this is indeed backwards and fix *)
 let clockwise_sign' ps =
   let len = Array.length ps
   and sum = ref 0. in

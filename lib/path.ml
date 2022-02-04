@@ -1,4 +1,17 @@
-module Make (V : Sigs.Vec) = struct
+module type S = sig
+  type vec
+  type t = vec list
+
+  val total_travel' : vec array -> float
+  val total_travel : vec list -> float
+  val cummulative_travel : vec list -> float list
+  val to_continuous : vec list -> float -> vec
+  val resample : freq:[< `N of int | `Spacing of float ] -> vec list -> vec list
+  val prune_colinear' : vec array -> vec array
+  val prune_colinear : vec list -> vec list
+end
+
+module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   type vec = V.t
   type t = vec list
 
@@ -64,4 +77,21 @@ module Make (V : Sigs.Vec) = struct
     let step = 1. /. Float.of_int (n - 1)
     and f = to_continuous path in
     List.init n (fun i -> f @@ (Float.of_int i *. step))
+
+  let prune_colinear_rev' path =
+    let len = Array.length path in
+    let w = Util.index_wrap ~len in
+    let rec aux i acc =
+      if i < len
+      then (
+        let p = path.(i) in
+        if not (V.colinear path.(w (i - 1)) p path.(w (i + 1)))
+        then aux (i + 1) (p :: acc)
+        else aux (i + 1) acc )
+      else acc
+    in
+    aux 0 []
+
+  let prune_colinear' path = Util.array_of_list_rev (prune_colinear_rev' path)
+  let prune_colinear path = List.rev @@ prune_colinear_rev' (Array.of_list path)
 end

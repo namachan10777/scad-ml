@@ -55,10 +55,6 @@ val mirror : t -> t -> t
     Project [t] onto the XY plane. *)
 val projection : t -> t
 
-(** {1 3d Utilities} *)
-
-val get_z : t -> float
-
 (** {1 2d - 3d conversion} *)
 
 val to_vec2 : t -> float * float
