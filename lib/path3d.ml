@@ -27,6 +27,16 @@ let arc ?init ?rev ?fn ~centre ~radius ~start angle =
   | Some init -> List.concat [ arc; init ]
   | None      -> arc
 
+(* TODO: copy the arc concat impl for init, rather than project/lift. (wasteful) *)
+let arc_about_centre ?init ?rev ?fn ~centre p1 p2 =
+  let plane = centre, p1, p2 in
+  let p1' = project_plane plane p1
+  and p2' = project_plane plane p2
+  and centre' = project_plane plane centre
+  and init = Option.map (List.map (project_plane plane)) init in
+  Path2d.arc_about_centre ?init ?rev ?fn ~centre:centre' p1' p2'
+  |> List.map (lift_plane plane)
+
 let arc_through ?init ?rev ?fn p1 p2 p3 =
   let plane = p3, p1, p2 in
   let p1' = project_plane plane p1

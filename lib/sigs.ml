@@ -188,6 +188,15 @@ module type ArcProvider = sig
     -> float
     -> vec list
 
+  val arc_about_centre
+    :  ?init:vec list
+    -> ?rev:bool
+    -> ?fn:int
+    -> centre:vec
+    -> vec
+    -> vec
+    -> vec list
+
   val arc_through
     :  ?init:vec list
     -> ?rev:bool

@@ -28,6 +28,15 @@ val arc
   -> float
   -> Vec3.t list
 
+val arc_about_centre
+  :  ?init:Vec3.t list
+  -> ?rev:bool
+  -> ?fn:int
+  -> centre:Vec3.t
+  -> Vec3.t
+  -> Vec3.t
+  -> Vec3.t list
+
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec3.t -> Vec3.t -> Vec3.t -> t
 
 val helix

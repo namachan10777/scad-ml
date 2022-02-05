@@ -10,6 +10,15 @@ val arc
   -> float
   -> Vec2.t list
 
+val arc_about_centre
+  :  ?init:Vec2.t list
+  -> ?rev:bool
+  -> ?fn:int
+  -> centre:Vec2.t
+  -> Vec2.t
+  -> Vec2.t
+  -> Vec2.t list
+
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec2.t -> Vec2.t -> Vec2.t -> t
 val translate : Vec2.t -> t -> t
 val rotate : float -> t -> t

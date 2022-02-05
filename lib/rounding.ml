@@ -90,20 +90,15 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     if is_180
     then [ p1'; p3' ]
     else (
-      let is_ccw = V.clockwise_sign p1' p2 p3' > 0. in
-      let start_p = if is_ccw then p1' else p3'
+      let is_ccw = Float.equal (V.clockwise_sign p1' p2 p3') 1. in
+      let start_p, end_p = if is_ccw then p1', p3' else p3', p1'
       and centre =
         V.(add p2 (mul_scalar (normalize @@ add prev next) (rad /. Float.sin half_angle)))
       and fn =
         let frags = Float.of_int @@ Util.helical_fragments ?fn ~fa ~fs rad in
         Float.(to_int @@ max 3. @@ ceil (((pi /. 2.) -. half_angle) /. pi *. frags))
       in
-      let angle = V.angle_points p1' centre p3'
-      and start =
-        let vx, vy = V.(get_xy @@ sub start_p centre) in
-        Float.atan2 vy vx
-      in
-      Arc.arc ~rev:(not is_ccw) ~fn ~centre ~radius:rad ~start angle )
+      Arc.arc_about_centre ~rev:(not is_ccw) ~fn ~centre start_p end_p )
 
   let spec_to_corner ?fn ?fa ?fs t =
     match t with

@@ -52,29 +52,6 @@ let offset_poly ~offset ps =
   done;
   out
 
-let arc_about_centre ?(mode = `Shortest) ~fn p1 p2 ((cx, cy) as centre) =
-  let sign = Poly2d.clockwise_sign' [| centre; p1; p2 |] in
-  let step_a =
-    let path_angle = Vec2.angle_points p2 centre p1 in
-    let arc_angle =
-      match mode with
-      | `Shortest -> path_angle
-      | `Longest -> path_angle -. (2. *. Float.pi)
-      | `CW when sign < 0. -> path_angle
-      | `CW when sign > 0. -> path_angle -. (2. *. Float.pi)
-      | `CCW when sign > 0. -> path_angle
-      | `CCW when sign < 0. -> path_angle -. (2. *. Float.pi)
-      | _ -> path_angle
-    in
-    arc_angle /. Float.of_int fn *. sign
-  and start_a = get_angle centre p1
-  and r = Vec2.distance p1 centre in
-  let f i =
-    let a = (step_a *. Float.of_int i) +. start_a in
-    (r *. Float.cos a) +. cx, (r *. Float.sin a) +. cy
-  in
-  List.init (fn + 1) f
-
 let round_5_points (x1, y1, _) (x2, y2, r2) (x3, y3, r3) (x4, y4, r4) (x5, y5, _) =
   let p1 = x1, y1
   and p2 = x2, y2
@@ -164,7 +141,9 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
       then [ x, y ]
       else (
         let p1, p2, centre = round i in
-        arc_about_centre ~fn p1 p2 centre )
+        let is_ccw = Float.equal (Vec2.clockwise_sign p1 centre p2) 1. in
+        let start_p, end_p = if is_ccw then p2, p1 else p1, p2 in
+        Path2d.arc_about_centre ~rev:is_ccw ~fn ~centre start_p end_p )
   in
   List.flatten @@ List.init len f
 
