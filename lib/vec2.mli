@@ -1,5 +1,21 @@
 include Sigs.Vec with type t = float * float
 
+val line_intersection
+  :  ?eps:float
+  -> ?bounds1:bool * bool
+  -> ?bounds2:bool * bool
+  -> t * t
+  -> t * t
+  -> t option
+
+val unbounded_intersection_exn : ?eps:float -> t * t -> t * t -> t
+
+(** [line_normal p1 p2]
+
+    Calculates the normal (perpendicular vector) of the line between [p1] and
+    [p2]. *)
+val line_normal : t -> t -> t
+
 (** {1 Transformations}
 
     Equivalent to those found in {!module:Scad}. Quaternion operations are

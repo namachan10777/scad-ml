@@ -54,6 +54,43 @@ let colinear p1 p2 p3 =
   and c = distance p3 p1 in
   a +. b < c || b +. c < a || c +. a < b
 
+let line_intersection
+    ?(eps = Util.epsilon)
+    ?(bounds1 = false, false)
+    ?(bounds2 = false, false)
+    (a1, a2)
+    (b1, b2)
+  =
+  let da = sub a1 a2
+  and db = sub b1 b2 in
+  let _, _, denominator = cross da db in
+  if Math.approx ~eps denominator 0.
+  then None
+  else (
+    let v = sub a1 b1 in
+    let a_frac =
+      let _, _, num = cross v db in
+      num /. denominator
+    and b_frac =
+      let _, _, num = cross v da in
+      num /. denominator
+    in
+    let good =
+      let bn_a1, bn_a2 = bounds1
+      and bn_b1, bn_b2 = bounds2 in
+      ((not bn_a1) || a_frac >= 0. -. eps)
+      && ((not bn_a2) || a_frac <= 1. +. eps)
+      && ((not bn_b1) || b_frac >= 0. -. eps)
+      && ((not bn_b2) || b_frac <= 1. +. eps)
+    in
+    if good then Some (add a1 (mul_scalar (sub a2 a1) a_frac)) else None )
+
+let unbounded_intersection_exn ?eps l1 l2 =
+  match line_intersection ?eps l1 l2 with
+  | Some p -> p
+  | None   -> raise (Invalid_argument "No intersection between parallel line segments.")
+
+let line_normal (x1, y1) (x2, y2) = normalize (y1 -. y2, x2 -. x1)
 let get_x (x, _) = x
 let get_y (_, y) = y
 let get_z _ = 0.
