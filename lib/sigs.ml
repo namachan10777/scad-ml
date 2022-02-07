@@ -192,6 +192,7 @@ module type ArcProvider = sig
     :  ?init:vec list
     -> ?rev:bool
     -> ?fn:int
+    -> ?dir:[ `CW | `CCW ]
     -> centre:vec
     -> vec
     -> vec

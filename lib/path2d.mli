@@ -14,6 +14,7 @@ val arc_about_centre
   :  ?init:Vec2.t list
   -> ?rev:bool
   -> ?fn:int
+  -> ?dir:[ `CW | `CCW ]
   -> centre:Vec2.t
   -> Vec2.t
   -> Vec2.t

@@ -32,6 +32,7 @@ val arc_about_centre
   :  ?init:Vec3.t list
   -> ?rev:bool
   -> ?fn:int
+  -> ?dir:[ `CW | `CCW ]
   -> centre:Vec3.t
   -> Vec3.t
   -> Vec3.t

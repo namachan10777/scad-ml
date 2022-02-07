@@ -141,9 +141,7 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
       then [ x, y ]
       else (
         let p1, p2, centre = round i in
-        let is_ccw = Float.equal (Vec2.clockwise_sign p1 centre p2) 1. in
-        let start_p, end_p = if is_ccw then p2, p1 else p1, p2 in
-        Path2d.arc_about_centre ~rev:is_ccw ~fn ~centre start_p end_p )
+        Path2d.arc_about_centre ~fn ~centre p1 p2 )
   in
   List.flatten @@ List.init len f
 
