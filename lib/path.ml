@@ -81,16 +81,11 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   let prune_colinear_rev' path =
     let len = Array.length path in
     let w = Util.index_wrap ~len in
-    let rec aux i acc =
-      if i < len
-      then (
-        let p = path.(i) in
-        if not (V.colinear path.(w (i - 1)) p path.(w (i + 1)))
-        then aux (i + 1) (p :: acc)
-        else aux (i + 1) acc )
-      else acc
+    let f i acc =
+      let p = path.(i) in
+      if not (V.colinear path.(w (i - 1)) p path.(w (i + 1))) then p :: acc else acc
     in
-    aux 0 []
+    Util.fold_init len f []
 
   let prune_colinear' path = Util.array_of_list_rev (prune_colinear_rev' path)
   let prune_colinear path = List.rev @@ prune_colinear_rev' (Array.of_list path)

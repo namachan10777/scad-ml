@@ -112,16 +112,13 @@ let prune_radii_points rps =
   let len = Array.length rps in
   let w = index_wrap ~len
   and ps = Array.map Vec2.of_vec3 rps in
-  let rec aux i acc =
-    if i < len
-    then (
-      let ((x, y, r) as rp) = rps.(i) in
-      if (not (Vec2.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
-      then aux (i + 1) (rp :: acc)
-      else aux (i + 1) acc )
+  let f i acc =
+    let ((x, y, r) as rp) = rps.(i) in
+    if (not (Vec2.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+    then rp :: acc
     else acc
   in
-  aux 0 [] |> Util.array_of_list_rev
+  Util.fold_init len f [] |> Util.array_of_list_rev
 
 let polyround' ?(rad_limit = true) ?(fn = 5) rps =
   let pruned = prune_radii_points rps in

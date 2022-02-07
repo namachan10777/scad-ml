@@ -56,16 +56,18 @@ let transpose_row_list l =
   then List.init row_len (fun c -> List.init col_len (fun r -> m.(r).(c)))
   else raise (Invalid_argument "Input lists are ragged (not a matrix).")
 
-let prepend_init n f init =
-  let rec loop acc i = if i < n then loop (f i :: acc) (i + 1) else acc in
-  loop init 0
-
 let unzip l =
   let rec loop l1 l2 = function
     | []             -> l1, l2
     | (h1, h2) :: tl -> loop (h1 :: l1) (h2 :: l2) tl
   in
   loop [] [] (List.rev l)
+
+let fold_init n f init =
+  let rec loop acc i = if i < n then loop (f i acc) (i + 1) else acc in
+  loop init 0
+
+let prepend_init n f init = fold_init n (fun i acc -> f i :: acc) init
 
 (* TODO: Add support for fa and fs where applicable and update this accordingly?
 https://github.com/openscad/openscad/blob/dd7f6c0256ccfbd1e6efa6c06b9a12ef3565c29c/src/GeometryEvaluator.cc#L1075

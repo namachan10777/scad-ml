@@ -211,16 +211,13 @@ let interpolate_path t n =
   let xmin = t.xmins.(0)
   and xmax = t.xmaxs.(t.len - 1) in
   let step = (xmax -. xmin) /. Float.of_int (n - 1) in
-  let rec aux i pts =
-    if i < n
-    then (
-      let x = xmin +. (Float.of_int i *. step) in
-      match extrapolate t x with
-      | Some y -> aux (i + 1) ((x, y) :: pts)
-      | None   -> aux (i + 1) pts )
-    else pts
+  let f i pts =
+    let x = xmin +. (Float.of_int i *. step) in
+    match extrapolate t x with
+    | Some y -> (x, y) :: pts
+    | None   -> pts
   in
-  List.rev @@ aux 0 []
+  List.rev @@ Util.fold_init n f []
 
 let path_to_3d ?(plane = `XY) ps =
   let f =

@@ -2,16 +2,10 @@ include Path.Make (Vec2)
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let step_a = angle /. Float.of_int fn *. if rev then 1. else -1. in
-  let rec loop acc i a =
-    if i <= fn
-    then
-      loop
-        (((Float.cos a *. radius) +. cx, (Float.sin a *. radius) +. cy) :: acc)
-        (i + 1)
-        (a +. step_a)
-    else acc
+  let f _ (acc, a) =
+    ((Float.cos a *. radius) +. cx, (Float.sin a *. radius) +. cy) :: acc, a +. step_a
   in
-  loop init 0 (if rev then start else start +. angle)
+  fst @@ Util.fold_init (fn + 1) f (init, if rev then start else start +. angle)
 
 let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   let radius = Vec2.distance centre p1
