@@ -83,8 +83,7 @@ type scad =
   | Resize of (float * float * float) * scad
   | Offset of
       { src : scad
-      ; offset : [ `Radius of float | `Delta of float ]
-      ; chamfer : bool
+      ; offset : [ `Radius of float | `Delta of float | `Chamfer of float ]
       }
   | Import of
       { file : string
@@ -226,7 +225,7 @@ let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
 
 let scale factors = map (fun scad -> Scale (factors, scad))
 let resize new_dims = map (fun scad -> Resize (new_dims, scad))
-let offset ?(chamfer = false) offset (D2 src) = d2 @@ Offset { src; offset; chamfer }
+let offset offset (D2 src) = d2 @@ Offset { src; offset }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
 
 let legal_ext allowed file =
@@ -439,14 +438,14 @@ let to_string t =
         indent
         (Vec3.to_string p)
         (print (indent ^ "\t") scad)
-    | Offset { src; offset; chamfer } ->
+    | Offset { src; offset } ->
       Printf.sprintf
-        "%soffset(%s, chamfer=%B)\n%s"
+        "%soffset(%s)\n%s"
         indent
         ( match offset with
-        | `Radius r -> Printf.sprintf "r = %f" r
-        | `Delta d  -> Printf.sprintf "delta = %f" d )
-        chamfer
+        | `Radius r  -> Printf.sprintf "r = %f" r
+        | `Delta d   -> Printf.sprintf "delta = %f" d
+        | `Chamfer d -> Printf.sprintf "delta = %f, chamfer=true" d )
         (print (indent ^ "\t") src)
     | Import { file; convexity; dxf_layer } ->
       Printf.sprintf

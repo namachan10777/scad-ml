@@ -226,22 +226,22 @@ val scale : float * float * float -> 's t -> 's t
     Adjusts the size of [t] to match the given [dimensions]. *)
 val resize : float * float * float -> 's t -> 's t
 
-(** [offset ?chamfer offset t]
+(** [offset offset t]
 
     Generates a new 2D interior or exterior outline from an existing outline [t].
     - [`Delta d] will create a new outline whose sides are a fixed distance [d]
       (+ve out, -ve in) from the original outline.
+    - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
+      chamfered.
     - [`Radius r] creates a new outline as if a circle of some radius [r] is
       rotated around the exterior ([r > 0]) or interior ([r < 0]) original
       outline.
-    - [?chamfer] determines whether edges should be chamfered off when using
-      [`Delta] offsets.
 
     Helpful diagrams of what each of these offset styles and chamfering look
     like can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#offset}
     here}. *)
-val offset : ?chamfer:bool -> [ `Delta of float | `Radius of float ] -> d2 -> d2
+val offset : [ `Delta of float | `Radius of float | `Chamfer of float ] -> d2 -> d2
 
 (** [color ?alpha color t]
 
