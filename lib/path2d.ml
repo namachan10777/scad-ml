@@ -1,5 +1,17 @@
 include Path.Make (Vec2)
 
+let clockwise_sign' ps =
+  let len = Array.length ps
+  and sum = ref 0. in
+  for i = 0 to len - 1 do
+    let x0, y0 = ps.(Util.index_wrap ~len i)
+    and x1, y1 = ps.(Util.index_wrap ~len (i + 1)) in
+    sum := !sum +. ((x0 -. x1) *. (y0 +. y1))
+  done;
+  Float.(of_int @@ compare !sum 0.)
+
+let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
+
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let step_a = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =

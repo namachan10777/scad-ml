@@ -134,8 +134,8 @@ let mesh_of_layer ?(reverse = false) layer =
 let enforce_winding w shape =
   let reverse =
     match w with
-    | `CCW     -> Float.equal (Poly2d.clockwise_sign shape) 1.
-    | `CW      -> Float.equal (Poly2d.clockwise_sign shape) (-1.)
+    | `CCW     -> Float.equal (Path2d.clockwise_sign shape) 1.
+    | `CW      -> Float.equal (Path2d.clockwise_sign shape) (-1.)
     | `NoCheck -> false
   in
   if reverse then List.rev shape else shape

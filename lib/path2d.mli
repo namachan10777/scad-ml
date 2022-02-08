@@ -1,5 +1,8 @@
 include Path.S with type vec := Vec2.t
 
+val clockwise_sign' : Vec2.t array -> float
+val clockwise_sign : Vec2.t list -> float
+
 val arc
   :  ?init:Vec2.t list
   -> ?rev:bool

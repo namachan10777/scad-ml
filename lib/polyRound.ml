@@ -19,7 +19,7 @@ let get_angle (x1, y1) (x2, y2) =
 (* TODO: consider a check that notices when the shape implodes due to too great
     of offset. This can lead to extrude errors that may be confusing. *)
 let offset_poly ~offset ps =
-  let cw_sign = Math.sign offset *. Poly2d.clockwise_sign' ps *. -1.
+  let cw_sign = Math.sign offset *. Path2d.clockwise_sign' ps *. -1.
   and len = Array.length ps in
   let parallel_follow (x1, y1) (x2, y2) (x3, y3) =
     if Float.equal offset 0.
@@ -29,7 +29,7 @@ let offset_poly ~offset ps =
       and p2 = x2, y2
       and p3 = x3, y3 in
       let path_angle = Vec2.angle_points p1 p2 p3
-      and local_sign = Poly2d.clockwise_sign' [| p1; p2; p3 |] in
+      and local_sign = Path2d.clockwise_sign' [| p1; p2; p3 |] in
       let radius = cw_sign *. local_sign *. offset /. Float.sin (path_angle /. 2.)
       and angle_to_centre =
         let mid_tangent =
@@ -155,7 +155,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
     Array.unsafe_set radii i r
   done;
   (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
-  if Float.equal (Poly2d.clockwise_sign' ps) 1.
+  if Float.equal (Path2d.clockwise_sign' ps) 1.
   then (
     rev_array rps;
     rev_array ps;
@@ -171,7 +171,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
       let get_op idx = Array.unsafe_get (offset_poly ~offset ps) (index_wrap ~len idx) in
       let adjust_radii j =
         let local_sign =
-          Poly2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
+          Path2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
         in
         let x, y = get_op j in
         (* The overall polygon rotation is enforced to be CCW, so if the local

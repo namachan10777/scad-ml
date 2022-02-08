@@ -329,3 +329,20 @@ let rounding_basic () =
   and oc = open_out "rounding_basic_ml.scad" in
   Scad.write oc scad;
   close_out oc
+
+let offset_poly () =
+  let shape = [ -4., 0.; 5., 3.; 0., 7.; 8., 7.; 20., 20.; 10., 0. ] in
+  let scad =
+    let rounded =
+      Scad.polygon (Poly2d.offset (`Radius (-0.5)) shape)
+      |> Scad.linear_extrude ~height:1.
+    and pointy =
+      Scad.polygon shape
+      |> Scad.linear_extrude ~height:1.
+      |> Scad.translate (0., 0., -0.5)
+      |> Scad.color ~alpha:0.5 Color.Silver
+    in
+    Scad.union [ rounded; pointy ]
+  and oc = open_out "offset_poly.scad" in
+  Scad.write oc scad;
+  close_out oc
