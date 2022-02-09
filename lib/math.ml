@@ -8,9 +8,9 @@ let lerpn ?(endpoint = true) a b n =
       let u = Float.of_int i /. d in
       lerp a b u )
 
-let quant v q = Float.floor (v /. (q +. 0.5)) *. q
-let quant_down v q = Float.floor (v /. q) *. q
-let quant_up v q = Float.ceil (v /. q) *. q
+let quant ~q v = Float.floor ((v /. q) +. 0.5) *. q
+let quant_down ~q v = Float.floor (v /. q) *. q
+let quant_up ~q v = Float.ceil (v /. q) *. q
 let approx ?(eps = Util.epsilon) a b = Float.(compare (abs (a -. b)) eps) < 1
 
 let law_of_cosines a b c =
