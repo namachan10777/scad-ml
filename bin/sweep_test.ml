@@ -317,7 +317,7 @@ let rounding_basic () =
   in
   let scad =
     let rounded =
-      Scad.polygon (Rounding2d.round_corners ~fn:30 shape_spec)
+      Scad.polygon (Rounding2d.corners ~fn:30 shape_spec)
       |> Scad.linear_extrude ~height:1.
     and pointy =
       Scad.polygon shape
@@ -344,5 +344,65 @@ let offset_poly () =
     in
     Scad.union [ rounded; pointy ]
   and oc = open_out "offset_poly.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let offset_sweep () =
+  let shape = Poly2d.square ~center:true (3., 3.) in
+  let shape_spec =
+    (* Rounding2d.(flat ~spec:(circ (`Joint 2.))) shape *)
+    Rounding2d.(flat ~spec:(circ (`Cut 0.5))) shape
+    (* Rounding2d.(flat ~spec:(chamf (`Width 0.5))) shape *)
+    (* Rounding2d.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
+  in
+  let transforms =
+    let step = 0.005 in
+    let f i =
+      let t = Float.of_int i *. step in
+      ( ((t /. 1.5) +. 0.5) *. 100. *. Float.cos (6. *. 360. *. t *. Float.pi /. 180.)
+      , ((t /. 1.5) +. 0.5) *. 100. *. Float.sin (6. *. 360. *. t *. Float.pi /. 180.)
+      , 200. *. (1. -. t) )
+    in
+    let path = List.init (Int.of_float (1. /. step)) f in
+    Path3d.to_transforms ~euler:false path
+  in
+  let scad =
+    let poly =
+      Rounding2d.corners ~fn:30 shape_spec
+      |> RoundExtrude.(
+           offset_sweep (* ~transforms:[] *)
+             ~mode:`Radius
+             ~transforms
+               (* ~bot:(circ (`Radius (-1.))) *)
+               (* ~top:(circ (`Radius 0.1))) *)
+             ~bot:(tear (`Radius (-1.)))
+             ~top:(tear (`Radius 0.5)))
+      (* ~bot:(chamf (`Cut 0.2) (`Angle (Float.pi /. 4.))) *)
+      (* ~top:(chamf (`Cut 0.2) (`Angle (Float.pi /. 4.)))) *)
+      (* ~bot:(bez (`Joint 0.2)) *)
+      (* ~top:(bez (`Joint 0.2))) *)
+    in
+    (* List.map (fun p -> Scad.(translate p (sphere 0.1))) (Poly3d.points poly) |> Scad.union *)
+    Poly3d.to_scad poly
+  and oc = open_out "offset_sweep.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let offset_linear_extrude () =
+  let scad =
+    let shape = Poly2d.square ~center:true (3., 3.) in
+    Rounding2d.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
+    |> List.map (Vec2.translate (1.5, 1.5))
+    |> RoundExtrude.extrude
+         ~slices:100
+         ~fn:16
+         ~scale:(4., 4.)
+         ~twist:(2. *. Float.pi)
+         ~center:false
+         ~bot:(RoundExtrude.circ (`Radius (-0.2)))
+         ~top:(RoundExtrude.tear (`Radius 0.5))
+         ~height:10.
+    |> Poly3d.to_scad
+  and oc = open_out "offset_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc

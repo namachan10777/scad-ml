@@ -23,4 +23,6 @@ let () =
   Sweep_test.sweep_starburst ~euler:false;
   Sweep_test.tri_mesh_poly ();
   Sweep_test.rounding_basic ();
-  Sweep_test.offset_poly ()
+  Sweep_test.offset_poly ();
+  Sweep_test.offset_sweep ();
+  Sweep_test.offset_linear_extrude ()

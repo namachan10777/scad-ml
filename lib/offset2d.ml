@@ -22,7 +22,7 @@ let chamfer ~centre ~delta p1 p2 p3 =
 (* If any part of a segment is further than distance d from the path (original
     path/outline before offseting). The number of points sampled along the
     segments for this approximation is set by quality. *)
-let good_segments ?(quality = 1) ~closed ~d path shifted_segs =
+let good_segments ~quality ~closed ~d path shifted_segs =
   let len = Array.length path - if closed then 0 else 1
   and d = d -. 1e-7 in
   let path_segs =
@@ -73,7 +73,7 @@ let good_segments ?(quality = 1) ~closed ~d path shifted_segs =
   in
   Array.init (Array.length shifted_segs) f
 
-let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = true) ?(quality = 1) offset path =
+let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
   let mode, d =
     let flip = if closed then Path2d.clockwise_sign path *. -1. else 1. in
     match offset with
@@ -88,9 +88,9 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = true) ?(quality = 1) of
     List.init len f
   in
   let good =
-    if check_valid
-    then good_segments ~quality ~closed ~d path' (Array.of_list shifted_segs)
-    else Array.make len true
+    match check_valid with
+    | Some quality -> good_segments ~quality ~closed ~d path' (Array.of_list shifted_segs)
+    | None         -> Array.make len true
   in
   if Array.for_all not good then raise (Failure "Offset of path is degenerate");
   let good_segs = List.filteri (fun i _ -> good.(i)) shifted_segs |> Array.of_list
@@ -159,26 +159,71 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = true) ?(quality = 1) of
   in
   good, new_corners, point_counts
 
-let offset ?fn ?fs ?fa ?closed ?check_valid ?quality offset path =
-  let _, points, _ = offset' ?fn ?fs ?fa ?closed ?check_valid ?quality offset path in
+let offset ?fn ?fs ?fa ?closed ?check_valid offset path =
+  let _, points, _ = offset' ?fn ?fs ?fa ?closed ?check_valid offset path in
   points
 
 let offset_with_faces
     ?fn
     ?fs
     ?fa
-    ?closed
+    ?(closed = true)
     ?check_valid
-    ?quality
     ?(flip_faces = false)
     ?(start_idx = 0)
     offset
     path
   =
-  let good, points, counts =
-    offset' ?fn ?fs ?fa ?closed ?check_valid ?quality offset path
+  let good, points, counts = offset' ?fn ?fs ?fa ~closed ?check_valid offset path in
+  let len = Array.length good in
+  (* Expand the point count list with zeros where points from the original path
+      were lost (essentially a lookup of how many points are on the offset path
+      for each point on the original path). *)
+  let counts =
+    let cs = Array.of_list counts
+    and expanded = Array.make len 0
+    and j = ref 0 in
+    for i = 0 to len - 1 do
+      if good.(i)
+      then (
+        expanded.(i) <- cs.(!j);
+        incr j )
+    done;
+    expanded
   in
-  let counts = List.filteri (fun i _ -> good.(i)) counts in
-  let n_first = List.length counts
-  and n_second = List.fold_left ( + ) 0 counts in
-  points
+  let n_first = len
+  and n_second = Array.fold_left ( + ) 0 counts
+  and start_i = start_idx
+  and start_j = start_idx + len
+  and j = ref 0
+  and faces = ref [] in
+  let add_face =
+    if flip_faces
+    then fun a -> faces := List.rev a :: !faces
+    else fun a -> faces := a :: !faces
+  in
+  for i = 0 to n_first - Bool.to_int (not closed) - 1 do
+    let c = counts.(i)
+    and j' = !j in
+    if c = 0
+    then
+      (* Point in original path no longer exists in the offset path. Thus a
+           triangular face is made from the adjacent points on th original, to the
+           current point in the new path. *)
+      add_face
+        [ (j' mod n_second) + start_j; i + start_i; ((i + 1) mod n_first) + start_i ]
+    else
+      (* Triangular faces for the extra points in the offset path, if there are any. *)
+      for k = 0 to c - 2 do
+        add_face [ i + start_i; j' + k + 1 + start_j; j' + k + start_j ]
+      done;
+    (* Quadrilateral face *)
+    add_face
+      [ i + start_i
+      ; ((i + 1) mod n_first) + start_i
+      ; ((j' + c) mod n_second) + start_j
+      ; ((j' + c - 1) mod n_second) + start_j
+      ];
+    j := j' + c
+  done;
+  n_second, points, !faces

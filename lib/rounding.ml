@@ -1,7 +1,5 @@
-module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struct
-  module B = Bezier.Make (V)
-  module P = Path.Make (V)
-
+module type S = sig
+  type vec
   type radius = [ `Radius of float ]
   type joint = [ `Joint of float ]
   type cut = [ `Cut of float ]
@@ -16,6 +14,39 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
         }
 
   type shape_spec =
+    | Mix of (vec * spec option) list
+    | Flat of
+        { shape : vec list
+        ; spec : spec
+        ; closed : bool
+        }
+
+  val chamf : [ cut | joint | width ] -> spec
+  val circ : [ cut | joint | radius ] -> spec
+  val bez : ?curv:float -> [ cut | joint ] -> spec
+  val mix : (vec * spec option) list -> shape_spec
+  val flat : ?closed:bool -> spec:spec -> vec list -> shape_spec
+  val corners : ?fn:int -> ?fa:float -> ?fs:float -> shape_spec -> vec list
+end
+
+module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struct
+  module B = Bezier.Make (V)
+  module P = Path.Make (V)
+
+  type radius = [ `Radius of float ]
+  type joint = [ `Joint of float ]
+  type cut = [ `Cut of float ]
+  type width = [ `Width of float ]
+
+  type spec =
+    | Chamf of { spec : [ joint | cut | width ] }
+    | Circ of { spec : [ radius | joint | cut ] }
+    | Bez of
+        { spec : [ joint | cut ]
+        ; curv : float
+        }
+
+  type shape_spec =
     | Mix of (V.t * spec option) list
     | Flat of
         { shape : V.t list
@@ -25,7 +56,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
 
   let chamf spec = Chamf { spec }
   let circ spec = Circ { spec }
-  let bez ?curv spec = Bez { spec; curv }
+  let bez ?(curv = 0.5) spec = Bez { spec; curv }
   let mix ss = Mix ss
   let flat ?(closed = true) ~spec shape = Flat { shape; spec; closed }
 
@@ -102,7 +133,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     match t with
     | Chamf { spec }     -> chamfer_corner ~spec
     | Circ { spec }      -> circle_corner ?fn ?fa ?fs ~spec
-    | Bez { spec; curv } -> bez_corner ?fn ?fs ?curv ~spec
+    | Bez { spec; curv } -> bez_corner ?fn ?fs ~curv ~spec
 
   let prune_mixed_spec mix =
     let shape, specs = Util.unzip mix in
@@ -118,7 +149,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     let _, shape, specs = List.fold_left f (0, [], []) specs in
     Util.array_of_list_rev shape, Array.get (Util.array_of_list_rev specs)
 
-  let round_corners ?fn ?fa ?fs shape_spec =
+  let corners ?fn ?fa ?fs shape_spec =
     let shape, get_spec =
       match shape_spec with
       | Mix mix                      -> prune_mixed_spec mix

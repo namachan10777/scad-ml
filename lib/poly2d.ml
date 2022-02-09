@@ -1,5 +1,7 @@
 type t = Vec2.t list
 
+(* module Round : Rounding.S with type vec := Vec2.t = Rounding.Make (Vec2) (Path2d) *)
+
 let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
   let f i =

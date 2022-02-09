@@ -4,6 +4,7 @@ val empty : t
 val n_points : t -> int
 val points : t -> Vec3.t list
 val faces : t -> int list list
+val make : points:Vec3.t list -> faces:int list list -> t
 
 (** [of_layers ?closed layers]
 

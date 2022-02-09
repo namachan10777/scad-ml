@@ -12,6 +12,7 @@ module PolyRound = PolyRound
 module Rounding2d = Rounding2d
 module Path2d = Path2d
 module Path3d = Path3d
+module RoundExtrude = RoundExtrude
 
 (** A rotation matrix.
 
