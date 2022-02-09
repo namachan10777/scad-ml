@@ -5,7 +5,13 @@ let shift_segment ~d (p1, p2) =
 (* Get the intersection point between two segments, or their common point if
    they already share one. *)
 let segment_extension ((_, a2) as sa) ((b1, _) as sb) =
-  if Vec2.(norm (sub a2 b1) < 1e-6) then a2 else Vec2.unbounded_intersection_exn sa sb
+  if Vec2.(norm (sub a2 b1) < 1e-6)
+  then a2
+  else (
+    match Vec2.line_intersection sa sb with
+    | Some inter -> inter
+    | None       -> Failure "Offset: path contains segment that reverses direction."
+                    |> raise )
 
 let chamfer ~centre ~delta p1 p2 p3 =
   let endline =
@@ -15,9 +21,12 @@ let chamfer ~centre ~delta p1 p2 p3 =
     in
     shift_segment ~d:(delta -. dist) (p1, p3)
   in
-  [ Vec2.unbounded_intersection_exn endline (p1, p2)
-  ; Vec2.unbounded_intersection_exn endline (p2, p3)
-  ]
+  (* if endline segment is colinear with either input segment, return middle *)
+  match
+    Vec2.line_intersection endline (p1, p2), Vec2.line_intersection endline (p2, p3)
+  with
+  | Some i1, Some i2 -> [ i1; i2 ]
+  | _                -> [ p2 ]
 
 (* If any part of a segment is further than distance d from the path (original
     path/outline before offseting). The number of points sampled along the
