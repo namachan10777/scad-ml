@@ -181,7 +181,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         then [||]
         else (
           let f acc r = if r > 0. && r < 1. then r :: acc else acc in
-          Util.array_of_list_rev (Array.fold_left f [] (Math.real_roots p)) )
+          Util.array_of_list_rev (Array.fold_left f [] (Math.real_roots' p)) )
       in
       let dists =
         let bz = bez [ V.zero; normal1; normal2; V.zero ] in
