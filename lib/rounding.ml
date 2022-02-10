@@ -172,5 +172,5 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
         corner shape.(wrap (i - 1)) shape.(i) shape.(wrap (i + 1))
       | None      -> [ shape.(i) ]
     in
-    List.init len f |> List.concat |> Util.deduplicate ~equal:V.approx
+    List.init len f |> List.concat |> Util.deduplicate_consecutive ~equal:V.approx
 end
