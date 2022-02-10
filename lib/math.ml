@@ -20,10 +20,10 @@ let law_of_cosines a b c =
 let posmod a m = mod_float (mod_float a m +. m) m
 
 let mat_dims m =
-  let rows = Array.length m in
-  let cols = if rows = 0 then 0 else Array.length m.(0) in
-  if Array.for_all (fun c -> Array.length c = cols) m
-  then rows, cols
+  let n_rows = Array.length m in
+  let n_cols = if n_rows = 0 then 0 else Array.length m.(0) in
+  if Array.for_all (fun c -> Array.length c = n_cols) m
+  then n_rows, n_cols
   else raise (Invalid_argument "mat_dims: Matrix has ragged rows.")
 
 let matmul a =

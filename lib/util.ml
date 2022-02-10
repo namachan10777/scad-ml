@@ -35,6 +35,27 @@ let array_of_list_rev l =
     done;
     a
 
+let flatten_array m =
+  let size = Array.fold_left (fun s r -> s + Array.length r) 0 m in
+  if size > 0
+  then (
+    let first = ref None
+    and i = ref 0 in
+    while Option.is_none !first do
+      if Array.length m.(!i) > 0 then first := Some m.(!i).(0) else incr i
+    done;
+    let v = Array.make size (Option.get !first) in
+    i := 0;
+    for j = 0 to Array.length m - 1 do
+      let row = m.(j) in
+      for k = 0 to Array.length row - 1 do
+        v.(!i) <- row.(k);
+        incr i
+      done
+    done;
+    v )
+  else [||]
+
 let deduplicate_consecutive list ~equal =
   let rec loop acc last = function
     | []       -> last :: acc
