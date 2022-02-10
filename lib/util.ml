@@ -35,7 +35,7 @@ let array_of_list_rev l =
     done;
     a
 
-let deduplicate list ~equal =
+let deduplicate_consecutive list ~equal =
   let rec loop acc last = function
     | []       -> last :: acc
     | hd :: tl -> if equal hd last then loop acc last tl else loop (last :: acc) hd tl

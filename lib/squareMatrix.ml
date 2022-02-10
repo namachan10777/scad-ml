@@ -6,6 +6,17 @@ module type Ops = sig
   (** The identity matrix. *)
   val id : t
 
+  (** [of_row_matrix_exn m]
+
+    Convert the float matrix [m] into a [t] if it is the correct shape,
+    otherwise throw an [Invalid_argument] exception. *)
+  val of_row_matrix_exn : float array array -> t
+
+  (** [of_row_matrix m]
+
+    Convert the float matrix [m] into a [t] if it is the correct shape. *)
+  val of_row_matrix : float array array -> (t, string) result
+
   val mul : t -> t -> t
   val add : t -> t -> t
   val sub : t -> t -> t
@@ -44,6 +55,24 @@ module Make (C : Config) : S = struct
       m.(i).(i) <- 1.
     done;
     m
+
+  let of_row_matrix_exn rm =
+    if Array.(length rm = C.size && for_all (fun c -> length c = C.size) rm)
+    then (
+      let m = Array.make_matrix C.size C.size 0. in
+      for i = 0 to C.size - 1 do
+        for j = 0 to C.size - 1 do
+          m.(i).(j) <- rm.(i).(j)
+        done
+      done;
+      m )
+    else (
+      let msg = Printf.sprintf "Input is not square matrix of size %i" C.size in
+      raise (Invalid_argument msg) )
+
+  let of_row_matrix rm =
+    try Ok (of_row_matrix_exn rm) with
+    | Invalid_argument msg -> Error msg
 
   let mul a b =
     let m = Array.make_matrix C.size C.size 0. in
