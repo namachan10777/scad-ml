@@ -49,10 +49,24 @@ let bezier_matrix =
 module type S = sig
   type vec
 
-  val bez : vec list -> float -> vec
+  val make : vec list -> float -> vec
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
   val patch : vec list list -> float -> float -> vec
+  val of_bezpath : n:int -> vec list -> float -> vec
+
+  val path_to_bezpath
+    :  ?closed:bool
+    -> ?uniform:bool
+    -> ?size:
+         [> `Abs of float list
+         | `FlatAbs of float
+         | `FlatRel of float
+         | `Rel of float list
+         ]
+    -> ?tangents:vec list
+    -> vec list
+    -> vec list
 
   val of_path
     :  ?closed:bool
@@ -65,13 +79,14 @@ module type S = sig
          ]
     -> ?tangents:vec list
     -> vec list
-    -> vec list
+    -> float
+    -> vec
 end
 
 module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   module P = Path.Make (V)
 
-  let bez ps =
+  let make ps =
     let ps = Array.of_list ps in
     let n = Array.length ps - 1 in
     let bm = bezier_matrix n
@@ -98,7 +113,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
 
   let travel ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
     let n_segs = List.length ps * 2
-    and bz = bez ps in
+    and bz = make ps in
     let d = Float.of_int n_segs in
     let rec aux su eu =
       let path =
@@ -130,12 +145,64 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     aux start_u end_u
 
   let patch grid =
-    let horizontal_bezs = List.map bez grid in
+    let horizontal_bezs = List.map make grid in
     fun u ->
-      let vertical_bez = bez @@ List.map (fun bz -> bz u) horizontal_bezs in
+      let vertical_bez = make @@ List.map (fun bz -> bz u) horizontal_bezs in
       vertical_bez
 
-  let of_path ?(closed = false) ?(uniform = false) ?(size = `FlatRel 0.1) ?tangents path =
+  let of_bezpath ~n bezpath =
+    let bezpath = Array.of_list bezpath in
+    let len = Array.length bezpath in
+    if len mod n <> 1
+    then (
+      let msg =
+        Printf.sprintf
+          "The length of a degree %i bezier path should be a multiple of %i, plus 1."
+          len
+          len
+      in
+      raise (Invalid_argument msg) );
+    let n_segs = (len - 1) / n in
+    let segs =
+      Array.init n_segs (fun i -> List.init (n + 1) (fun j -> bezpath.((i * n) + j)))
+    in
+    let bezs = Array.map (fun ps -> make ps) segs in
+    let travels, total =
+      let f (acc, total) seg =
+        let total = total +. travel seg in
+        total :: acc, total
+      in
+      let acc, total = Array.fold_left f ([ 0. ], 0.) segs in
+      Util.array_of_list_rev acc, total
+    in
+    let extrapolate s =
+      if s >= 1.
+      then bezs.(n_segs - 1) 1.0
+      else (
+        let d = Float.(min (max s 0.) 1.) *. total in
+        let i = ref 0
+        and p = ref None in
+        while Option.is_none !p && !i < n_segs do
+          let idx = !i in
+          let d0 = Array.unsafe_get travels idx
+          and d1 = Array.unsafe_get travels (idx + 1) in
+          if d >= d0 && d <= d1
+          then (
+            let frac = (d -. d0) /. (d1 -. d0) in
+            p := Some (bezs.(idx) frac) )
+          else incr i
+        done;
+        Option.get !p )
+    in
+    extrapolate
+
+  let path_to_bezpath
+      ?(closed = false)
+      ?(uniform = false)
+      ?(size = `FlatRel 0.1)
+      ?tangents
+      path
+    =
     let ps = Array.of_list path
     and get_size =
       let valid l = List.fold_left (fun m a -> Float.min m a) Float.max_float l > 0. in
@@ -184,7 +251,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           Util.array_of_list_rev (Array.fold_left f [] (Math.real_roots' p)) )
       in
       let dists =
-        let bz = bez [ V.zero; normal1; normal2; V.zero ] in
+        let bz = make [ V.zero; normal1; normal2; V.zero ] in
         Array.map (fun u -> V.norm (bz u)) uextreme
       in
       let scale =
@@ -199,6 +266,8 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       let l = Float.min (seg_len /. parallel) (get_size i seg_len /. scale) in
       V.(add p2 (mul_scalar t2 l)) :: V.(add p1 (mul_scalar t1 l)) :: p1 :: acc
     in
-    ps.(len_ps - 1) :: Util.fold_init len_ts f [] |> List.rev
-  (* TODO: feed into a bezpath *)
+    List.rev (ps.(len_ps - 1) :: Util.fold_init len_ts f [])
+
+  let of_path ?closed ?uniform ?size ?tangents path =
+    of_bezpath ~n:3 @@ path_to_bezpath ?closed ?uniform ?size ?tangents path
 end

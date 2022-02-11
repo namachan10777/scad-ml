@@ -142,7 +142,7 @@ let poly_roots' ?(tol = 1e-14) p =
             incr n_complete )
           else (
             let newton = Complex.div p_of_z (polynomial_complex' p_deriv z.(j)) in
-            for k = 0 to n do
+            for k = 0 to n - 1 do
               if j <> k then z_diff := Complex.(add !z_diff (div one (sub z.(j) z.(k))))
             done;
             let w = Complex.(div newton (sub one (mul newton !z_diff))) in

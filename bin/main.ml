@@ -15,14 +15,15 @@ let () =
   Sweep_test.polyround_sweep ();
   (* Sweep_test.resample_path (); *)
   (* Sweep_test.poly_linear_extrude (); *)
-  Sweep_test.polyround_linear_extrude ();
-  Sweep_test.helix_path ();
-  Sweep_test.helix_sweep ();
-  Sweep_test.helix_extrude ();
-  Sweep_test.sweep_starburst ~euler:true;
-  Sweep_test.sweep_starburst ~euler:false;
-  Sweep_test.tri_mesh_poly ();
+  (* Sweep_test.polyround_linear_extrude (); *)
+  (* Sweep_test.helix_path (); *)
+  (* Sweep_test.helix_sweep (); *)
+  (* Sweep_test.helix_extrude (); *)
+  (* Sweep_test.sweep_starburst ~euler:true; *)
+  (* Sweep_test.sweep_starburst ~euler:false; *)
+  (* Sweep_test.tri_mesh_poly (); *)
   Sweep_test.rounding_basic ();
   Sweep_test.offset_poly ();
   Sweep_test.offset_sweep ();
-  Sweep_test.offset_linear_extrude ()
+  Sweep_test.offset_linear_extrude ();
+  Sweep_test.bezier_path ()

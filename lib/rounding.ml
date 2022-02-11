@@ -30,7 +30,7 @@ module type S = sig
 end
 
 module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struct
-  module B = Bezier.Make (V)
+  module Bz = Bezier.Make (V)
   module P = Path.Make (V)
 
   type radius = [ `Radius of float ]
@@ -87,9 +87,9 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
       | None   -> smooth_bez_fill ~curv p1 p2 p3
     in
     let fn =
-      Int.max 3 (Option.value ~default:Float.(to_int @@ ceil (B.travel ps /. fs)) fn)
+      Int.max 3 (Option.value ~default:Float.(to_int @@ ceil (Bz.travel ps /. fs)) fn)
     in
-    B.curve ~fn (B.bez ps)
+    Bz.curve ~fn (Bz.make ps)
 
   let chamfer_corner ~spec p1 p2 p3 =
     let dist =

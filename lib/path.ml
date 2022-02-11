@@ -71,7 +71,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           let frac = (d -. d0) /. (d1 -. d0)
           and p0 = Array.unsafe_get path idx
           and p1 = Array.unsafe_get path (idx + 1) in
-          p := Some V.(mul_scalar (p1 <-> p0) frac <+> p0) )
+          p := Some (V.lerp p0 p1 frac) )
         else incr i
       done;
       Option.get !p
@@ -117,7 +117,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           V.(sub (sub (g (-3)) (g (-2))) (mul_scalar (sub (g (-2)) (g (-1))) 3.))
         | i -> calc i
     in
-    List.init len (fun i -> V.div_scalar (f i) (2. *. h))
+    List.init (len - Bool.to_int (not closed)) (fun i -> V.div_scalar (f i) (2. *. h))
 
   let deriv_nonuniform ?(closed = false) ~h path =
     let path = Array.of_list path
@@ -152,7 +152,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         | i when i = len - 1 -> V.(div_scalar (sub path.(i) path.(i - 1)) h.(i - 1))
         | i -> calc i
     in
-    List.init len f
+    List.init (len - Bool.to_int (not closed)) f
 
   let tangents ?(uniform = true) ?(closed = false) path =
     ( if uniform

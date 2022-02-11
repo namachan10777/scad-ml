@@ -58,9 +58,9 @@ let wave_cylinder () =
 
 let spline_path () =
   let control_pts = [ 0., 10.; 10., 40.; 20., 40.; 30., -20.; 40., -40. ]
-  and square = Poly2d.square ~center:true (5., 10.) in
+  and square = Poly2d.square ~center:true (2., 5.) in
   let marks =
-    let s = Scad.color Color.Red @@ Scad.sphere 1. in
+    let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
@@ -70,8 +70,6 @@ let spline_path () =
   and oc = open_out "spline.scad" in
   Scad.write oc scad;
   close_out oc
-
-let bezier_path () = ()
 
 let arc_points () =
   let arc = Path2d.arc_through ~fn:5 (10., 10.) (20., 20.) (10., 30.) in
@@ -400,5 +398,20 @@ let offset_linear_extrude () =
          ~height:10.
     |> Poly3d.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let bezier_path () =
+  let control_pts = [ 0., 10.; 10., 40.; 20., 40.; 30., -20.; 40., -40. ]
+  and square = Poly2d.square ~center:true (2., 2.) in
+  let marks =
+    let s = Scad.color Color.Red @@ Scad.sphere 2. in
+    List.map (fun (x, y) -> Scad.translate (x, y, 0.) s) control_pts
+  and line =
+    let path = Bezier2d.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
+    Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
+  in
+  let scad = Scad.union (line :: marks)
+  and oc = open_out "bezier_path.scad" in
   Scad.write oc scad;
   close_out oc
