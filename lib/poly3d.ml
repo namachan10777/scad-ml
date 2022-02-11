@@ -192,42 +192,33 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
   in
   sweep ~winding ~transforms shape
 
-let cartesian_plot ~min_x ~step_x ~max_x ~min_y ~step_y ~max_y plot =
+let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =
+  let step_x = (max_x -. min_x) /. Float.of_int x_steps
+  and step_y = (max_y -. min_y) /. Float.of_int y_steps in
   let max_x = max_x +. (0.001 *. step_x)
   and max_y = max_y +. (0.001 *. step_y)
   (* stay above plane to guarantee manifold. *)
-  and min_plot = 0.0005 *. (step_x +. step_y)
-  and x_steps = Float.(to_int @@ ((max_x -. min_x) /. step_x)) + 1
-  and y_steps = Float.(to_int @@ ((max_y -. min_y) /. step_y)) + 1 in
-  let min_y_edge =
-    let y = min_y -. (0.001 *. step_y) in
-    let f i acc =
-      let x = (Float.of_int i *. step_x) +. min_x in
-      (x, y, 0.0001) :: acc
-    and init = [ min_x, y, 0.; max_x, y, 0. ] in
-    List.rev @@ Util.fold_init x_steps f init
+  and min_plot = 0.0005 *. (step_x +. step_y) in
+  let xs_rev =
+    List.init (x_steps + 1) (fun i -> (Float.of_int (x_steps - i) *. step_x) +. min_x)
   in
-  let body =
-    let outer i acc_out =
+  let edge y =
+    (max_x, y, 0.)
+    :: (min_x, y, 0.)
+    :: List.fold_left (fun acc x -> (x, y, 0.0001) :: acc) [] xs_rev
+  in
+  let layers =
+    let outer i layers =
       let y = (Float.of_int i *. step_y) +. min_y in
-      let inner j acc_in =
-        let x = (Float.of_int j *. step_x) +. min_x in
+      let layer l x =
         let z = plot x y in
-        (x, y, if z < min_plot then min_plot else z) :: acc_in
-      and init = [ min_x, y, 0.; max_x, y, 0. ] in
-      List.rev (Util.fold_init x_steps inner init) :: acc_out
+        (x, y, if z < min_plot then min_plot else z) :: l
+      in
+      ((max_x, y, 0.) :: (min_x, y, 0.) :: List.fold_left layer [] xs_rev) :: layers
     in
-    Util.fold_init y_steps outer [ min_y_edge ]
+    Util.fold_init (y_steps + 1) outer [ edge (min_y -. (0.001 *. step_y)) ]
   in
-  let max_y_edge =
-    let y = max_y +. (0.001 *. step_y) in
-    let f i acc =
-      let x = (Float.of_int i *. step_x) +. min_x in
-      (x, y, 0.0001) :: acc
-    and init = [ min_x, y, 0.; max_x, y, 0. ] in
-    List.rev @@ Util.fold_init x_steps f init
-  in
-  of_layers @@ List.rev (max_y_edge :: body)
+  of_layers @@ List.rev (edge (max_y +. (0.001 *. step_y)) :: layers)
 
 let join = function
   | [] -> empty

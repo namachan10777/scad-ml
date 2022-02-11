@@ -77,10 +77,10 @@ val helix_extrude
 
 val cartesian_plot
   :  min_x:float
-  -> step_x:float
+  -> x_steps:int
   -> max_x:float
   -> min_y:float
-  -> step_y:float
+  -> y_steps:int
   -> max_y:float
   -> (float -> float -> float)
   -> t

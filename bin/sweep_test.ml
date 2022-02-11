@@ -424,10 +424,10 @@ let cartesian_gravity_well () =
     in
     Poly3d.cartesian_plot
       ~min_x:(-10.)
-      ~step_x:0.4
+      ~x_steps:30
       ~max_x:0.
       ~min_y:(-10.)
-      ~step_y:0.4
+      ~y_steps:60
       ~max_y:10.
       gravity_well
     |> Poly3d.to_scad
