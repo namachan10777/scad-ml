@@ -40,13 +40,13 @@ let flatten_array m =
   if size > 0
   then (
     let first = ref None
+    and start = ref 0
     and i = ref 0 in
     while Option.is_none !first do
-      if Array.length m.(!i) > 0 then first := Some m.(!i).(0) else incr i
+      if Array.length m.(!start) > 0 then first := Some m.(!start).(0) else incr i
     done;
     let v = Array.make size (Option.get !first) in
-    i := 0;
-    for j = 0 to Array.length m - 1 do
+    for j = !start to Array.length m - 1 do
       let row = m.(j) in
       for k = 0 to Array.length row - 1 do
         v.(!i) <- row.(k);
