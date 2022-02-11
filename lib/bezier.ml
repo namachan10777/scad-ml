@@ -53,9 +53,9 @@ module type S = sig
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
   val patch : vec list list -> float -> float -> vec
-  val of_bezpath : n:int -> vec list -> float -> vec
+  val of_bezpath : ?n:int -> vec list -> float -> vec
 
-  val path_to_bezpath
+  val bezpath_of_path
     :  ?closed:bool
     -> ?uniform:bool
     -> ?size:
@@ -67,6 +67,8 @@ module type S = sig
     -> ?tangents:vec list
     -> vec list
     -> vec list
+
+  val bezpath_curve : ?fn:int -> ?n:int -> vec list -> vec list
 
   val of_path
     :  ?closed:bool
@@ -150,7 +152,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       let vertical_bez = make @@ List.map (fun bz -> bz u) horizontal_bezs in
       vertical_bez
 
-  let of_bezpath ~n bezpath =
+  let of_bezpath ?(n = 3) bezpath =
     let bezpath = Array.of_list bezpath in
     let len = Array.length bezpath in
     if len mod n <> 1
@@ -196,7 +198,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     in
     extrapolate
 
-  let path_to_bezpath
+  let bezpath_of_path
       ?(closed = false)
       ?(uniform = false)
       ?(size = `FlatRel 0.1)
@@ -268,6 +270,27 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     in
     List.rev (ps.(len_ps - 1) :: Util.fold_init len_ts f [])
 
+  let bezpath_curve ?(fn = 16) ?(n = 3) bezpath =
+    let bezpath = Array.of_list bezpath in
+    let len = Array.length bezpath in
+    if len mod n <> 1
+    then (
+      let msg =
+        Printf.sprintf
+          "The length of a degree %i bezier path should be a multiple of %i, plus 1."
+          len
+          len
+      in
+      raise (Invalid_argument msg) );
+    let n_segs = (len - 1) / n in
+    let f i pts =
+      let bez = make @@ List.init (n + 1) (fun j -> bezpath.((i * n) + j)) in
+      let pts = curve ~init:pts ~rev:true ~fn bez in
+      (* avoid duplication of endpoints *)
+      if i < n_segs - 1 then List.tl pts else pts
+    in
+    List.rev @@ Util.fold_init n_segs f []
+
   let of_path ?closed ?uniform ?size ?tangents path =
-    of_bezpath ~n:3 @@ path_to_bezpath ?closed ?uniform ?size ?tangents path
+    of_bezpath ~n:3 @@ bezpath_of_path ?closed ?uniform ?size ?tangents path
 end
