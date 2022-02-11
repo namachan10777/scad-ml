@@ -75,7 +75,19 @@ val helix_extrude
   -> (float * float) list
   -> t
 
+val cartesian_plot
+  :  min_x:float
+  -> step_x:float
+  -> max_x:float
+  -> min_y:float
+  -> step_y:float
+  -> max_y:float
+  -> (float -> float -> float)
+  -> t
+
 val join : t list -> t
+val add_face : int list -> t -> t
+val add_faces : int list list -> t -> t
 val rev_faces : t -> t
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t

@@ -12,6 +12,15 @@ let points t = t.points
 let faces t = t.faces
 let make ~points ~faces = { n_points = List.length points; points; faces }
 
+(* TODO:
+  - add some more control over the sealing of the shapes. Instead of only
+    capping or looping, also allow for there to be no caps added (non-manifold)
+   - also, "closed" is a bit overloaded. Maybe "capped", "seal"/"sealed"/"seals".
+   - variant type? `Looped | `Capped | `Custom of [`Auto | `Manual of int list]
+    tuple
+   - would allow for all of the variations. Is there a cleaner way?
+   - Being able to leave off the caps should allow for building polyhedrons
+    with holes by joining each of the shapes along with the special caps*)
 let of_layers ?(closed = false) layers =
   match layers with
   | []       -> empty
@@ -183,6 +192,43 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
   in
   sweep ~winding ~transforms shape
 
+let cartesian_plot ~min_x ~step_x ~max_x ~min_y ~step_y ~max_y plot =
+  let max_x = max_x +. (0.001 *. step_x)
+  and max_y = max_y +. (0.001 *. step_y)
+  (* stay above plane to guarantee manifold. *)
+  and min_plot = 0.0005 *. (step_x +. step_y)
+  and x_steps = Float.(to_int @@ ((max_x -. min_x) /. step_x)) + 1
+  and y_steps = Float.(to_int @@ ((max_y -. min_y) /. step_y)) + 1 in
+  let min_y_edge =
+    let y = min_y -. (0.001 *. step_y) in
+    let f i acc =
+      let x = (Float.of_int i *. step_x) +. min_x in
+      (x, y, 0.0001) :: acc
+    and init = [ min_x, y, 0.; max_x, y, 0. ] in
+    List.rev @@ Util.fold_init x_steps f init
+  in
+  let body =
+    let outer i acc_out =
+      let y = (Float.of_int i *. step_y) +. min_y in
+      let inner j acc_in =
+        let x = (Float.of_int j *. step_x) +. min_x in
+        let z = plot x y in
+        (x, y, if z < min_plot then min_plot else z) :: acc_in
+      and init = [ min_x, y, 0.; max_x, y, 0. ] in
+      List.rev (Util.fold_init x_steps inner init) :: acc_out
+    in
+    Util.fold_init y_steps outer [ min_y_edge ]
+  in
+  let max_y_edge =
+    let y = max_y +. (0.001 *. step_y) in
+    let f i acc =
+      let x = (Float.of_int i *. step_x) +. min_x in
+      (x, y, 0.0001) :: acc
+    and init = [ min_x, y, 0.; max_x, y, 0. ] in
+    List.rev @@ Util.fold_init x_steps f init
+  in
+  of_layers @@ List.rev (max_y_edge :: body)
+
 let join = function
   | [] -> empty
   | [ t ] -> t
@@ -194,6 +240,8 @@ let join = function
     let n_points, ps, fs = List.fold_left f (n_points, [ points ], [ faces ]) ts in
     { n_points; points = List.concat (List.rev ps); faces = List.concat (List.rev fs) }
 
+let add_face face t = { t with faces = face :: t.faces }
+let add_faces faces t = { t with faces = List.rev_append faces t.faces }
 let rev_faces t = { t with faces = List.map List.rev t.faces }
 let translate p t = { t with points = Path3d.translate p t.points }
 let rotate r t = { t with points = Path3d.rotate r t.points }

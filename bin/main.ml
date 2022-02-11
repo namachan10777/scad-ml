@@ -26,4 +26,5 @@ let () =
   Sweep_test.offset_poly ();
   Sweep_test.offset_sweep ();
   Sweep_test.offset_linear_extrude ();
+  (* Sweep_test.cartesian_gravity_well () *)
   Sweep_test.bezier_path ()

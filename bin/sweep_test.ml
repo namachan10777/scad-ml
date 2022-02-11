@@ -415,3 +415,22 @@ let bezier_path () =
   and oc = open_out "bezier_path.scad" in
   Scad.write oc scad;
   close_out oc
+
+let cartesian_gravity_well () =
+  let scad =
+    let gravity_well x y =
+      let z = 30. -. (10. *. 10. /. ((x *. x) +. (y *. y))) in
+      if z < 1. then 1. else z
+    in
+    Poly3d.cartesian_plot
+      ~min_x:(-10.)
+      ~step_x:0.4
+      ~max_x:0.
+      ~min_y:(-10.)
+      ~step_y:0.4
+      ~max_y:10.
+      gravity_well
+    |> Poly3d.to_scad
+  and oc = open_out "cartesian_gravity_well.scad" in
+  Scad.write oc scad;
+  close_out oc
