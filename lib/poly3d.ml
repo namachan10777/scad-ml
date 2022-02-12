@@ -220,6 +220,36 @@ let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =
   in
   of_layers @@ List.rev (edge (max_y +. (0.001 *. step_y)) :: layers)
 
+let polar_plot ?min_step ~max_r plot =
+  let min_step, a_steps =
+    match min_step with
+    | Some s -> s, Float.(to_int (ceil (max_r *. 2. *. pi /. s) /. 8. *. 8.))
+    | None   -> 2. *. Float.pi *. max_r /. 360., 360
+  in
+  let r_steps = Float.(to_int @@ ceil (max_r /. min_step)) in
+  (* NOTE: this should protect against actually dropping r to zero on it's own
+    right? Test and clean up along with maybe using an ?fn ?fa style of
+    specifying how many steps to take? *)
+  let step_r = (max_r -. (0.001 *. min_step)) /. Float.of_int r_steps
+  and step_a = 2. *. Float.pi /. Float.of_int a_steps in
+  let min_plot = 0.001 *. step_r
+  and angles_rev =
+    Util.fold_init (a_steps + 1) (fun i acc -> (Float.of_int i *. step_a) :: acc) []
+  in
+  let bot =
+    let f ps a = Float.(max_r *. cos a, max_r *. sin a, 0.) :: ps in
+    List.fold_left f [] angles_rev
+  in
+  let f i layers =
+    let r = if i < r_steps then max_r -. (Float.of_int i *. step_r) else 1e-6 *. step_r in
+    let layer l a =
+      let z = plot r a in
+      Float.(r *. cos a, r *. sin a, if z < min_plot then min_plot else z) :: l
+    in
+    List.fold_left layer [] angles_rev :: layers
+  in
+  of_layers @@ List.rev (Util.fold_init (r_steps + 1) f [ bot ])
+
 let join = function
   | [] -> empty
   | [ t ] -> t

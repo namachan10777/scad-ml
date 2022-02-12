@@ -13,6 +13,7 @@ module Rounding2d = Rounding2d
 module Path2d = Path2d
 module Path3d = Path3d
 module RoundExtrude = RoundExtrude
+module Math = Math
 
 (** A rotation matrix.
 

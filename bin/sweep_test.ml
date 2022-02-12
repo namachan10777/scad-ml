@@ -419,7 +419,7 @@ let bezier_path () =
 let cartesian_gravity_well () =
   let scad =
     let gravity_well x y =
-      let z = 30. -. (10. *. 10. /. ((x *. x) +. (y *. y))) in
+      let z = 50. -. (50. /. Float.sqrt ((x *. x) +. (y *. y))) in
       if z < 1. then 1. else z
     in
     Poly3d.cartesian_plot
@@ -432,5 +432,23 @@ let cartesian_gravity_well () =
       gravity_well
     |> Poly3d.to_scad
   and oc = open_out "cartesian_gravity_well.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let polar_rose () =
+  let scad =
+    let rose r a =
+      let open Float in
+      let x =
+        pow
+          ( (r *. cos a *. cos (r *. 8. *. pi /. 180.))
+          +. (r *. sin a *. sin (r *. 35. *. pi /. 180.)) )
+          2.
+        /. -300.
+      in
+      ((15. +. (5. *. sin (r *. 10. *. pi /. 180.))) *. exp x) +. 1.
+    in
+    Poly3d.polar_plot ~min_step:1. ~max_r:22. rose |> Poly3d.to_scad
+  and oc = open_out "polar_rose.scad" in
   Scad.write oc scad;
   close_out oc

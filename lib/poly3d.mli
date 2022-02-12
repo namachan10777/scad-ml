@@ -85,6 +85,7 @@ val cartesian_plot
   -> (float -> float -> float)
   -> t
 
+val polar_plot : ?min_step:float -> max_r:float -> (float -> float -> float) -> t
 val join : t list -> t
 val add_face : int list -> t -> t
 val add_faces : int list list -> t -> t
