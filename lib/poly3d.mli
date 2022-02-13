@@ -54,6 +54,7 @@ val sweep
 
 val linear_extrude
   :  ?slices:int
+  -> ?fa:float
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
@@ -82,10 +83,19 @@ val cartesian_plot
   -> min_y:float
   -> y_steps:int
   -> max_y:float
-  -> (float -> float -> float)
+  -> (x:float -> y:float -> float)
   -> t
 
-val polar_plot : ?min_step:float -> max_r:float -> (float -> float -> float) -> t
+val polar_plot : ?r_step:float -> max_r:float -> (r:float -> a:float -> float) -> t
+
+val axial_plot
+  :  ?fn:int
+  -> min_z:float
+  -> z_steps:int
+  -> max_z:float
+  -> (z:float -> a:float -> float)
+  -> t
+
 val join : t list -> t
 val add_face : int list -> t -> t
 val add_faces : int list list -> t -> t

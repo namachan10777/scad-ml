@@ -13,9 +13,9 @@ let clockwise_sign' ps =
 let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
-  let step_a = angle /. Float.of_int fn *. if rev then 1. else -1. in
+  let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =
-    ((Float.cos a *. radius) +. cx, (Float.sin a *. radius) +. cy) :: acc, a +. step_a
+    ((Float.cos a *. radius) +. cx, (Float.sin a *. radius) +. cy) :: acc, a +. a_step
   in
   fst @@ Util.fold_init (fn + 1) f (init, if rev then start else start +. angle)
 

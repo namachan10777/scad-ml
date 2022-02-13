@@ -28,4 +28,5 @@ let () =
   Sweep_test.offset_linear_extrude ();
   (* Sweep_test.cartesian_gravity_well (); *)
   Sweep_test.polar_rose ();
+  Sweep_test.axial_chalice ();
   Sweep_test.bezier_path ()

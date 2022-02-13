@@ -128,7 +128,7 @@ let linear_extrude
     ~height
     shape
   =
-  let slices = Util.helical_slices ?fn:slices twist
+  let slices = Util.helical_slices ?fa ?fn:slices twist
   and (Spec top_spec) = Option.value ~default:(Spec []) top
   and (Spec bot_spec) = Option.value ~default:(Spec []) bot in
   let bot_height = List.fold_left (fun _ (_, z) -> z) 0. bot_spec

@@ -418,7 +418,7 @@ let bezier_path () =
 
 let cartesian_gravity_well () =
   let scad =
-    let gravity_well x y =
+    let gravity_well ~x ~y =
       let z = 50. -. (50. /. Float.sqrt ((x *. x) +. (y *. y))) in
       if z < 1. then 1. else z
     in
@@ -437,7 +437,7 @@ let cartesian_gravity_well () =
 
 let polar_rose () =
   let scad =
-    let rose r a =
+    let rose ~r ~a =
       let open Float in
       let x =
         pow
@@ -448,7 +448,19 @@ let polar_rose () =
       in
       ((15. +. (5. *. sin (r *. 10. *. pi /. 180.))) *. exp x) +. 1.
     in
-    Poly3d.polar_plot ~min_step:1. ~max_r:22. rose |> Poly3d.to_scad
+    Poly3d.polar_plot ~r_step:1. ~max_r:22. rose |> Poly3d.to_scad
   and oc = open_out "polar_rose.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let axial_chalice () =
+  let scad =
+    let f ~z ~a:_ = Float.(5. *. (cos (log ((z /. 5.) +. 1.) *. pi) +. 2.)) in
+    let outer = Poly3d.axial_plot ~min_z:0. ~z_steps:50 ~max_z:50. f
+    and inner =
+      Poly3d.axial_plot ~min_z:2. ~z_steps:50 ~max_z:51. (fun ~z ~a -> f ~z ~a -. 2.)
+    in
+    Scad.difference (Poly3d.to_scad outer) [ Poly3d.to_scad inner ]
+  and oc = open_out "axial_chalice.scad" in
   Scad.write oc scad;
   close_out oc
