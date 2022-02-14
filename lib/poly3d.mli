@@ -1,24 +1,33 @@
 type t
 
+type caps =
+  [ `Capped
+  | `Looped
+  | `Open
+  | `Caps of int list * int list
+  ]
+
 val empty : t
 val n_points : t -> int
 val points : t -> Vec3.t list
 val faces : t -> int list list
 val make : points:Vec3.t list -> faces:int list list -> t
 
-(** [of_layers ?closed layers]
+(** [of_layers ?caps layers]
 
     Create a {!type:t} representing a polyhedron from a list of layers
-    (counter_clockwise loops of 3d points). Setting [closed] to true will connect
-    the open faces of the first and last layers (defaults to [false]). The
-    generated faces wrap around the ends of the layers, creating an enclosed
-    shape which is generally ready to be passed along to {!Poly3d.to_scad}
-    without further modification. If [layers] is empty, a {!empty} is returned.
+    (counter_clockwise loops of 3d points). [caps] defaults to [`Capped], which
+    specifies that faces should be generated to close off the bottom and top
+    layers of the generated shape. If it is instead set to [`Looped], the open
+    faces of the first and last layers will be closed with one another. For more
+    advanced usages, [caps] can be specified manually with [`Caps (bottom, top)]
+    (top indices provided in terms of the original poly, and they will be offset
+    appropriately) or left [`Open]. If [layers] is empty, a {!empty} is returned.
     Throws [Invalid_argument] if [layers] contains only one layer, or if it is
     not rectangular (any layer differs in length). *)
-val of_layers : ?closed:bool -> Vec3.t list list -> t
+val of_layers : ?caps:caps -> Vec3.t list list -> t
 
-(** [tri_mesh ?closed rows]
+(** [tri_mesh ?looped rows]
 
     Create a triangular mesh from a list of rows, where each row can differ in
     length relative to its neighbours by up to 2. Since the rows can be ragged,
@@ -26,10 +35,10 @@ val of_layers : ?closed:bool -> Vec3.t list list -> t
     than layers as with {!of_layers} which produces an enclosed polyhedron.
     Instead, this function is useful for the generation of triangular patches
     that can be joined with one another to create a complete polyhedron. Setting
-    [closed] to true will generate faces between the last and first rows, so long
+    [looped] to true will generate faces between the last and first rows, so long
     as their lengths differ by no more than 2. Throws [Invalid_argument] if a row
     length delta of greater than 2 is encountered. *)
-val tri_mesh : ?closed:bool -> Vec3.t list list -> t
+val tri_mesh : ?looped:bool -> Vec3.t list list -> t
 
 (** [mesh_of_layer ?reverse layer]
 
@@ -39,21 +48,21 @@ val tri_mesh : ?closed:bool -> Vec3.t list list -> t
     patch mesh to be combined with other meshes to produce a complete shape. *)
 val mesh_of_layer : ?reverse:bool -> Vec3.t list -> t
 
-(** [sweep ?closed ?convexity ~transforms shape]
+(** [sweep ?caps ?convexity ~transforms shape]
 
     Create a polyhedron by sweeping the given [shape], described as a 2d
     polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn.
-    Setting [closed] to true will connect the open faces of the beginning and
-    end of the sweep (defaults to [false]). *)
+    See {!of_layers} for an breakdown of the options made available by [caps]. *)
 val sweep
   :  ?winding:[ `CCW | `CW | `NoCheck ]
-  -> ?closed:bool
+  -> ?caps:caps
   -> transforms:MultMatrix.t list
   -> Vec2.t list
   -> t
 
 val linear_extrude
-  :  ?slices:int
+  :  ?winding:[ `CCW | `CW | `NoCheck ]
+  -> ?slices:int
   -> ?fa:float
   -> ?scale:Vec2.t
   -> ?twist:float

@@ -67,10 +67,29 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
 let custom l =
   Spec (List.map (fun (d, z) -> quantize d *. -1., quantize @@ Float.abs z) l)
 
-let sweep ?check_valid ?fn ?fs ?fa ?(mode = `Radius) ?top ?bot ~transforms shape =
+let sweep'
+    ?check_valid
+    ?(winding = `CCW)
+    ?fn
+    ?fs
+    ?fa
+    ?(mode = `Radius)
+    ?(caps = `Capped)
+    ?top
+    ?bot
+    ~transforms
+    shape
+  =
   let shape =
-    if Float.equal (Path2d.clockwise_sign shape) 1. then List.rev shape else shape
-  and (Spec top) = Option.value ~default:(Spec []) top
+    let reverse =
+      match winding with
+      | `CCW     -> Path2d.is_clockwise shape
+      | `CW      -> not @@ Path2d.is_clockwise shape
+      | `NoCheck -> false
+    in
+    if reverse then List.rev shape else shape
+  in
+  let (Spec top) = Option.value ~default:(Spec []) top
   and (Spec bot) = Option.value ~default:(Spec []) bot
   and len = List.length shape
   and offset = Offset2d.offset_with_faces ?check_valid ?fn ?fs ?fa
@@ -91,30 +110,44 @@ let sweep ?check_valid ?fn ?fs ?fa ?(mode = `Radius) ?top ?bot ~transforms shape
       List.fold_left f ([ lift m shape ], [], 0, shape, len, 0.) offsets
     in
     let faces =
-      let f =
-        if flip_faces then fun i _ -> last_len + idx - i - 1 else fun i _ -> i + idx
-      in
-      List.mapi f last_shape :: List.concat faces
+      match caps with
+      | `Capped ->
+        let close =
+          if flip_faces then fun i _ -> last_len + idx - i - 1 else fun i _ -> i + idx
+        in
+        List.mapi close last_shape :: List.concat faces
+      | `Open   -> List.concat faces
     in
-    Poly3d.make ~points:List.(concat (rev points)) ~faces
+    last_shape, Poly3d.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
   | []      ->
-    let bot = cap ~top:false ~m:MultMatrix.id bot
-    and top = cap ~top:true ~m:MultMatrix.id top in
-    Poly3d.join [ bot; top ]
+    let bot_lid, bot = cap ~top:false ~m:MultMatrix.id bot
+    and top_lid, top = cap ~top:true ~m:MultMatrix.id top in
+    bot_lid, top_lid, Poly3d.join [ bot; top ]
   | hd :: _ ->
     let mid, last_transform =
       let f (acc, _last) m = lift m shape :: acc, m in
       List.fold_left f ([], hd) transforms
     in
-    let mid = Poly3d.of_layers (List.rev mid)
-    and bot = cap ~top:false ~m:hd bot
-    and top = cap ~top:true ~m:last_transform top in
-    Poly3d.join [ bot; mid; top ]
+    let mid = Poly3d.of_layers ~caps:`Open (List.rev mid)
+    and bot_lid, bot = cap ~top:false ~m:hd bot
+    and top_lid, top = cap ~top:true ~m:last_transform top in
+    bot_lid, top_lid, Poly3d.join [ bot; mid; top ]
+
+(* NOTE: This is broken out to facilitate the code required for sweeping with
+    holes. The bottom and top lid shapes will be used to generate faces with
+    holes to seal the polyhedrons when internal shapes are given. Otherwise,
+    they will just be ignored. *)
+let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape =
+  let _, _, poly =
+    sweep' ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
+  in
+  poly
 
 let linear_extrude
     ?check_valid
+    ?winding
     ?fn
     ?fs
     ?fa
@@ -123,6 +156,7 @@ let linear_extrude
     ?(twist = 0.)
     ?(center = false)
     ?mode
+    ?caps
     ?top
     ?bot
     ~height
@@ -140,4 +174,4 @@ let linear_extrude
     List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. z)
     |> Path3d.to_transforms ?scale ?twist
   in
-  sweep ?check_valid ?fn ?fs ?fa ?mode ?top ?bot ~transforms shape
+  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape

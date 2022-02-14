@@ -6,22 +6,25 @@ type t =
   ; faces : int list list
   }
 
+type caps =
+  [ `Capped
+  | `Looped
+  | `Open
+  | `Caps of int list * int list
+  ]
+
 let empty = { n_points = 0; points = []; faces = [] }
 let n_points t = t.n_points
 let points t = t.points
 let faces t = t.faces
 let make ~points ~faces = { n_points = List.length points; points; faces }
 
-(* TODO:
-  - add some more control over the sealing of the shapes. Instead of only
-    capping or looping, also allow for there to be no caps added (non-manifold)
-   - also, "closed" is a bit overloaded. Maybe "capped", "seal"/"sealed"/"seals".
-   - variant type? `Looped | `Capped | `Custom of [`Auto | `Manual of int list]
-    tuple
-   - would allow for all of the variations. Is there a cleaner way?
-   - Being able to leave off the caps should allow for building polyhedrons
-    with holes by joining each of the shapes along with the special caps*)
-let of_layers ?(closed = false) layers =
+let of_layers ?(caps = `Capped) layers =
+  let looped =
+    match caps with
+    | `Looped -> true
+    | _       -> false
+  in
   match layers with
   | []       -> empty
   | [ _ ]    -> raise (Invalid_argument "Only one layer provided.")
@@ -32,7 +35,7 @@ let of_layers ?(closed = false) layers =
     if not (List.for_all (fun l -> List.length l = n_facets) tl)
     then raise (Invalid_argument "Inconsistent layer length.");
     let faces =
-      let last_seg = n_layers - (if closed then 0 else 1) - 1
+      let last_seg = n_layers - (if looped then 0 else 1) - 1
       and last_face = n_facets - 1 in
       let rec loop acc seg face =
         let acc =
@@ -50,17 +53,21 @@ let of_layers ?(closed = false) layers =
         then if seg = last_seg then acc else loop acc (seg + 1) 0
         else loop acc seg (face + 1)
       in
-      let looped_faces = loop [] 0 0 in
-      if closed
-      then List.rev looped_faces
-      else (
+      let faces = loop [] 0 0
+      and top_offset = n_facets * (n_layers - 1) in
+      match caps with
+      | `Capped                ->
         let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
-        and top_cap = List.init n_facets (fun i -> i + (n_facets * (n_layers - 1))) in
-        List.rev @@ (top_cap :: bottom_cap :: looped_faces) )
+        and top_cap = List.init n_facets (fun i -> i + top_offset) in
+        top_cap :: bottom_cap :: faces
+      | `Open | `Looped        -> faces
+      | `Caps ([], top_cap)    -> List.map (( + ) top_offset) top_cap :: faces
+      | `Caps (bottom_cap, []) -> bottom_cap :: faces
+      | `Caps (bot, top)       -> List.map (( + ) top_offset) top :: bot :: faces
     in
-    { n_points = n_layers * n_facets; points; faces }
+    { n_points = n_layers * n_facets; points; faces = List.rev faces }
 
-let tri_mesh ?(closed = false) rows =
+let tri_mesh ?(looped = false) rows =
   let starts_lenghts, points =
     let f (start, starts_lengths, points) row =
       let g (i, ps) p = i + 1, p :: ps in
@@ -124,7 +131,7 @@ let tri_mesh ?(closed = false) rows =
       in
       next, faces
     in
-    let _, faces = List.fold_left f (hd, []) (if closed then tl @ [ hd ] else tl)
+    let _, faces = List.fold_left f (hd, []) (if looped then tl @ [ hd ] else tl)
     and verts = Array.of_list points in
     let cull_degenerate =
       let v = Array.unsafe_get verts in
@@ -150,14 +157,14 @@ let enforce_winding w shape =
   in
   if reverse then List.rev shape else shape
 
-let sweep ?(winding = `CCW) ?closed ~transforms shape =
+let sweep ?(winding = `CCW) ?caps ~transforms shape =
   let shape = enforce_winding winding shape in
   List.map
     (fun m -> List.map (fun (x, y) -> MultMatrix.transform m (x, y, 0.)) shape)
     transforms
-  |> of_layers ?closed
+  |> of_layers ?caps
 
-let linear_extrude ?slices ?fa ?scale ?twist ?(center = false) ~height shape =
+let linear_extrude ?winding ?slices ?fa ?scale ?twist ?(center = false) ~height shape =
   let slices = helical_slices ?fa ?fn:slices (Option.value ~default:0. twist) in
   let bot = if center then height /. -2. else 0.
   and s = height /. Float.of_int slices in
@@ -165,7 +172,7 @@ let linear_extrude ?slices ?fa ?scale ?twist ?(center = false) ~height shape =
     List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
     |> Path3d.to_transforms ?scale ?twist
   in
-  sweep ~transforms shape
+  sweep ?winding ~transforms shape
 
 let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r1 shape =
   let r2 = Option.value ~default:r1 r2 in

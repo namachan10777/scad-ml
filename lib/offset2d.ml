@@ -83,14 +83,14 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   Array.init (Array.length shifted_segs) f
 
 let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
+  let path' = Array.of_list path in
   let mode, d =
-    let flip = if closed then Path2d.clockwise_sign path *. -1. else 1. in
+    let flip = if closed then Path2d.clockwise_sign' path' *. -1. else 1. in
     match offset with
     | `Delta d   -> `Delta, flip *. d
     | `Chamfer d -> `Chamfer, flip *. d
     | `Radius r  -> `Radius, flip *. r
-  and path' = Array.of_list path in
-  let len = Array.length path' in
+  and len = Array.length path' in
   let shifted_segs =
     (* last looping segment ignored later if not closed *)
     let f i = shift_segment ~d (path'.(i), path'.(Util.index_wrap ~len (i + 1))) in

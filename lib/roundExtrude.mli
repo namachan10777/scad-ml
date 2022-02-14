@@ -8,10 +8,12 @@ val custom : (float * float) list -> spec
 
 val sweep
   :  ?check_valid:int option
+  -> ?winding:[ `CCW | `CW | `NoCheck ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:[ `Capped | `Open ]
   -> ?top:spec
   -> ?bot:spec
   -> transforms:MultMatrix.t list
@@ -20,6 +22,7 @@ val sweep
 
 val linear_extrude
   :  ?check_valid:int option
+  -> ?winding:[ `CCW | `CW | `NoCheck ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
@@ -28,6 +31,7 @@ val linear_extrude
   -> ?twist:float
   -> ?center:bool
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:[ `Capped | `Open ]
   -> ?top:spec
   -> ?bot:spec
   -> height:float
