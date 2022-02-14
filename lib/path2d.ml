@@ -10,7 +10,9 @@ let clockwise_sign' ps =
   done;
   Float.(of_int @@ compare !sum 0.)
 
+let is_clockwise' ps = Float.equal 1. (clockwise_sign' ps)
 let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
+let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
@@ -31,9 +33,9 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
     | 0., None                      ->
       raise
         (Invalid_argument "Co-linear points don't define unique arc. Must specify dir.")
-    | 0., Some `CW                  -> ((2. *. Float.pi) -. a) *. -1.
-    | 0., Some `CCW                 -> (2. *. Float.pi) -. a
-    | 1., Some `CW | -1., Some `CCW -> ((2. *. Float.pi) -. a) *. Float.neg d
+    | 0., Some `CW                  -> (2. *. Float.pi) -. a
+    | 0., Some `CCW                 -> ((2. *. Float.pi) -. a) *. -1.
+    | -1., Some `CW | 1., Some `CCW -> ((2. *. Float.pi) -. a) *. Float.neg d
     | _                             -> d *. a
   in
   arc ?init ?rev ?fn ~centre ~radius ~start angle
@@ -48,7 +50,7 @@ let arc_through ?init ?rev ?fn ((x1, y1) as p1) ((x2, y2) as p2) ((x3, y3) as p3
     let nx = (m1 *. (y3 -. y2)) +. (m2 *. (y3 -. y1))
     and ny = (m1 *. (x2 -. x3)) +. (m2 *. (x1 -. x3)) in
     nx /. d, ny /. d
-  and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CCW else `CW in
+  and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CW else `CCW in
   arc_about_centre ?init ?rev ?fn ~dir ~centre p1 p3
 
 let translate p = List.map (Vec2.translate p)
