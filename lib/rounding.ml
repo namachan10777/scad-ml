@@ -24,6 +24,9 @@ module type S = sig
   val chamf : [ cut | joint | width ] -> spec
   val circ : [ cut | joint | radius ] -> spec
   val bez : ?curv:float -> [ cut | joint ] -> spec
+  val chamfers : kind:[ `Cut | `Joint | `Width ] -> (vec * float) list -> shape_spec
+  val circles : kind:[ `Radius | `Cut | `Joint ] -> (vec * float) list -> shape_spec
+  val beziers : ?curv:float -> kind:[ `Cut | `Joint ] -> (vec * float) list -> shape_spec
   val mix : (vec * spec option) list -> shape_spec
   val flat : ?closed:bool -> spec:spec -> vec list -> shape_spec
   val corners : ?fn:int -> ?fa:float -> ?fs:float -> shape_spec -> vec list
@@ -60,9 +63,36 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
   let mix ss = Mix ss
   let flat ?(closed = true) ~spec shape = Flat { shape; spec; closed }
 
-  (* NOTE: seems like it is backwards in bosl, be sure to test. *)
+  let chamfers ~kind spec_pts =
+    let wrap =
+      match kind with
+      | `Cut   -> fun c -> `Cut c
+      | `Joint -> fun j -> `Joint j
+      | `Width -> fun w -> `Width w
+    in
+    let f (p, v) = p, if Float.equal 0. v then None else Some (chamf (wrap v)) in
+    mix @@ List.map f spec_pts
+
+  let circles ~kind spec_pts =
+    let wrap =
+      match kind with
+      | `Radius -> fun r -> `Radius r
+      | `Cut    -> fun c -> `Cut c
+      | `Joint  -> fun j -> `Joint j
+    in
+    let f (p, v) = p, if Float.equal 0. v then None else Some (circ (wrap v)) in
+    mix @@ List.map f spec_pts
+
+  let beziers ?curv ~kind spec_pts =
+    let wrap =
+      match kind with
+      | `Cut   -> fun c -> `Cut c
+      | `Joint -> fun j -> `Joint j
+    in
+    let f (p, v) = p, if Float.equal 0. v then None else Some (bez ?curv (wrap v)) in
+    mix @@ List.map f spec_pts
+
   let smooth_bez_fill ~curv p1 p2 p3 =
-    (* [ p1; V.lerp p2 p1 curv; p2; V.lerp p2 p3 curv; p3 ] *)
     [ p1; V.lerp p1 p2 curv; p2; V.lerp p2 p3 curv; p3 ]
 
   let bez_corner ?fn ?(fs = Util.fs) ?(curv = 0.5) ?spec p1 p2 p3 =
