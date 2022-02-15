@@ -86,4 +86,5 @@ let extremes inners =
         let _, idx, mx = Array.fold_left max_x (0, 0, Float.min_float) inners.(i) in
         i, idx, mx )
   in
-  Array.sort (fun (_, _, x1) (_, _, x2) -> Float.compare x2 x1) xs
+  Array.sort (fun (_, _, x1) (_, _, x2) -> Float.compare x2 x1) xs;
+  xs
