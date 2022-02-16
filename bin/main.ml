@@ -30,4 +30,5 @@ let () =
   (* Sweep_test.polar_rose (); *)
   (* Sweep_test.axial_chalice (); *)
   (* Sweep_test.bezier_path (); *)
-  Sweep_test.polyholes ()
+  Sweep_test.polyholes ();
+  Sweep_test.poly2d_to_scad ()

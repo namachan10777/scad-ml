@@ -1,23 +1,5 @@
 include Path.S with type vec := Vec3.t
 
-(** [project_plane plane p]
-
- Project the 3d point [p] onto the provided [plane] described by 3 points, the
- first of which represents the origin [(0., 0.)] of the target 2d coordinate
- system, and the second being a point that falls along the positive y-axis.
- The final point being a point co-planar with the first two. See
- {!Path2d.lift_plane} for a means to lift points back out of 2d onto the same
- plane. Throws [Invalid_argument] if the points of [plane] are colinear. *)
-val project_plane : Vec3.t * Vec3.t * Vec3.t -> Vec3.t -> Vec2.t
-
-(** [lift_plane plane p]
-
- Lift the 2d point [p] onto the provided [plane] described by 3 points, the
- first of which represents the origin [(0., 0.)] of the target 2d coordinate
- system, and the second being a point that falls along the positive y-axis.
- Throws [Invalid_argument] if the points of [plane] are colinear. *)
-val lift_plane : Vec3.t * Vec3.t * Vec3.t -> float * float -> Vec3.t
-
 val arc
   :  ?init:Vec3.t list
   -> ?rev:bool

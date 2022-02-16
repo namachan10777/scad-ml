@@ -485,3 +485,14 @@ let polyholes () =
   and oc = open_out "polyholes.scad" in
   Scad.write oc scad;
   close_out oc
+
+let poly2d_to_scad () =
+  let scad =
+    let holes =
+      let s = Poly2d.square ~center:true (2., 2.) |> Poly2d.rotate (Float.pi /. 4.) in
+      Poly2d.[ s; translate (-2., -2.) s; translate (2., 2.) s ]
+    and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
+    Poly2d.to_scad ~holes outer
+  and oc = open_out "poly2d_to_scad.scad" in
+  Scad.write oc scad;
+  close_out oc

@@ -147,6 +147,13 @@ let mesh_of_layer ?(reverse = false) layer =
   in
   { n_points; points; faces = [ (if reverse then List.rev face else face) ] }
 
+(* TODO: plane_from polygon (requiring polygon_normal, plane_from_normal, and
+    are_points_on_plane for a check that the poly is fully co-planar (check can
+    be turned off))
+
+   - with plane_from_polygon, this becomes a function that takes vec3 polys.
+    Can have another that still takes vec2, unencumbered by the extra ceremony.
+    Suffix with _vec2? *)
 let polyhole_partition ?rev ~holes outer =
   let points, faces = PolyHoles.partition ?rev ~holes outer in
   make ~points ~faces
