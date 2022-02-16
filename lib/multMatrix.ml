@@ -20,7 +20,7 @@ let of_row_list_exn l =
     in
     loop 0 l;
     mat )
-  else raise (Invalid_argument "Matrix must have 3 or 4 rows.")
+  else invalid_arg "Matrix must have 3 or 4 rows."
 
 let of_row_list l =
   try Ok (of_row_list_exn l) with

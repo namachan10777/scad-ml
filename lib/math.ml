@@ -26,18 +26,16 @@ let mat_dims m =
   let n_cols = if n_rows = 0 then 0 else Array.length m.(0) in
   if Array.for_all (fun c -> Array.length c = n_cols) m
   then n_rows, n_cols
-  else raise (Invalid_argument "mat_dims: Matrix has ragged rows.")
+  else invalid_arg "mat_dims: Matrix has ragged rows."
 
 let matmul a =
   let a_rows, a_cols = mat_dims a in
   fun b ->
     let b_rows, b_cols = mat_dims b in
     if a_cols <> b_rows
-    then (
-      let msg =
-        Printf.sprintf "matmul: Inner dims do not match (%i x %i)" a_cols b_rows
-      in
-      raise (Invalid_argument msg) );
+    then
+      invalid_arg
+        (Printf.sprintf "matmul: Inner dims do not match (%i x %i)" a_cols b_rows);
     let out = Array.make_matrix a_rows b_cols 0. in
     for i = 0 to a_rows - 1 do
       for j = 0 to b_cols - 1 do
@@ -100,8 +98,7 @@ let polynomial_complex p z =
 (* Adapted from: https://github.com/revarbat/BOSL2/blob/master/math.scad#L1418 *)
 let poly_roots' ?(tol = 1e-14) p =
   let p = poly_trim_head_tail' p in
-  if Array.for_all (( = ) 0.) p
-  then raise (Invalid_argument "Input polynomial cannot be zero.");
+  if Array.for_all (( = ) 0.) p then invalid_arg "Input polynomial cannot be zero.";
   let n = Array.length p - 1 in
   (* polynomial degree *)
   if n = 0

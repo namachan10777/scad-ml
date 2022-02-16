@@ -155,8 +155,8 @@ let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
-let empty_message n =
-  Invalid_argument
+let empty_exn n =
+  invalid_arg
     (Printf.sprintf
        "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
        n
@@ -167,7 +167,7 @@ let union : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> union_2d ts
   | D3 _ :: _ -> union_3d ts
-  | []        -> raise (empty_message "union")
+  | []        -> empty_exn "union"
 
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
@@ -177,7 +177,7 @@ let minkowski : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> minkowski_2d ts
   | D3 _ :: _ -> minkowski_3d ts
-  | []        -> raise (empty_message "minkowski")
+  | []        -> empty_exn "minkowski"
 
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
@@ -187,7 +187,7 @@ let hull : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> hull_2d ts
   | D3 _ :: _ -> hull_3d ts
-  | []        -> raise (empty_message "hull")
+  | []        -> empty_exn "hull"
 
 let difference (type a) (t : a t) (sub : a t list) =
   map (fun scad -> Difference (scad, List.map unpack sub)) t
@@ -200,7 +200,7 @@ let intersection : type a. a t list -> a t =
   match ts with
   | D2 _ :: _ -> intersection_2d ts
   | D3 _ :: _ -> intersection_3d ts
-  | []        -> raise (empty_message "intersection")
+  | []        -> empty_exn "intersection"
 
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
@@ -243,17 +243,15 @@ let import_2d ?dxf_layer ?convexity file =
   match legal_ext [ "dxf"; "svg" ] file with
   | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
   | Error ext ->
-    raise
-    @@ Invalid_argument
-         (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
+    invalid_arg
+      (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
 let import_3d ?convexity file =
   match legal_ext [ "stl"; "off"; "amf"; "3mf" ] file with
   | Ok ()     -> d3 (import ?convexity file)
   | Error ext ->
-    raise
-    @@ Invalid_argument
-         (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
+    invalid_arg
+      (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
 
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
 let render ?(convexity = 10) = map (fun src -> Render { src; convexity })

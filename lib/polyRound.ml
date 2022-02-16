@@ -11,7 +11,7 @@ let invtan run rise =
   | -1, -1 -> Float.pi +. a
   | -1, 0  -> Float.pi *. 1.5
   | -1, 1  -> (2. *. Float.pi) -. a
-  | _      -> raise (Invalid_argument "Run and rise cannot both = 0.")
+  | _      -> invalid_arg "Run and rise cannot both = 0."
 
 let get_angle (x1, y1) (x2, y2) =
   if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)

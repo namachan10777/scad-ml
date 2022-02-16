@@ -58,7 +58,7 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = MultMatrix.id in
-  if len < 2 then raise (Invalid_argument "Invalid path (too few points).");
+  if len < 2 then invalid_arg "Invalid path (too few points).";
   let scale = Util.value_map_opt ~default:id (scaler ~len) scale
   and twist = Util.value_map_opt ~default:id (twister ~len) twist
   and transform =

@@ -96,7 +96,7 @@ let mirror ax t = sub t (mul_scalar ax (2. *. (dot t ax /. dot ax ax)))
 let projection (x, y, _) = x, y, 0.
 
 let project_plane (a, b, c) p =
-  if colinear a b c then raise (Invalid_argument "Plane points must not be colinear.");
+  if colinear a b c then invalid_arg "Plane points must not be colinear.";
   let v = sub c a
   and ((yx, yy, yz) as y_ax) = normalize (sub b a) in
   let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in
@@ -104,7 +104,7 @@ let project_plane (a, b, c) p =
   (x *. xx) +. (y *. xy) +. (z *. xz), (x *. yx) +. (y *. yy) +. (z *. yz)
 
 let lift_plane (a, b, c) (px, py) =
-  if colinear a b c then raise (Invalid_argument "Plane points must not be colinear.");
+  if colinear a b c then invalid_arg "Plane points must not be colinear.";
   let v = sub c a
   and ((yx, yy, yz) as y_ax) = normalize (sub b a) in
   let xx, xy, xz = normalize (sub v (mul_scalar y_ax (dot v y_ax))) in

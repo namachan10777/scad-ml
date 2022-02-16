@@ -131,7 +131,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           "Invalid length of non-uniform sampling parameter `h`. Should be %i."
           valid_h_len
       in
-      raise (Invalid_argument msg) );
+      invalid_arg msg );
     let f =
       let w = Util.index_wrap ~len in
       let calc i =

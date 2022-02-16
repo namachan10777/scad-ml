@@ -31,8 +31,7 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
     and d = Vec2.clockwise_sign p1 p2 centre in
     match d, dir with
     | 0., None                      ->
-      raise
-        (Invalid_argument "Co-linear points don't define unique arc. Must specify dir.")
+      invalid_arg "Co-linear points don't define unique arc. Must specify dir."
     | 0., Some `CW                  -> (2. *. Float.pi) -. a
     | 0., Some `CCW                 -> ((2. *. Float.pi) -. a) *. -1.
     | -1., Some `CW | 1., Some `CCW -> ((2. *. Float.pi) -. a) *. Float.neg d
@@ -41,8 +40,7 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   arc ?init ?rev ?fn ~centre ~radius ~start angle
 
 let arc_through ?init ?rev ?fn ((x1, y1) as p1) ((x2, y2) as p2) ((x3, y3) as p3) =
-  if Vec2.colinear p1 p2 p3
-  then raise (Invalid_argument "Arc points must form a valid triangle.");
+  if Vec2.colinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
   let centre =
     let d = (2. *. (x1 -. x3) *. (y3 -. y2)) +. (2. *. (x2 -. x3) *. (y1 -. y3))
     and m1 = Vec2.dot p1 p1 -. Vec2.dot p3 p3

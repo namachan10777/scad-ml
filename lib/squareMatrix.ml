@@ -66,9 +66,7 @@ module Make (C : Config) : S = struct
         done
       done;
       m )
-    else (
-      let msg = Printf.sprintf "Input is not square matrix of size %i" C.size in
-      raise (Invalid_argument msg) )
+    else invalid_arg (Printf.sprintf "Input is not square matrix of size %i" C.size)
 
   let of_row_matrix rm =
     try Ok (of_row_matrix_exn rm) with

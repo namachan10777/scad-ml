@@ -163,7 +163,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           len
           len
       in
-      raise (Invalid_argument msg) );
+      invalid_arg msg );
     let n_segs = (len - 1) / n in
     let segs =
       Array.init n_segs (fun i -> List.init (n + 1) (fun j -> bezpath.((i * n) + j)))
@@ -217,7 +217,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       | `Abs ss when valid ss ->
         let ss = Array.of_list ss in
         fun i _ -> Array.unsafe_get ss i
-      | _ -> raise (Invalid_argument "Size must be greater than zero.")
+      | _ -> invalid_arg "Size must be greater than zero."
     and power_poly =
       let m =
         [| [| -3.; 6.; -3. |]; [| 7.; -9.; 2. |]; [| -5.; 3.; 0. |]; [| 1.; 0.; 0. |] |]
@@ -281,7 +281,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           len
           len
       in
-      raise (Invalid_argument msg) );
+      invalid_arg msg );
     let n_segs = (len - 1) / n in
     let f i pts =
       let bez = make @@ List.init (n + 1) (fun j -> bezpath.((i * n) + j)) in

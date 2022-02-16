@@ -18,9 +18,7 @@ let chamf ?(angle = Float.pi /. 4.) ?cut ?width ?height () =
     | Some w, None, None   -> w, w /. Float.tan a
     | None, Some h, None   -> h *. Float.tan a, h
     | None, None, None     ->
-      raise
-        (Invalid_argument
-           "At least one of cut, width, or height must be specified for chamfer." )
+      invalid_arg "At least one of cut, width, or height must be specified for chamfer."
   in
   Spec [ -.width, Float.abs height ]
 

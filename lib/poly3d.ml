@@ -28,13 +28,13 @@ let of_layers ?(caps = `Capped) layers =
   in
   match layers with
   | []       -> empty
-  | [ _ ]    -> raise (Invalid_argument "Only one layer provided.")
+  | [ _ ]    -> invalid_arg "Only one layer provided."
   | hd :: tl ->
     let n_layers = List.length layers
     and n_facets = List.length hd
     and points = List.concat layers in
     if not (List.for_all (fun l -> List.length l = n_facets) tl)
-    then raise (Invalid_argument "Inconsistent layer length.");
+    then invalid_arg "Inconsistent layer length.";
     let faces =
       let last_seg = n_layers - (if looped then 0 else 1) - 1
       and last_face = n_facets - 1 in
@@ -126,7 +126,7 @@ let tri_mesh ?(looped = false) rows =
           |> Util.prepend_init (next_len + 1 - count) d
         | delta ->
           let s = Printf.sprintf "Unsupported layer length difference of %i" delta in
-          raise (Invalid_argument s)
+          invalid_arg s
       in
       next, faces
     in
