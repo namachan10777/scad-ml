@@ -140,6 +140,13 @@ let sweep'
     holes to seal the polyhedrons when internal shapes are given. Otherwise,
     they will just be ignored. *)
 let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape =
+  (* TODO: instead of the 2d shapes of the lids, return the lifted ones?
+     -> plane projection
+     -> polyholes partition
+     -> lift points back onto the plane
+     -> Poly3d.join to slap them all together
+     -> note that there will be duplicated points, so I'll probably want to
+        trim those out? After I have it, add an option to do it in house? *)
   let _, _, poly =
     sweep' ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
   in

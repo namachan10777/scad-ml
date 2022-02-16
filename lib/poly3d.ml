@@ -10,7 +10,8 @@ type caps =
   [ `Capped
   | `Looped
   | `Open
-  | `Caps of int list * int list
+  | `OpenBot
+  | `OpenTop
   ]
 
 let empty = { n_points = 0; points = []; faces = [] }
@@ -55,15 +56,13 @@ let of_layers ?(caps = `Capped) layers =
       in
       let faces = loop [] 0 0
       and top_offset = n_facets * (n_layers - 1) in
+      let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
+      and top_cap = List.init n_facets (fun i -> i + top_offset) in
       match caps with
-      | `Capped                ->
-        let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
-        and top_cap = List.init n_facets (fun i -> i + top_offset) in
-        top_cap :: bottom_cap :: faces
-      | `Open | `Looped        -> faces
-      | `Caps ([], top_cap)    -> List.map (( + ) top_offset) top_cap :: faces
-      | `Caps (bottom_cap, []) -> bottom_cap :: faces
-      | `Caps (bot, top)       -> List.map (( + ) top_offset) top :: bot :: faces
+      | `Capped         -> top_cap :: bottom_cap :: faces
+      | `Open | `Looped -> faces
+      | `OpenBot        -> top_cap :: faces
+      | `OpenTop        -> bottom_cap :: faces
     in
     { n_points = n_layers * n_facets; points; faces = List.rev faces }
 
@@ -147,6 +146,10 @@ let mesh_of_layer ?(reverse = false) layer =
     List.fold_left (fun (n, ps, fs) p -> n + 1, p :: ps, n :: fs) (0, [], []) layer
   in
   { n_points; points; faces = [ (if reverse then List.rev face else face) ] }
+
+let polyhole_partition ?rev ~holes outer =
+  let points, faces = PolyHoles.partition ?rev ~holes outer in
+  make ~points ~faces
 
 let enforce_winding w shape =
   let reverse =

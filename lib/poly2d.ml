@@ -6,7 +6,7 @@ let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
   let f i =
     let a = s *. Float.of_int i in
-    [ r *. Float.cos a; r *. Float.sin a ]
+    r *. Float.cos a, r *. Float.sin a
   in
   List.init fn f
 

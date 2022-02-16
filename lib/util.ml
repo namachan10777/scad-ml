@@ -23,14 +23,78 @@ let array_of_list_rev l =
   | []       -> [||]
   | hd :: tl ->
     let len = 1 + List.length tl in
-    let a = Array.make len hd in
-    let r = ref tl in
+    let a = Array.make len hd
+    and r = ref tl in
     (* Start at [len - 2] as [make] has placed [hd] at [t.(len - 1)]. *)
     for i = len - 2 downto 0 do
       match !r with
       | []       -> assert false
       | hd :: tl ->
         a.(i) <- hd;
+        r := tl
+    done;
+    a
+
+let array_of_list_map f l =
+  match l with
+  | []       -> [||]
+  | hd :: tl ->
+    let len = 1 + List.length tl in
+    let a = Array.make len (f hd)
+    and r = ref tl in
+    for i = 1 to len - 1 do
+      match !r with
+      | []       -> assert false
+      | hd :: tl ->
+        a.(i) <- f hd;
+        r := tl
+    done;
+    a
+
+let array_of_list_rev_map f l =
+  match l with
+  | []       -> [||]
+  | hd :: tl ->
+    let len = 1 + List.length tl in
+    let a = Array.make len (f hd)
+    and r = ref tl in
+    for i = len - 2 downto 0 do
+      match !r with
+      | []       -> assert false
+      | hd :: tl ->
+        a.(i) <- f hd;
+        r := tl
+    done;
+    a
+
+let array_of_list_mapi f l =
+  match l with
+  | []       -> [||]
+  | hd :: tl ->
+    let len = 1 + List.length tl in
+    let a = Array.make len (f 0 hd)
+    and r = ref tl in
+    for i = 1 to len - 1 do
+      match !r with
+      | []       -> assert false
+      | hd :: tl ->
+        a.(i) <- f i hd;
+        r := tl
+    done;
+    a
+
+let array_of_list_rev_mapi f l =
+  match l with
+  | []       -> [||]
+  | hd :: tl ->
+    let len = 1 + List.length tl in
+    let a = Array.make len (f 0 hd)
+    and r = ref tl in
+    for i = len - 2 downto 0 do
+      match !r with
+      | []       -> assert false
+      | hd :: tl ->
+        a.(i) <- f i hd;
         r := tl
     done;
     a

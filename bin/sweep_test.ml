@@ -464,3 +464,24 @@ let axial_chalice () =
   and oc = open_out "axial_chalice.scad" in
   Scad.write oc scad;
   close_out oc
+
+let polyholes () =
+  let scad =
+    let holes =
+      let s = Poly2d.square ~center:true (2., 2.) |> Poly2d.rotate (Float.pi /. 4.) in
+      Poly2d.[ s; translate (-2., -2.) s; translate (2., 2.) s ]
+    and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
+    let poly =
+      Poly3d.polyhole_partition ~holes outer
+      |> Poly3d.to_scad
+      |> Scad.color ~alpha:0.5 Color.Silver
+    and reference =
+      Scad.difference (Scad.polygon outer) (List.map Scad.polygon holes)
+      |> Scad.linear_extrude ~height:1.
+      |> Scad.translate (0., 0., -3.)
+      |> Scad.color ~alpha:0.5 Color.BlueViolet
+    in
+    Scad.union [ poly; reference ]
+  and oc = open_out "polyholes.scad" in
+  Scad.write oc scad;
+  close_out oc

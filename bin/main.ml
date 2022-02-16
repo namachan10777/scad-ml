@@ -10,9 +10,9 @@ let () =
   (* Sweep_test.rounded_poly (); *)
   (* Sweep_test.polyround_basic (); *)
   (* Sweep_test.polyround_parametric (); *)
-  Sweep_test.polyround_triangle_extrude ();
-  Sweep_test.polyround_basic_extrude ();
-  Sweep_test.polyround_sweep ();
+  (* Sweep_test.polyround_triangle_extrude ();
+   * Sweep_test.polyround_basic_extrude ();
+   * Sweep_test.polyround_sweep (); *)
   (* Sweep_test.resample_path (); *)
   (* Sweep_test.poly_linear_extrude (); *)
   (* Sweep_test.polyround_linear_extrude (); *)
@@ -22,11 +22,12 @@ let () =
   (* Sweep_test.sweep_starburst ~euler:true; *)
   (* Sweep_test.sweep_starburst ~euler:false; *)
   (* Sweep_test.tri_mesh_poly (); *)
-  Sweep_test.rounding_basic ();
-  Sweep_test.offset_poly ();
-  Sweep_test.offset_sweep ();
-  Sweep_test.offset_linear_extrude ();
+  (* Sweep_test.rounding_basic ();
+   * Sweep_test.offset_poly ();
+   * Sweep_test.offset_sweep (); *)
+  (* Sweep_test.offset_linear_extrude (); *)
   (* Sweep_test.cartesian_gravity_well (); *)
   (* Sweep_test.polar_rose (); *)
   (* Sweep_test.axial_chalice (); *)
-  Sweep_test.bezier_path ()
+  (* Sweep_test.bezier_path (); *)
+  Sweep_test.polyholes ()

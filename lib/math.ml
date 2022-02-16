@@ -1,7 +1,7 @@
 let deg_of_rad r = 180.0 *. r /. Float.pi
 let rad_of_deg d = d *. Float.pi /. 180.
 let sign a = Float.(of_int @@ compare a 0.)
-let clamp ~min ~max a = Float.min (Float.max min a) max
+let clamp ~min ~max a = if a < min then min else if a > max then max else a
 let lerp a b u = ((1. -. u) *. a) +. (u *. b)
 
 let lerpn ?(endpoint = true) a b n =

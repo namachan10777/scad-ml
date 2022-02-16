@@ -4,7 +4,8 @@ type caps =
   [ `Capped
   | `Looped
   | `Open
-  | `Caps of int list * int list
+  | `OpenBot
+  | `OpenTop
   ]
 
 val empty : t
@@ -18,13 +19,12 @@ val make : points:Vec3.t list -> faces:int list list -> t
     Create a {!type:t} representing a polyhedron from a list of layers
     (counter_clockwise loops of 3d points). [caps] defaults to [`Capped], which
     specifies that faces should be generated to close off the bottom and top
-    layers of the generated shape. If it is instead set to [`Looped], the open
-    faces of the first and last layers will be closed with one another. For more
-    advanced usages, [caps] can be specified manually with [`Caps (bottom, top)]
-    (top indices provided in terms of the original poly, and they will be offset
-    appropriately) or left [`Open]. If [layers] is empty, a {!empty} is returned.
-    Throws [Invalid_argument] if [layers] contains only one layer, or if it is
-    not rectangular (any layer differs in length). *)
+   layers of the generated shape. If it is instead set to [`Looped], the open
+   faces of the first and last layers will be closed with one another. For more
+   advanced usages, one or both of the caps can be left open, so the resulting
+   meshes can be closed off by some other means. If [layers] is empty, a
+   {!empty} is returned.  Throws [Invalid_argument] if [layers] contains only
+   one layer, or if it is not rectangular (any layer differs in length). *)
 val of_layers : ?caps:caps -> Vec3.t list list -> t
 
 (** [tri_mesh ?looped rows]
@@ -47,6 +47,8 @@ val tri_mesh : ?looped:bool -> Vec3.t list list -> t
     is reversed if [reverse] is [true]. This can be useful for producing a flat
     patch mesh to be combined with other meshes to produce a complete shape. *)
 val mesh_of_layer : ?reverse:bool -> Vec3.t list -> t
+
+val polyhole_partition : ?rev:bool -> holes:Vec2.t list list -> Vec2.t list -> t
 
 (** [sweep ?caps ?convexity ~transforms shape]
 

@@ -1,18 +1,38 @@
 (* https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 
 type tag =
-  | Outer
-  | Inner of int
+  { n : int
+  ; idx : int
+  }
 
-type id =
+let equal_tag a b = Int.equal a.n b.n && Int.equal a.idx b.idx
+
+let compare_tag a b =
+  match Int.compare a.n b.n with
+  | 0 -> Int.compare a.idx b.idx
+  | c -> c
+
+type point =
   { p : Vec2.t
   ; tag : tag
   }
 
+let negate_point { p; tag } = { p = Vec2.negate p; tag }
+
+module BridgeSet = Set.Make (struct
+  type t = tag * tag
+
+  let compare (a1, a2) (b1, b2) =
+    match compare_tag a1 b1 with
+    | 0 -> compare_tag a2 b2
+    | c -> c
+end)
+
+(* Opposite of usual convention, but this works. Flip inputs for now. *)
+let is_ccw a b c = Vec3.get_z Vec2.(cross (sub b a) (sub c a)) > 0.
+
 (* check if point p is within the CCW triangle described by p1, p2, and p3. *)
-let in_tri ~p1 ~p2 ~p3 p =
-  Float.equal 1. (Vec2.clockwise_sign p1 p p2)
-  && Float.equal 1. (Vec2.clockwise_sign p2 p p3)
+let in_tri p p1 p2 p3 = is_ccw p1 p p2 && is_ccw p2 p p3
 
 (* find closest intersect on the outer path made with rightward horizontal ray
    from point p *)
@@ -29,9 +49,9 @@ let outer_intersect ((_, y) as p) outer =
       out_y := inter_y )
   in
   for i = 0 to len - 1 do
-    let ((_, yo1) as po1) = outer.(i)
-    and ((_, yo2) as po2) = outer.(Util.index_wrap ~len (i + 1)) in
-    if Float.equal (-1.) (Vec2.clockwise_sign p po1 po2)
+    let { p = (_, yo1) as po1; _ } = outer.(i)
+    and { p = (_, yo2) as po2; _ } = outer.((i + 1) mod len) in
+    if is_ccw p po1 po2
     then
       if Float.equal y yo1
       then update i po1
@@ -42,49 +62,149 @@ let outer_intersect ((_, y) as p) outer =
         let u = (y -. yo2) /. (yo1 -. yo2) in
         update i (Vec2.lerp po1 po2 u) )
   done;
-  if Float.is_infinite !out_x then raise (Failure "Invalid input polygons.");
-  !seg_idx, (!out_x, !out_y)
+  if Float.is_infinite !out_x
+  then raise (Failure "Holes should have opposite winding direction of outer polygon.")
+  else !seg_idx, (!out_x, !out_y)
 
 (* Find a bridge between the point p (in the interior of poly outer) and a
-    vertex (given by index) in the outer path. *)
-let bridge_to_outer ((x, y) as p) outer =
-  let seg_idx, intersect = outer_intersect p outer
+   vertex (given by index) in the outer path. *)
+let bridge_to_outer { p = (x, y) as pt; _ } outer =
+  let seg_idx, intersect = outer_intersect pt outer
   and len = Array.length outer in
   let next_idx = Util.index_wrap ~len (seg_idx + 1) in
-  let ((seg_x, _) as seg) = outer.(seg_idx)
-  and ((next_x, _) as next) = outer.(next_idx) in
   let first, valid_candidate =
+    let { p = (seg_x, _) as seg; _ } = outer.(seg_idx)
+    and { p = (next_x, _) as next; _ } = outer.(next_idx) in
     if seg_x > x || next_x <= x
-    then
-      ( seg_idx
-      , fun i ->
-          let ((_, vy) as v) = outer.(i) in
-          vy < y && in_tri ~p1:seg ~p2:p ~p3:v intersect )
-    else
-      ( next_idx
-      , fun i ->
-          let ((_, vy) as v) = outer.(i) in
-          vy > y && in_tri ~p1:v ~p2:p ~p3:next intersect )
+    then seg_idx, fun ((_, cy) as cp) -> cy < y && in_tri seg pt cp intersect
+    else next_idx, fun ((_, cy) as cp) -> cy > y && in_tri cp pt next intersect
   in
   let idx = ref first
-  and min_x = ref @@ Vec2.get_x outer.(first) in
+  and min_x = ref @@ Vec2.get_x outer.(first).p in
   for i = 0 to len - 1 do
-    if valid_candidate i
-    then (
-      let cx, _ = outer.(i) in
-      if cx < !min_x then min_x := cx;
-      idx := i )
+    let { p = (cx, _) as p; _ } = outer.(i) in
+    if valid_candidate p
+    then
+      if cx < !min_x
+      then (
+        min_x := cx;
+        idx := i )
   done;
   !idx
 
-(* Right-most extreme vertices of each hole sorted in descending order.
-   Returns: (hole index, vertex index, x max) *)
-let extremes inners =
-  let max_x (i, idx, m) x = if x > m then i + 1, i, x else i + 1, idx, m in
-  let xs =
-    Array.init (Array.length inners) (fun i ->
-        let _, idx, mx = Array.fold_left max_x (0, 0, Float.min_float) inners.(i) in
-        i, idx, mx )
+let extremes holes =
+  let max_x m ({ p = x, _; _ } as e) = if x > Vec2.get_x m.p then e else m in
+  let rightmost =
+    Array.init (Array.length holes) (fun i ->
+        Array.fold_left max_x holes.(i).(0) holes.(i) )
   in
-  Array.sort (fun (_, _, x1) (_, _, x2) -> Float.compare x2 x1) xs;
-  xs
+  Array.sort (fun { p = x1, _; _ } { p = x2, _; _ } -> Float.compare x2 x1) rightmost;
+  rightmost
+
+let polyhole_complex ~holes outer =
+  let f (poly, bridges) { tag = { n = hole_idx; idx = bridge_start }; _ } =
+    let hole = holes.(hole_idx) in
+    let bridge_end = bridge_to_outer hole.(bridge_start) poly in
+    let len_poly = Array.length poly
+    and len_hole = Array.length hole
+    and bridge = hole.(bridge_start).tag, poly.(bridge_end).tag in
+    let poly =
+      Array.concat
+        [ Array.init (len_poly + 1) (fun j -> poly.((bridge_end + j) mod len_poly))
+        ; Array.init (len_hole + 1) (fun j -> hole.((bridge_start + j) mod len_hole))
+        ]
+    in
+    poly, bridge :: bridges
+  in
+  (* bridges will be reversed when duplicates are removed later *)
+  Array.fold_left f (outer, []) (extremes holes)
+
+let remove_duplicate_bridges a b =
+  let a_set = BridgeSet.of_list a in
+  let f bs ((bridge_start, bridge_end) as bridge) =
+    if BridgeSet.mem (bridge_end, bridge_start) a_set then bs else bridge :: bs
+  in
+  List.fold_left f [] b
+
+let insert_bridge (bridge_start, bridge_end) polys =
+  let poly_idx = ref 0 in
+  let f poly =
+    let len = Array.length poly
+    and i = ref 0
+    and start_idx = ref None
+    and end_idx = ref None in
+    while (Option.is_none !start_idx || Option.is_none !end_idx) && !i < len do
+      let { tag; _ } = poly.(!i) in
+      if Option.is_none !start_idx && equal_tag tag bridge_start
+      then start_idx := Some !i
+      else if Option.is_none !end_idx && equal_tag tag bridge_end
+      then end_idx := Some !i;
+      incr i
+    done;
+    match !start_idx, !end_idx with
+    | Some si, Some ei -> Some (si, ei)
+    | _                ->
+      incr poly_idx;
+      None
+  in
+  let start_idx, end_idx = Option.get @@ Array.find_map f polys
+  and poly_idx = !poly_idx in
+  let poly = polys.(poly_idx) in
+  let len = Array.length poly
+  and n_poly = Array.length polys in
+  let len_div_es, len_div_se =
+    if start_idx < end_idx
+    then start_idx + len - end_idx, end_idx - start_idx
+    else start_idx - end_idx, end_idx + len - start_idx
+  in
+  let end_to_start = Array.init (len_div_es + 1) (fun j -> poly.((end_idx + j) mod len))
+  and start_to_end = Array.init (len_div_se + 1) (fun j -> poly.((start_idx + j) mod len))
+  and rest = Array.init (n_poly - 1) (fun j -> polys.((poly_idx + 1 + j) mod n_poly)) in
+  Array.concat [ [| end_to_start; start_to_end |]; rest ]
+
+let partition ?(rev = false) ~holes outer =
+  let flipped = Float.equal (-1.) (Path2d.clockwise_sign outer) in
+  let outer = if flipped then List.rev outer else outer in
+  let holes = if flipped then List.map List.rev holes else holes in
+  let pos_holes =
+    let f n = Util.array_of_list_mapi (fun idx p -> { p; tag = { n; idx } }) in
+    Util.array_of_list_mapi f holes
+  in
+  let n_holes = Array.length pos_holes in
+  let pos_outer =
+    Util.array_of_list_mapi (fun idx p -> { p; tag = { n = n_holes; idx } }) outer
+  in
+  let face_offsets =
+    let f (acc, start) hole =
+      let start = start + Array.length hole in
+      start :: acc, start
+    in
+    let offsets, _ = Array.fold_left f ([ 0 ], 0) pos_holes in
+    Util.array_of_list_rev offsets
+  in
+  let poly, pos_bridges = polyhole_complex ~holes:pos_holes pos_outer
+  and _, neg_bridges =
+    polyhole_complex
+      ~holes:(Array.map (fun hole -> Array.map negate_point hole) pos_holes)
+      (Array.map negate_point pos_outer)
+  in
+  let bridges = remove_duplicate_bridges pos_bridges neg_bridges in
+  let polys = List.fold_left (fun polys b -> insert_bridge b polys) [| poly |] bridges in
+  let points = List.map Vec2.to_vec3 @@ List.concat @@ List.concat [ holes; [ outer ] ]
+  and faces =
+    let f i =
+      let poly = polys.(i) in
+      let len = Array.length poly in
+      let flip =
+        if (rev && not flipped) || ((not rev) && flipped)
+        then fun j -> len - 1 - j
+        else Fun.id
+      in
+      List.init len (fun j ->
+          let { tag = { n; idx }; _ } = poly.(flip j) in
+          idx + face_offsets.(n) )
+    in
+    List.init (Array.length polys) f
+  in
+  (* Poly3d.make ~points ~faces *)
+  points, faces
