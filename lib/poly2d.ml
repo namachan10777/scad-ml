@@ -18,7 +18,6 @@ let square ?(center = false) (x, y) =
     [ x', y'; -.x', y'; -.x', -.y'; x', -.y' ] )
   else [ 0., 0.; x, 0.; x, y; 0., y ]
 
-let polyhole_partition = PolyHoles.partition
 let offset = Offset2d.offset
 let translate = Path2d.translate
 let rotate = Path2d.rotate

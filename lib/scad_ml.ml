@@ -14,6 +14,7 @@ module Path2d = Path2d
 module Path3d = Path3d
 module RoundExtrude = RoundExtrude
 module Math = Math
+module Plane = Plane
 
 (** A rotation matrix.
 

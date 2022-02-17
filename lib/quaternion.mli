@@ -3,10 +3,15 @@
     to create composable and interpolatable rotations to be applied to vectors
     (e.g. {!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
 
-type t = float * float * float * float
+type t
 
 (** The identity quaternion: [(0., 0., 0., 1.)] *)
 val id : t
+
+(** [coefficients t]
+
+    Returns the imaginary (xyz) and real (w) parts which describe the quaternion [t]. *)
+val coefficients : t -> float * float * float * float
 
 (** [make ax angle]
 

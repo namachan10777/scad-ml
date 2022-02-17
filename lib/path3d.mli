@@ -59,6 +59,19 @@ val twister : len:int -> float -> int -> MultMatrix.t
    {!Scad.linear_extrude}. *)
 val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMatrix.t list
 
+(** [normal t]
+
+  Calculate the normal vector of the path [t]. *)
+val normal : t -> Vec3.t
+
+(** [coplanar ?eps t]
+
+  Returns [true] if all points in [t] are coplanar, within the tolerance [eps].
+  If there are fewer than 3 points, or the path is colinear, this returns [false]. *)
+val coplanar : ?eps:float -> t -> bool
+
+(** {1 Basic Transfomations} *)
+
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t
 val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t

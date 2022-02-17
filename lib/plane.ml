@@ -1,5 +1,7 @@
 type t = float * float * float * float
 
+let coefficients t = t
+
 let make p1 p2 p3 =
   let ((a, b, c) as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
   let n = Vec3.norm crx in
@@ -33,14 +35,15 @@ let normalize (a, b, c, d) =
 
 let distance_to_point (a, b, c, d) p = Vec3.dot (a, b, c) p -. d
 
-let greatest_distance (a, b, c, d) points =
+let greatest_distance (a, b, c, d) ps =
   let normal = a, b, c in
   let f (min, max) p =
     let n = Vec3.dot p normal in
     Float.min min n, Float.max max n
   in
-  let min_norm, max_norm = List.fold_left f (Float.max_float, Float.min_float) points in
+  let min_norm, max_norm = List.fold_left f (Float.max_float, Float.min_float) ps in
   Float.max (max_norm -. d) (d -. min_norm) /. Vec3.norm normal
 
-let are_points_on ?(eps = Util.epsilon) t points = greatest_distance t points < eps
+let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
 let is_point_above t p = distance_to_point t p > Util.epsilon
+let to_string (a, b, c, d) = Printf.sprintf "[%f, %f, %f, %f]" a b c d

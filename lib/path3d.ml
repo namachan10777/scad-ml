@@ -10,24 +10,25 @@ let arc ?init ?rev ?fn ~centre ~radius ~start angle =
   | None      -> arc
 
 let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
-  let plane = centre, p1, p2 in
-  let p1' = Vec3.project_plane plane p1
-  and p2' = Vec3.project_plane plane p2
-  and centre' = Vec3.project_plane plane centre in
-  let arc =
-    Path2d.arc_about_centre ?rev ?dir ?fn ~centre:centre' p1' p2'
-    |> List.map (Vec3.lift_plane plane)
-  in
+  let plane = Plane.make centre p1 p2 in
+  let project = Plane.project plane
+  and lift = List.map (Plane.lift plane) in
+  let p1' = project p1
+  and p2' = project p2
+  and centre' = project centre in
+  let arc = lift @@ Path2d.arc_about_centre ?rev ?dir ?fn ~centre:centre' p1' p2' in
   match init with
   | Some init -> List.concat [ arc; init ]
   | None      -> arc
 
 let arc_through ?init ?rev ?fn p1 p2 p3 =
-  let plane = p3, p1, p2 in
-  let p1' = Vec3.project_plane plane p1
-  and p2' = Vec3.project_plane plane p2
-  and p3' = Vec3.project_plane plane p3 in
-  let arc = Path2d.arc_through ?rev ?fn p1' p2' p3' |> List.map (Vec3.lift_plane plane) in
+  let plane = Plane.make p3 p1 p2 in
+  let project = Plane.project plane
+  and lift = List.map (Plane.lift plane) in
+  let p1' = project p1
+  and p2' = project p2
+  and p3' = project p3 in
+  let arc = lift @@ Path2d.arc_through ?rev ?fn p1' p2' p3' in
   match init with
   | Some init -> List.concat [ arc; init ]
   | None      -> arc
@@ -136,6 +137,23 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   in
   let f i = scale i |> MultMatrix.mul (twist i) |> MultMatrix.mul (transform i) in
   List.init len f
+
+let normal = function
+  | p0 :: p1 :: p2 :: poly ->
+    let area_vec =
+      let f (sum, last) p =
+        let c = Vec3.(cross (sub last p0) (sub p last)) in
+        Vec3.add c sum, p
+      in
+      fst @@ List.fold_left f (f (Vec3.zero, p1) p2) poly
+    in
+    Vec3.(normalize @@ negate area_vec)
+  | _                      -> invalid_arg "Too few points to calculate polygon normal."
+
+let coplanar ?eps t =
+  try Plane.are_points_on ?eps (Plane.of_normal @@ normal t) t with
+  (* too few points, or co-linear *)
+  | Invalid_argument _ -> false
 
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)

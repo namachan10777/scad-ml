@@ -1,6 +1,7 @@
 type t = float * float * float * float
 
 let id = 0., 0., 0., 1.
+let coefficients t = t
 
 let make ax angle =
   let x, y, z = Vec3.normalize ax in

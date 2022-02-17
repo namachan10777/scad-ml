@@ -85,6 +85,20 @@ let arc_points () =
   Scad.write oc scad;
   close_out oc
 
+let arc_points_3d () =
+  let arc = Path3d.arc_through ~fn:5 (10., 10., 0.) (20., 20., 10.) (10., 30., 20.) in
+  let scad =
+    List.mapi
+      (fun i (x, y, z) ->
+        Scad.text ~size:5. (Printf.sprintf "%i" i)
+        |> Scad.color Color.Red
+        |> Scad.translate (x, y, z) )
+      arc
+    |> Scad.union
+  and oc = open_out "arc_points_3d.scad" in
+  Scad.write oc scad;
+  close_out oc
+
 let rounded_poly () =
   let radii_pts = [ 0., 0., 0.5; 10., 0., 0.5; 0., 10., 0.5 ] in
   let scad = Scad.polygon (PolyRound.polyround ~fn:10 radii_pts)
@@ -472,7 +486,7 @@ let polyholes () =
       Poly2d.[ s; translate (-2., -2.) s; translate (2., 2.) s ]
     and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
     let poly =
-      Poly3d.polyhole_partition ~holes outer
+      Poly3d.polyhole_partition_vec2 ~holes outer
       |> Poly3d.to_scad
       |> Scad.color ~alpha:0.5 Color.Silver
     and reference =
@@ -494,5 +508,30 @@ let poly2d_to_scad () =
     and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
     Poly2d.to_scad ~holes outer
   and oc = open_out "poly2d_to_scad.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let rounded_polyhole_sweep () =
+  let transforms =
+    let bez = Bezier3d.of_path [ 0., 0., 2.; 0., 20., 20.; 40., 10., 0.; 50., 10., 5. ] in
+    Path3d.to_transforms ~euler:false (Bezier3d.curve ~fn:20 bez)
+  in
+  let scad =
+    let holes =
+      let s = Poly2d.circle ~fn:90 2.
+      and d = 2. in
+      Poly2d.[ translate (-.d, -.d) s; translate (d, d) s ]
+    and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
+    RoundExtrude.(
+      sweep
+        ~transforms
+        ~bot:(circ (`Radius (-0.8)))
+        ~top:(circ (`Radius 0.5))
+        ~flip_hole_top_d:true
+        ~holes
+        outer)
+    |> Poly3d.to_scad
+    |> Scad.color ~alpha:0.5 Color.RoyalBlue
+  and oc = open_out "rounded_polyhole_sweep.scad" in
   Scad.write oc scad;
   close_out oc

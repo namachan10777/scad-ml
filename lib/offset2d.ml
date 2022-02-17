@@ -10,8 +10,7 @@ let segment_extension ((_, a2) as sa) ((b1, _) as sb) =
   else (
     match Vec2.line_intersection sa sb with
     | Some inter -> inter
-    | None       -> Failure "Offset: path contains segment that reverses direction."
-                    |> raise )
+    | None       -> failwith "Offset: path contains segment that reverses direction." )
 
 let chamfer ~centre ~delta p1 p2 p3 =
   let endline =
@@ -101,7 +100,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
     | Some quality -> good_segments ~quality ~closed ~d path' (Array.of_list shifted_segs)
     | None         -> Array.make len true
   in
-  if Array.for_all not good then raise (Failure "Offset of path is degenerate");
+  if Array.for_all not good then failwith "Offset of path is degenerate";
   let good_segs = List.filteri (fun i _ -> good.(i)) shifted_segs |> Array.of_list
   and good_path = List.filteri (fun i _ -> good.(i)) path |> Array.of_list in
   let len_good = Array.length good_segs in

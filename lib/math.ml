@@ -150,7 +150,7 @@ let poly_roots' ?(tol = 1e-14) p =
       done;
       incr i
     done;
-    if !n_complete < n then raise (Failure "poly_roots exceeded iteration limit.");
+    if !n_complete < n then failwith "poly_roots exceeded iteration limit.";
     let error =
       let f xi =
         let num =

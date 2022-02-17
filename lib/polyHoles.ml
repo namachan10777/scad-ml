@@ -63,7 +63,7 @@ let outer_intersect ((_, y) as p) outer =
         update i (Vec2.lerp po1 po2 u) )
   done;
   if Float.is_infinite !out_x
-  then raise (Failure "Holes should have opposite winding direction of outer polygon.")
+  then failwith "Invalid polygon: holes may intersect with eachother, or the outer walls."
   else !seg_idx, (!out_x, !out_y)
 
 (* Find a bridge between the point p (in the interior of poly outer) and a
@@ -162,9 +162,12 @@ let insert_bridge (bridge_start, bridge_end) polys =
   and rest = Array.init (n_poly - 1) (fun j -> polys.((poly_idx + 1 + j) mod n_poly)) in
   Array.concat [ [| end_to_start; start_to_end |]; rest ]
 
-let partition ?(rev = false) ~holes outer =
-  let flipped = Float.equal (-1.) (Path2d.clockwise_sign outer) in
+let partition ?(rev = false) ?(lift = fun (x, y) -> x, y, 0.) ~holes outer =
+  let outer_sign = Path2d.clockwise_sign outer in
+  let flipped = Float.equal (-1.) outer_sign in
   let outer = if flipped then List.rev outer else outer in
+  if not @@ List.for_all (fun h -> Path2d.clockwise_sign h <> outer_sign) holes
+  then invalid_arg "Holes must have opposite winding direction of the outer polygon.";
   let holes = if flipped then List.map List.rev holes else holes in
   let pos_holes =
     let f n = Util.array_of_list_mapi (fun idx p -> { p; tag = { n; idx } }) in
@@ -190,7 +193,7 @@ let partition ?(rev = false) ~holes outer =
   in
   let bridges = remove_duplicate_bridges pos_bridges neg_bridges in
   let polys = List.fold_left (fun polys b -> insert_bridge b polys) [| poly |] bridges in
-  let points = List.map Vec2.to_vec3 @@ List.concat @@ List.concat [ holes; [ outer ] ]
+  let points = List.map lift @@ List.concat @@ List.concat [ holes; [ outer ] ]
   and faces =
     let f i =
       let poly = polys.(i) in
@@ -206,5 +209,4 @@ let partition ?(rev = false) ~holes outer =
     in
     List.init (Array.length polys) f
   in
-  (* Poly3d.make ~points ~faces *)
   points, faces

@@ -7,6 +7,7 @@ let () =
   Sweep_test.spline_path ();
   (* Sweep_test.bezier_path (); *)
   Sweep_test.arc_points ();
+  Sweep_test.arc_points_3d ();
   (* Sweep_test.rounded_poly (); *)
   (* Sweep_test.polyround_basic (); *)
   (* Sweep_test.polyround_parametric (); *)
@@ -31,4 +32,5 @@ let () =
   (* Sweep_test.axial_chalice (); *)
   (* Sweep_test.bezier_path (); *)
   Sweep_test.polyholes ();
-  Sweep_test.poly2d_to_scad ()
+  Sweep_test.poly2d_to_scad ();
+  Sweep_test.rounded_polyhole_sweep ()

@@ -12,10 +12,13 @@ val sweep
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?mode:[ `Chamfer | `Delta | `Radius ]
   -> ?caps:[ `Capped | `Open ]
   -> ?top:spec
   -> ?bot:spec
+  -> ?holes:Vec2.t list list
+  -> ?flip_hole_top_d:bool
+  -> ?flip_hole_bot_d:bool
   -> transforms:MultMatrix.t list
   -> Vec2.t list
   -> Poly3d.t

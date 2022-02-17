@@ -65,6 +65,16 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
 let custom l =
   Spec (List.map (fun (d, z) -> quantize d *. -1., quantize @@ Float.abs z) l)
 
+let flip_d (Spec l) = Spec (List.map (fun (d, z) -> d *. -1., z) l)
+
+let polyhole_partition ?rev ~holes outer =
+  let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3d.normal outer in
+  let project = List.map @@ Plane.project plane
+  and lift = Plane.lift plane in
+  let holes = List.map project holes in
+  let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
+  Poly3d.make ~points ~faces
+
 let sweep'
     ?check_valid
     ?(winding = `CCW)
@@ -116,7 +126,7 @@ let sweep'
         List.mapi close last_shape :: List.concat faces
       | `Open   -> List.concat faces
     in
-    last_shape, Poly3d.make ~points:List.(concat (rev points)) ~faces
+    List.hd points, Poly3d.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
   | []      ->
@@ -133,23 +143,47 @@ let sweep'
     and top_lid, top = cap ~top:true ~m:last_transform top in
     bot_lid, top_lid, Poly3d.join [ bot; mid; top ]
 
-(* NOTE: This is broken out to facilitate the code required for sweeping with
-    holes. The bottom and top lid shapes will be used to generate faces with
-    holes to seal the polyhedrons when internal shapes are given. Otherwise,
-    they will just be ignored. *)
-let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape =
-  (* TODO: instead of the 2d shapes of the lids, return the lifted ones?
-     -> plane projection
-     -> polyholes partition
-     -> lift points back onto the plane
-     -> Poly3d.join to slap them all together
-     -> note that there will be duplicated points, so I'll probably want to
-        trim those out? After I have it, add an option to do it in house? *)
-  let _, _, poly =
-    sweep' ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
-  in
-  poly
+(* TODO: think about the API here. Should it be separate functions since there
+    are so many optionals, including ones that are only relevant for holes? Or no? *)
+let sweep
+    ?check_valid
+    ?winding
+    ?fn
+    ?fs
+    ?fa
+    ?mode
+    ?caps
+    ?top
+    ?bot
+    ?holes
+    ?(flip_hole_top_d = false)
+    ?(flip_hole_bot_d = false)
+    ~transforms
+    shape
+  =
+  let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
+  match holes with
+  | None       ->
+    let _, _, poly = sweep ?winding ?caps ?top ?bot shape in
+    poly
+  | Some holes ->
+    let tunnel_bots, tunnel_tops, tunnels =
+      let hole_bot_spec = if flip_hole_bot_d then Option.map flip_d bot else bot
+      and hole_top_spec = if flip_hole_top_d then Option.map flip_d top else top in
+      let f (bots, tops, tuns) hole =
+        let bot, top, tunnel =
+          sweep ~winding:`CW ~caps:`Open ?top:hole_top_spec ?bot:hole_bot_spec hole
+        in
+        bot :: bots, top :: tops, tunnel :: tuns
+      in
+      List.fold_left f ([], [], []) holes
+    in
+    let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
+    let bot_lid = polyhole_partition ~rev:true ~holes:tunnel_bots outer_bot
+    and top_lid = polyhole_partition ~holes:tunnel_tops outer_top in
+    Poly3d.join (Poly3d.translate (0., 0., 0.) bot_lid :: top_lid :: outer :: tunnels)
 
+(* TODO: add holes *)
 let linear_extrude
     ?check_valid
     ?winding
