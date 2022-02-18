@@ -521,7 +521,11 @@ let rounded_polyhole_sweep () =
       let s = Poly2d.circle ~fn:90 2.
       and d = 2. in
       Poly2d.[ translate (-.d, -.d) s; translate (d, d) s ]
-    and outer = List.rev @@ Poly2d.square ~center:true (10., 10.) in
+    and outer =
+      Poly2d.square ~center:true (10., 10.)
+      |> Rounding2d.(flat ~spec:(chamf (`Width 1.)))
+      |> Rounding2d.corners
+    in
     RoundExtrude.(
       sweep
         ~transforms
@@ -531,7 +535,6 @@ let rounded_polyhole_sweep () =
         ~holes
         outer)
     |> Poly3d.to_scad
-    |> Scad.color ~alpha:0.5 Color.RoyalBlue
   and oc = open_out "rounded_polyhole_sweep.scad" in
   Scad.write oc scad;
   close_out oc

@@ -12,6 +12,13 @@ module type S = sig
   val deriv : ?closed:bool -> ?h:float -> vec list -> vec list
   val deriv_nonuniform : ?closed:bool -> h:float list -> vec list -> vec list
   val tangents : ?uniform:bool -> ?closed:bool -> vec list -> vec list
+
+  val continuous_closest_point
+    :  ?n_steps:int
+    -> ?max_err:float
+    -> (float -> vec)
+    -> vec
+    -> float
 end
 
 module Make (V : Sigs.Vec) : S with type vec := V.t = struct
@@ -159,4 +166,37 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     then deriv ~closed path
     else deriv_nonuniform ~closed ~h:(segment_lengths ~closed path) path )
     |> List.map V.normalize
+
+  let continuous_closest_point ?(n_steps = 15) ?(max_err = 0.01) path_f p =
+    let step = 1. /. Float.of_int n_steps in
+    let rec aux start_u end_u =
+      let minima_ranges =
+        let us =
+          let f i = Math.lerp start_u end_u (step *. Float.of_int i) in
+          Array.init (n_steps + 1) f
+        in
+        let ps = Array.map path_f us in
+        let len = Array.length ps in
+        let f i acc =
+          let i = len - 1 - i in
+          let d1 = V.distance ps.(i - 2) p
+          and d2 = V.distance ps.(i - 1) p
+          and d3 = V.distance ps.(i) p in
+          if d2 <= d1 && d2 <= d3 then (us.(i - 2), us.(i)) :: acc else acc
+        in
+        Util.fold_init (len - 2) f []
+      in
+      match minima_ranges with
+      | [ (a, b) ] when V.distance (path_f a) (path_f b) < max_err -> (a +. b) /. 2.
+      | [ (a, b) ] -> aux a b
+      | (a1, b1) :: tl ->
+        let f (min_u, min_dist) (a, b) =
+          let u = aux a b in
+          let d = V.distance (path_f u) p in
+          if d < min_dist then u, d else min_u, min_dist
+        in
+        fst @@ List.fold_left f (f (0., Float.max_float) (a1, b1)) tl
+      | [] -> failwith "Failure to find minima."
+    in
+    aux 0. 1.
 end

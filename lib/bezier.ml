@@ -49,6 +49,8 @@ let bezier_matrix =
 module type S = sig
   type vec
 
+  val coefs' : vec array -> vec array
+  val coefs : vec list -> vec array
   val make : vec list -> float -> vec
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
@@ -83,13 +85,14 @@ module type S = sig
     -> vec list
     -> float
     -> vec
+
+  val closest_point : ?n:int -> ?max_err:float -> (float -> vec) -> vec -> float
 end
 
 module Make (V : Sigs.Vec) : S with type vec := V.t = struct
   module P = Path.Make (V)
 
-  let make ps =
-    let ps = Array.of_list ps in
+  let coefs' ps =
     let n = Array.length ps - 1 in
     let bm = bezier_matrix n
     and m = Array.make (n + 1) V.zero in
@@ -99,6 +102,14 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         m.(i) <- V.add m.(i) (V.mul_scalar ps.(j) row.(j))
       done
     done;
+    m
+
+  let coefs ps = coefs' (Array.of_list ps)
+
+  let make ps =
+    let ps = Array.of_list ps in
+    let n = Array.length ps - 1 in
+    let m = coefs' ps in
     fun u ->
       let pt = ref V.zero in
       for i = 0 to n do
@@ -293,4 +304,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
 
   let of_path ?closed ?uniform ?size ?tangents path =
     of_bezpath ~n:3 @@ bezpath_of_path ?closed ?uniform ?size ?tangents path
+
+  let closest_point ?(n = 3) ?max_err bez p =
+    P.continuous_closest_point ~n_steps:(n * 3) ?max_err bez p
 end

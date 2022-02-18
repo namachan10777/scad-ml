@@ -120,6 +120,22 @@ let flatten_array m =
     v )
   else [||]
 
+let bisection ?(max_iter = 100) ?(tolerance = 0.001) ~lower ~upper f =
+  let rec loop i a b =
+    let c = (a +. b) /. 2. in
+    let res = f c in
+    Printf.printf "res = %f" res;
+    if res = 0. || (b -. a) /. 2. < tolerance
+    then c
+    else if i < max_iter
+    then
+      if Float.(Int.equal (compare 0. res) (compare 0. (f a)))
+      then loop (i + 1) c b
+      else loop (i + 1) a c
+    else failwith "Maximum iterations reached in bisection search."
+  in
+  loop 0 lower upper
+
 let deduplicate_consecutive list ~equal =
   let rec loop acc last = function
     | []       -> last :: acc
