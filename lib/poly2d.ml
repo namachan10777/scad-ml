@@ -38,5 +38,5 @@ let to_scad ?convexity ?holes t =
       in
       List.fold_left f (0, [], []) (t :: holes)
     in
-    Scad.polygon ?convexity ~paths points
+    Scad.polygon ?convexity ~paths:(List.rev paths) (List.rev points)
   | None       -> Scad.polygon ?convexity t

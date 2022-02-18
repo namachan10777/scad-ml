@@ -15,6 +15,7 @@ module Path3d = Path3d
 module RoundExtrude = RoundExtrude
 module Math = Math
 module Plane = Plane
+module PolyText = PolyText
 
 (** A rotation matrix.
 

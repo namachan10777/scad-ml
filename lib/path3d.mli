@@ -70,6 +70,8 @@ val normal : t -> Vec3.t
   If there are fewer than 3 points, or the path is colinear, this returns [false]. *)
 val coplanar : ?eps:float -> t -> bool
 
+val to_plane : t -> Plane.t
+
 (** {1 Basic Transfomations} *)
 
 val translate : Vec3.t -> t -> t

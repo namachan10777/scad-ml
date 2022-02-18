@@ -155,6 +155,10 @@ let coplanar ?eps t =
   (* too few points, or co-linear *)
   | Invalid_argument _ -> false
 
+let to_plane = function
+  | []         -> invalid_arg "Empty path cannot be converted to plane."
+  | point :: t -> Plane.of_normal ~point (normal t)
+
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)
 let rotate_about_pt r p = List.map (Vec3.rotate_about_pt r p)

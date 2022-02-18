@@ -51,8 +51,17 @@ module type S = sig
 
   val coefs' : vec array -> vec array
   val coefs : vec list -> vec array
+  val make' : vec array -> float -> vec
   val make : vec list -> float -> vec
-  val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> (float -> vec) -> vec list
+
+  val curve
+    :  ?init:vec list
+    -> ?rev:bool
+    -> ?fn:int
+    -> ?endpoint:bool
+    -> (float -> vec)
+    -> vec list
+
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
   val patch : vec list list -> float -> float -> vec
   val of_bezpath : ?n:int -> vec list -> float -> vec
@@ -106,8 +115,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
 
   let coefs ps = coefs' (Array.of_list ps)
 
-  let make ps =
-    let ps = Array.of_list ps in
+  let make' ps =
     let n = Array.length ps - 1 in
     let m = coefs' ps in
     fun u ->
@@ -117,8 +125,12 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       done;
       !pt
 
-  let curve ?(init = []) ?(rev = false) ?(fn = 16) bez =
-    let dt = 1. /. Float.of_int fn *. if rev then 1. else -1. in
+  let make ps = make' (Array.of_list ps)
+
+  let curve ?(init = []) ?(rev = false) ?(fn = 16) ?(endpoint = true) bez =
+    let step = 1. /. Float.of_int fn in
+    let last = if endpoint then 1. else 1. -. step in
+    let dt = 1. /. Float.of_int fn *. if rev then last else -.last in
     let rec loop acc i t =
       if i <= fn then loop (bez t :: acc) (i + 1) (t +. dt) else acc
     in
@@ -264,7 +276,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           Util.array_of_list_rev (Array.fold_left f [] (Math.real_roots' p)) )
       in
       let dists =
-        let bz = make [ V.zero; normal1; normal2; V.zero ] in
+        let bz = make' [| V.zero; normal1; normal2; V.zero |] in
         Array.map (fun u -> V.norm (bz u)) uextreme
       in
       let scale =
@@ -295,7 +307,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       invalid_arg msg );
     let n_segs = (len - 1) / n in
     let f i pts =
-      let bez = make @@ List.init (n + 1) (fun j -> bezpath.((i * n) + j)) in
+      let bez = make' @@ Array.init (n + 1) (fun j -> bezpath.((i * n) + j)) in
       let pts = curve ~init:pts ~rev:true ~fn bez in
       (* avoid duplication of endpoints *)
       if i < n_segs - 1 then List.tl pts else pts

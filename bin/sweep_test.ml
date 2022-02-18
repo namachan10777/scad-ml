@@ -538,3 +538,11 @@ let rounded_polyhole_sweep () =
   and oc = open_out "rounded_polyhole_sweep.scad" in
   Scad.write oc scad;
   close_out oc
+
+let polytext () =
+  let scad =
+    let PolyText.{ outer; inner } = PolyText.glyph_outline ~font:"Fira Code" '@' in
+    Poly2d.to_scad ~holes:inner outer
+  and oc = open_out "polytext.scad" in
+  Scad.write oc scad;
+  close_out oc
