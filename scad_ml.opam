@@ -18,6 +18,7 @@ bug-reports: "https://github.com/namachan10777/scad-ml/issues"
 depends: [
   "dune" {>= "2.9"}
   "ocaml" {>= "4.08.0"}
+  "cairo2" {>= "0.6.2"}
   "odoc" {with-doc}
 ]
 build: [
