@@ -46,6 +46,16 @@ let matmul a =
     done;
     out
 
+let transpose a =
+  let n_rows, n_cols = mat_dims a in
+  let m = Array.make_matrix n_cols n_rows a.(0).(0) in
+  for i = 0 to n_rows - 1 do
+    for j = 0 to n_cols - 1 do
+      m.(i).(j) <- a.(j).(i)
+    done
+  done;
+  m
+
 let poly_trim_head' p =
   let i = ref 0
   and first = ref None

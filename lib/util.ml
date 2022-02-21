@@ -99,6 +99,16 @@ let array_of_list_rev_mapi f l =
     done;
     a
 
+let array_find_mapi f a =
+  let len = Array.length a
+  and res = ref None
+  and i = ref 0 in
+  while Option.is_none !res && !i < len do
+    res := f !i a.(!i);
+    incr i
+  done;
+  !res
+
 let flatten_array m =
   let size = Array.fold_left (fun s r -> s + Array.length r) 0 m in
   if size > 0
@@ -119,6 +129,10 @@ let flatten_array m =
     done;
     v )
   else [||]
+
+let array_all_equal f a =
+  let len = Array.length a in
+  if len < 2 then true else Array.for_all (f a.(0)) a
 
 let bisection ?(max_iter = 100) ?(tolerance = 0.001) ~lower ~upper f =
   let rec loop i a b =
@@ -169,6 +183,10 @@ let fold_init n f init =
   loop init 0
 
 let prepend_init n f init = fold_init n (fun i acc -> f i :: acc) init
+
+let last_element = function
+  | []       -> invalid_arg "No last element in empty list."
+  | hd :: tl -> List.fold_left (fun _ e -> e) hd tl
 
 let helix_arc_length ~height ~r twist =
   twist *. Float.(sqrt ((r *. r) +. pow (height /. twist) 2.))

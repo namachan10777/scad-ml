@@ -127,8 +127,7 @@ let remove_duplicate_bridges a b =
   List.fold_left f [] b
 
 let insert_bridge (bridge_start, bridge_end) polys =
-  let poly_idx = ref 0 in
-  let f poly =
+  let f idx poly =
     let len = Array.length poly
     and i = ref 0
     and start_idx = ref None
@@ -142,13 +141,10 @@ let insert_bridge (bridge_start, bridge_end) polys =
       incr i
     done;
     match !start_idx, !end_idx with
-    | Some si, Some ei -> Some (si, ei)
-    | _                ->
-      incr poly_idx;
-      None
+    | Some si, Some ei -> Some (si, ei, idx)
+    | _                -> None
   in
-  let start_idx, end_idx = Option.get @@ Array.find_map f polys
-  and poly_idx = !poly_idx in
+  let start_idx, end_idx, poly_idx = Option.get @@ Util.array_find_mapi f polys in
   let poly = polys.(poly_idx) in
   let len = Array.length poly
   and n_poly = Array.length polys in

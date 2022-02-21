@@ -1,5 +1,12 @@
 include Path.Make (Vec2)
 
+type bounds =
+  { left : float
+  ; right : float
+  ; top : float
+  ; bot : float
+  }
+
 let clockwise_sign' ps =
   let len = Array.length ps
   and sum = ref 0. in
@@ -13,6 +20,15 @@ let clockwise_sign' ps =
 let is_clockwise' ps = Float.equal 1. (clockwise_sign' ps)
 let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
+
+let bounds = function
+  | []           -> invalid_arg "Cannot calculate bounds for empty path."
+  | (x, y) :: tl ->
+    let f (left, right, top, bot) (x, y) =
+      Float.(min left x, max right x, max top y, min bot y)
+    in
+    let left, right, top, bot = List.fold_left f (x, x, y, y) tl in
+    { left; right; top; bot }
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
