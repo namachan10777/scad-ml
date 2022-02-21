@@ -1,9 +1,17 @@
 include Path.S with type vec := Vec2.t
 
+type bounds =
+  { left : float
+  ; right : float
+  ; top : float
+  ; bot : float
+  }
+
 val clockwise_sign' : Vec2.t array -> float
 val is_clockwise' : Vec2.t array -> bool
 val clockwise_sign : Vec2.t list -> float
 val is_clockwise : Vec2.t list -> bool
+val bounds : Vec2.t list -> bounds
 
 val arc
   :  ?init:Vec2.t list
