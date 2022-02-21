@@ -35,13 +35,17 @@ let glyph_outline ?(center = false) ?weight ~font char =
   let s = String.of_seq (Seq.return char)
   and cr = create (Image.create Image.A1 ~w:1 ~h:1) in
   select_font_face ?weight cr font;
+  scale cr 1. 1.;
+  set_font_size cr 10.;
   let te = text_extents cr s in
   if center
   then (
     let x = 0.5 -. (te.width /. 2.) -. te.x_bearing
     and y = 0.5 -. (te.height /. 2.) -. te.y_bearing in
-    move_to cr x y );
+    move_to cr x y )
+  else move_to cr 0. 0.5;
   Path.text cr s;
+  (* Path.glyph cr [| { index = 30; x = 0.; y = 0. } |]; *)
   match pathdata_to_outlines Path.(to_array @@ copy cr) with
   (* match path_to_outlines (Path.copy cr) with *)
   | [] -> { outer = []; inner = [] }
