@@ -1,7 +1,12 @@
 (* placeholder module, will likely have this stuff in poly3d as rounded_extrude *)
 module R = Rounding.Make (Vec2) (Path2d)
 
-type spec = Spec : (float * float) list -> spec
+type offset =
+  { d : float
+  ; z : float
+  }
+
+type spec = Spec : offset list -> spec
 
 let quantize = Math.quant ~q:(1. /. 1024.)
 
@@ -20,15 +25,16 @@ let chamf ?(angle = Float.pi /. 4.) ?cut ?width ?height () =
     | None, None, None     ->
       invalid_arg "At least one of cut, width, or height must be specified for chamfer."
   in
-  Spec [ -.width, Float.abs height ]
+  Spec [ { d = -.width; z = Float.abs height } ]
 
 let circ ?(fn = 16) spec =
   let radius = radius_of_spec spec in
   let step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
   let f i =
     let i = Float.of_int (i + 1) in
-    ( quantize (radius *. (Float.cos (i *. step) -. 1.))
-    , quantize (Float.abs radius *. Float.sin (i *. step)) )
+    { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
+    ; z = quantize (Float.abs radius *. Float.sin (i *. step))
+    }
   in
   Spec (List.init fn f)
 
@@ -39,9 +45,10 @@ let tear ?(fn = 16) spec =
     if i < fn
     then (
       let i = Float.of_int (i + 1) in
-      ( quantize (radius *. (Float.cos (i *. step) -. 1.))
-      , quantize (Float.abs radius *. Float.sin (i *. step)) ) )
-    else -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)), Float.abs radius
+      { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
+      ; z = quantize (Float.abs radius *. Float.sin (i *. step))
+      } )
+    else { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = Float.abs radius }
   in
   Spec (List.init (fn + 1) f)
 
@@ -60,12 +67,13 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
         (0., Float.abs joint)
         (-.joint, Float.abs joint)
     |> List.tl
-    |> List.map (fun (d, z) -> quantize d, quantize z) )
+    |> List.map (fun (d, z) -> { d = quantize d; z = quantize z }) )
 
 let custom l =
-  Spec (List.map (fun (d, z) -> quantize d *. -1., quantize @@ Float.abs z) l)
+  Spec
+    (List.map (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z }) l)
 
-let flip_d (Spec l) = Spec (List.map (fun (d, z) -> d *. -1., z) l)
+let flip_d (Spec l) = Spec (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 
 let polyhole_partition ?rev ~holes outer =
   let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3d.normal outer in
@@ -104,7 +112,7 @@ let sweep'
   and lift ?z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ?z p) in
   let cap ~top ~m offsets =
     let z_dir, flip_faces = if top then 1., false else -1., true in
-    let f (pts, faces, start_idx, last_shape, last_len, last_d) (d, z) =
+    let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
       let spec =
         match mode with
         | `Radius  -> `Radius (d -. last_d)
@@ -204,8 +212,8 @@ let linear_extrude
   let slices = Util.helical_slices ?fa ?fn:slices twist
   and (Spec top_spec) = Option.value ~default:(Spec []) top
   and (Spec bot_spec) = Option.value ~default:(Spec []) bot in
-  let bot_height = List.fold_left (fun _ (_, z) -> z) 0. bot_spec
-  and top_height = List.fold_left (fun _ (_, z) -> z) 0. top_spec in
+  let bot_height = List.fold_left (fun _ { z; _ } -> z) 0. bot_spec
+  and top_height = List.fold_left (fun _ { z; _ } -> z) 0. top_spec in
   let z = if center then height /. -2. else bot_height
   and s = Float.max 0. (height -. bot_height -. top_height) /. Float.of_int slices
   and twist = if Float.abs twist > 0. then Some twist else None in
@@ -214,3 +222,108 @@ let linear_extrude
     |> Path3d.to_transforms ?scale ?twist
   in
   sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
+
+(* type patch_edges = *)
+(*   { left : Path3d.t *)
+(*   ; right : Path3d.t *)
+(*   ; top : Path3d.t *)
+(*   ; bot : Path3d.t *)
+(*   } *)
+
+(* let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch = *)
+(*   let trans_bezpatch = Math.transpose bezpatch *)
+(*   and n_rows, n_cols = Math.mat_dims bezpatch in *)
+(*   let row_degen = Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) bezpatch *)
+(*   and col_degen = *)
+(*     Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) trans_bezpatch *)
+(*   in *)
+(*   let top_degen = row_degen.(0) *)
+(*   and bot_degen = row_degen.(n_rows - 1) *)
+(*   and left_degen = col_degen.(0) *)
+(*   and right_degen = col_degen.(n_cols - 1) *)
+(*   and all_rows_degen = Array.for_all Fun.id row_degen *)
+(*   and all_cols_degen = Array.for_all Fun.id col_degen *)
+(*   and top_degen_case ~rev bp = *)
+(*     let row_max = *)
+(*       let full_degen = *)
+(*         let row_degen = Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) bp in *)
+(*         let r = Float.(to_int @@ ceil ((of_int n_rows /. 2.) -. 1.)) in *)
+(*         n_rows >= 4 && Array.for_all Fun.id (Array.sub row_degen 1 r) *)
+(*       in *)
+(*       let f = if full_degen then Fun.id else fun i -> if i <= fn / 2 then 2 * i else fn in *)
+(*       Array.init (fn + 1) f *)
+(*     and bezpatch = *)
+(*       Array.map (fun row -> Bezier3d.(curve' @@ make' row)) bp |> Math.transpose *)
+(*     in *)
+(*     let pts = *)
+(*       [ bezpatch.(0).(0) ] *)
+(*       :: List.init fn (fun i -> *)
+(*              let fn = row_max.(i) + 2 in *)
+(*              Bezier3d.(curve ~fn @@ make' bezpatch.(i + 1)) ) *)
+(*     in *)
+(*     let left = List.map List.hd pts *)
+(*     and right = List.map Util.last_element pts *)
+(*     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in *)
+(*     mesh, { left; right; top = List.hd pts; bot = Util.last_element pts } *)
+(*   in *)
+(*   match all_rows_degen, all_cols_degen, top_degen, bot_degen, left_degen, right_degen with *)
+(*   | true, true, _, _, _, _ -> *)
+(*     let p = [ bezpatch.(0).(0) ] in *)
+(*     Poly3d.empty, { left = p; right = p; top = p; bot = p } *)
+(*   | true, false, _, _, _, _ -> *)
+(*     let col = Bezier3d.(curve ~fn @@ make' trans_bezpatch.(0)) in *)
+(*     let bot = [ Util.last_element col ] in *)
+(*     Poly3d.empty, { left = col; right = col; top = [ List.hd col ]; bot } *)
+(*   | false, true, _, _, _, _ -> *)
+(*     let row = Bezier3d.(curve ~fn @@ make' bezpatch.(0)) in *)
+(*     let right = [ Util.last_element row ] in *)
+(*     Poly3d.empty, { left = [ List.hd row ]; right; top = row; bot = row } *)
+(*   | false, false, false, false, false, false -> *)
+(*     let pts = Bezier3d.(patch_curve ~fn @@ patch' bezpatch) in *)
+(*     let left = List.map List.hd pts *)
+(*     and right = List.map Util.last_element pts *)
+(*     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in *)
+(*     mesh, { left; right; top = List.hd pts; bot = Util.last_element pts } *)
+(*   | false, false, true, true, _, _ -> *)
+(*     let row_count = *)
+(*       let steps = ((fn - 3) / 2) + 1 in *)
+(*       let even = fn mod 2 = 0 in *)
+(*       let mid_start = if even then steps + 1 else steps in *)
+(*       let a = Array.make ((steps * 2) + if even then 1 else 0) 0 in *)
+(*       if even then a.(steps) <- fn + 1; *)
+(*       for i = 0 to steps - 1 do *)
+(*         a.(i) <- 3 + (i * 2); *)
+(*         a.(mid_start + i) <- 3 + ((steps - 1 - i) * 2) *)
+(*       done; *)
+(*       a *)
+(*     in *)
+(*     let bezpatch = *)
+(*       Array.map (fun row -> Bezier3d.(curve' @@ make' row)) trans_bezpatch *)
+(*       |> Math.transpose *)
+(*     in *)
+(*     let pts = *)
+(*       [ bezpatch.(0).(0) ] *)
+(*       :: Util.fold_init *)
+(*            (fn - 1) *)
+(*            (fun j acc -> *)
+(*              let i = fn - 2 - j in *)
+(*              Bezier3d.(curve ~fn:row_count.(i) @@ make' bezpatch.(i + 1)) :: acc ) *)
+(*            [ [ bezpatch.(0).(Array.length bezpatch - 1) ] ] *)
+(*     in *)
+(*     let left = List.map List.hd pts *)
+(*     and right = List.map Util.last_element pts *)
+(*     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in *)
+(*     mesh, { left; right; top = List.hd pts; bot = Util.last_element pts } *)
+(*   | false, false, true, false, false, false -> top_degen_case ~rev trans_bezpatch *)
+(*   | false, false, false, true, false, false -> *)
+(*     let poly, { left; right; top; bot } = *)
+(*       top_degen_case *)
+(*         ~rev:(not rev) *)
+(*         (Array.init n_rows (fun i -> bezpatch.(n_rows - 1 - i))) *)
+(*     in *)
+(*     poly, { left; right; top = bot; bot = top } *)
+(*   | _ -> *)
+(*     let poly, { left; right; top; bot } = *)
+(*       top_degen_case ~rev:(not rev) (Math.transpose bezpatch) *)
+(*     in *)
+(*     poly, { left = top; right = bot; top = left; bot = right } *)

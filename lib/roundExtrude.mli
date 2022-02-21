@@ -1,10 +1,15 @@
+type offset =
+  { d : float
+  ; z : float
+  }
+
 type spec
 
 val chamf : ?angle:float -> ?cut:float -> ?width:float -> ?height:float -> unit -> spec
 val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> spec
 val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> spec
 val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> spec
-val custom : (float * float) list -> spec
+val custom : offset list -> spec
 
 val sweep
   :  ?check_valid:int option
