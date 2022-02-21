@@ -62,8 +62,12 @@ module type S = sig
     -> (float -> vec)
     -> vec list
 
+  val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> (float -> vec) -> vec array
   val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
   val patch : vec list list -> float -> float -> vec
+  val patch' : vec array array -> float -> float -> vec
+  val patch_curve' : ?fn:int -> (float -> float -> vec) -> vec array array
+  val patch_curve : ?fn:int -> (float -> float -> vec) -> vec list list
   val of_bezpath : ?n:int -> vec list -> float -> vec
 
   val bezpath_of_path
@@ -136,6 +140,18 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     in
     loop init 0 (if rev then 0. else 1.)
 
+  let curve' ?(rev = false) ?(fn = 16) ?(endpoint = true) bez =
+    let a = Array.make (fn + 1) V.zero
+    and step = 1. /. Float.of_int fn in
+    let last = if endpoint then 1. else 1. -. step in
+    let dt = 1. /. Float.of_int fn *. if rev then last else -.last
+    and t = ref (if rev then 1. else 0.) in
+    for i = 0 to fn do
+      a.(i) <- bez !t;
+      t := !t +. dt
+    done;
+    a
+
   let travel ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
     let n_segs = List.length ps * 2
     and bz = make ps in
@@ -174,6 +190,27 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     fun u ->
       let vertical_bez = make @@ List.map (fun bz -> bz u) horizontal_bezs in
       vertical_bez
+
+  let patch' grid =
+    let horizontal_bezs = Array.map make' grid in
+    fun u ->
+      let vertical_bez = make' @@ Array.map (fun bz -> bz u) horizontal_bezs in
+      vertical_bez
+
+  let patch_curve' ?(fn = 16) p =
+    let m = Array.make_matrix (fn + 1) (fn + 1) V.zero
+    and step = 1. /. Float.of_int fn in
+    for col = 0 to fn do
+      let vbez = p (Float.of_int col *. step) in
+      for row = 0 to fn do
+        m.(row).(col) <- vbez (Float.of_int row *. step)
+      done
+    done;
+    m
+
+  let patch_curve ?(fn = 16) p =
+    let m = patch_curve' ~fn p in
+    List.init (fn + 1) (fun i -> List.init (fn + 1) (fun j -> m.(i).(j)))
 
   let of_bezpath ?(n = 3) bezpath =
     let bezpath = Array.of_list bezpath in
