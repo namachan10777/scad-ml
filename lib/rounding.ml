@@ -93,7 +93,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     mix @@ List.map f spec_pts
 
   let smooth_bez_fill ~curv p1 p2 p3 =
-    [ p1; V.lerp p1 p2 curv; p2; V.lerp p2 p3 curv; p3 ]
+    [ p1; V.lerp p2 p1 curv; p2; V.lerp p2 p3 curv; p3 ]
 
   let bez_corner ?fn ?(fs = Util.fs) ?(curv = 0.5) ?spec p1 p2 p3 =
     let ps =
