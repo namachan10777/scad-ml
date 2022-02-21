@@ -66,7 +66,7 @@ let of_layers ?(caps = `Capped) layers =
     in
     { n_points = n_layers * n_facets; points; faces = List.rev faces }
 
-let tri_mesh ?(looped = false) rows =
+let tri_mesh ?(looped = false) ?(reverse = false) rows =
   let starts_lenghts, points =
     let f (start, starts_lengths, points) row =
       let g (i, ps) p = i + 1, p :: ps in
@@ -130,16 +130,22 @@ let tri_mesh ?(looped = false) rows =
       in
       next, faces
     in
-    let _, faces = List.fold_left f (hd, []) (if looped then tl @ [ hd ] else tl)
+    let _, all_faces = List.fold_left f (hd, []) (if looped then tl @ [ hd ] else tl)
     and verts = Array.of_list points in
-    let cull_degenerate =
-      let v = Array.unsafe_get verts in
-      let not_degen a b = Float.compare (Vec3.distance (v a) (v b)) Util.epsilon = 1 in
-      function
-      | [ i0; i1; i2 ] -> not_degen i0 i1 && not_degen i1 i2 && not_degen i2 i0
-      | _              -> failwith "unreachable"
+    let faces =
+      let cull_degenerate =
+        let v = Array.unsafe_get verts in
+        let not_degen a b = Float.compare (Vec3.distance (v a) (v b)) Util.epsilon = 1 in
+        function
+        | [ i0; i1; i2 ] as face ->
+          if not_degen i0 i1 && not_degen i1 i2 && not_degen i2 i0
+          then if reverse then Some [ i2; i1; i0 ] else Some face
+          else None
+        | _                      -> failwith "unreachable"
+      in
+      List.filter_map cull_degenerate all_faces
     in
-    { n_points = Array.length verts; points; faces = List.filter cull_degenerate faces }
+    { n_points = Array.length verts; points; faces }
 
 let mesh_of_layer ?(reverse = false) layer =
   let n_points, points, face =
