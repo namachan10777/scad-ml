@@ -35,6 +35,11 @@ val project : t -> Vec3.t -> Vec2.t
  a {!MultMatrix.t} is computed to perform the lift transform.*)
 val lift : t -> Vec2.t -> Vec3.t
 
+(** [normal t]
+
+ Return the normalized (unit length) normal vector of the plane [t]. *)
+val normal : t -> Vec3.t
+
 (** [offset t]
 
  Obtain the coefficient {b d} of the normalized plane [t], or the scalar offset
@@ -69,5 +74,12 @@ val are_points_on : ?eps:float -> t -> Vec3.t list -> bool
 
  Returns [true] is point [p] is above the plane [t]. *)
 val is_point_above : t -> Vec3.t -> bool
+
+(** [line_angle t line]
+
+ Calculate the angle between the plane [t] and a 3d [line], represented by a
+ pair of {!type:Vec3.t}. The resulting angle is positive if the line vector
+ lies above the plane (on the same side as the normal vector of [t]). *)
+val line_angle : t -> Vec3.t * Vec3.t -> float
 
 val to_string : t -> string

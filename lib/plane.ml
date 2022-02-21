@@ -32,6 +32,7 @@ let lift { a; b; c; d } =
   let m = MultMatrix.(mul (translation cp) rot) in
   fun p -> MultMatrix.transform m (Vec3.of_vec2 p)
 
+let normal { a; b; c; _ } = Vec3.normalize (a, b, c)
 let offset { a; b; c; d } = d /. Vec3.norm (a, b, c)
 
 let normalize { a; b; c; d } =
@@ -51,4 +52,12 @@ let greatest_distance { a; b; c; d } ps =
 
 let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
 let is_point_above t p = distance_to_point t p > Util.epsilon
+
+let line_angle t (p1, p2) =
+  let dir = Vec3.(normalize @@ sub p2 p1)
+  and n = normal t in
+  let sin_angle = Vec3.dot dir n
+  and cos_angle = Vec3.(norm @@ cross dir n) in
+  Float.atan2 sin_angle cos_angle
+
 let to_string { a; b; c; d } = Printf.sprintf "[%f, %f, %f, %f]" a b c d
