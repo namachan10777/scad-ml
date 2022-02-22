@@ -339,34 +339,34 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
    confirmed to be the correct length when converted to array there as well
    (invalid_arg is not correct)) *)
 (* return an array/list of patches of length n (length of top) *)
-let compute_patches ~rtop:(rt_in, rt_down) ~rsides ~ktop ~ksides ~concave top bot =
+let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave top bot =
   let len = Array.length top
   and plane = Plane.make top.(0) top.(1) top.(2)
   and rt_in_sign = if rt_in >= 0. then 1. else -1.
   and abs_rt_in = Float.abs rt_in in
   let f i =
-    let rside_prev, rside_next = rsides.(i)
+    let rside_prev, rside_next = r_sides.(i)
     and concave_sign = rt_in_sign *. if concave.(i) then -1. else 1.
     and prev = Vec3.sub top.(Util.index_wrap ~len (i - 1)) top.(i)
     and next = Vec3.sub top.(Util.index_wrap ~len (i + 1)) top.(i)
     and edge = Vec3.sub bot.(i) top.(i) in
     let prev_offset =
-      Vec3.(
-        div_scalar
-          (add top.(i) (mul_scalar (normalize prev) rside_prev))
-          (Float.sin Vec3.(angle prev edge)))
+      let s =
+        Vec3.(mul_scalar (normalize prev) (rside_prev /. Float.sin (angle prev edge)))
+      in
+      Vec3.add top.(i) s
     and next_offset =
-      Vec3.(
-        div_scalar
-          (add top.(i) (mul_scalar (normalize next) rside_next))
-          (Float.sin Vec3.(angle next edge)))
+      let s =
+        Vec3.(mul_scalar (normalize next) (rside_next /. Float.sin (angle next edge)))
+      in
+      Vec3.add top.(i) s
     and down =
       let edge_angle =
         rt_down /. Float.sin (Float.abs (Plane.line_angle plane (bot.(i), top.(i))))
       in
       Vec3.(mul_scalar (normalize edge) edge_angle)
     and fill_row p1 p2 p3 =
-      [| p1; Vec3.lerp p2 p1 ksides.(i); p2; Vec3.lerp p2 p3 ksides.(i); p3 |]
+      [| p1; Vec3.lerp p2 p1 k_sides.(i); p2; Vec3.lerp p2 p3 k_sides.(i); p3 |]
     in
     let row0 =
       let in_prev =
@@ -377,9 +377,10 @@ let compute_patches ~rtop:(rt_in, rt_down) ~rsides ~ktop ~ksides ~concave top bo
         Vec3.(mul_scalar (normalize a) concave_sign)
       and far_corner =
         let num =
-          Vec3.(mul_scalar (normalize (add (normalize prev) (normalize next))) abs_rt_in)
+          let s = concave_sign *. abs_rt_in in
+          Vec3.(mul_scalar (normalize (add (normalize prev) (normalize next))) s)
         in
-        Vec3.(div_scalar (add num top.(i)) (Float.sin (Vec3.angle prev next /. 2.)))
+        Vec3.(add top.(i) @@ div_scalar num (Float.sin (Vec3.angle prev next /. 2.)))
       in
       let prev_corner = Vec3.(add prev_offset (mul_scalar in_prev abs_rt_in))
       and next_corner = Vec3.(add next_offset (mul_scalar in_next abs_rt_in)) in
@@ -414,8 +415,152 @@ let compute_patches ~rtop:(rt_in, rt_down) ~rsides ~ktop ~ksides ~concave top bo
     and row4 =
       Vec3.(fill_row (add prev_offset down) (add top.(i) down) (add next_offset down))
     in
-    let row1 = Array.map2 (fun a b -> Vec3.lerp a b ktop) row0 row2
-    and row3 = Array.map2 (fun a b -> Vec3.lerp a b ktop) row2 row4 in
+    let row1 = Array.map2 (fun a b -> Vec3.lerp b a k_top) row0 row2
+    and row3 = Array.map2 (fun a b -> Vec3.lerp a b k_top) row2 row4 in
     [| row0; row1; row2; row3; row4 |]
   in
   Array.init len f
+
+(* TODO: needs an is_colinear implementation is Path to proceed. *)
+let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp = ()
+(* for i = 0 to len - 1 do *)
+(*   for j = 0 to 4 do *)
+(*     let vline = *)
+(*       [ tp.(i).(2).(j) *)
+(*       ; tp.(i).(3).(j) *)
+(*       ; tp.(i).(4).(j) *)
+(*       ; bp.(i).(2).(j) *)
+(*       ; bp.(i).(3).(j) *)
+(*       ; bp.(i).(4).(j) *)
+(*       ] *)
+(*     in *)
+(*     if not (Path3d.is_colinear vline) then failwith "Curvature continuity failure." *)
+(*   done *)
+(* done *)
+
+let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
+  let open Vec3 in
+  let w = Util.index_wrap ~len in
+  let vert_bad i acc =
+    if distance top.(i) tp.(i).(4).(2) +. distance bot.(i) bp.(i).(4).(2)
+       > distance bot.(i) top.(i)
+    then i :: acc
+    else acc
+  and patch_bad p i acc =
+    if distance p.(i).(2).(4) p.(i).(2).(2)
+       +. distance p.(w (i + 1)).(2).(0) p.(w (i + 1)).(2).(2)
+       > distance p.(i).(2).(2) p.(w (i + 1)).(2).(2)
+    then (i, (i + 1) mod len) :: acc
+    else acc
+  and patch_in_bad p i acc =
+    if distance p.(i).(0).(2) p.(i).(0).(4)
+       +. distance p.(w (i + 1)).(0).(0) p.(w (i + 1)).(0).(2)
+       > distance p.(i).(0).(2) p.(w (i + 1)).(0).(2)
+    then (i, (i + 1) mod len) :: acc
+    else acc
+  and show (a, b) = Printf.sprintf "(%i, %i)" a b in
+  let check ~show ~msg f =
+    match Util.fold_init len f [] with
+    | []  -> ()
+    | bad ->
+      let f acc a = Printf.sprintf "%s; %s" acc (show a) in
+      failwith @@ List.fold_left f (Printf.sprintf "%s: [" msg) bad ^ "]"
+  in
+  check
+    ~show:Int.to_string
+    ~msg:"Top and bottom joint lengths are too large; they interfere with eachother"
+    vert_bad;
+  check ~show ~msg:"Joint lengths too large at top edges" (patch_bad tp);
+  check ~show ~msg:"Joint lengths too large at bottom edges" (patch_bad bp);
+  check ~show ~msg:"Joint length too large on the top face at edges" (patch_in_bad tp);
+  check ~show ~msg:"Joint length too large on the bottom face at edges" (patch_in_bad bp)
+
+let prism
+    ?(debug = false)
+    ?(fn = 16)
+    ?(k = 0.5)
+    ?k_bot
+    ?k_top
+    ?k_sides
+    ?(joint_bot = 0., 0.)
+    ?(joint_top = 0., 0.)
+    ?(joint_sides = `Flat (0., 0.))
+    bottom
+    top
+  =
+  let bottom = Array.of_list bottom
+  and top = Array.of_list top in
+  let len = Array.length bottom in
+  let wrap = Util.index_wrap ~len
+  and unpack_sides ~name = function
+    | `Flat s -> Array.make len s
+    | `Mix ss ->
+      let ss = Array.of_list ss in
+      if Array.length ss = len
+      then ss
+      else
+        invalid_arg
+        @@ Printf.sprintf "`Mix %s must be the same length as the top/bottom polys." name
+  in
+  if len <> Array.length top
+  then invalid_arg "Top and bottom shapes must have the same length.";
+  let k_bot = Option.value ~default:k k_bot
+  and k_top = Option.value ~default:k k_top
+  and k_sides = unpack_sides ~name:"k_sides" (Option.value ~default:(`Flat k) k_sides)
+  and r_sides = unpack_sides ~name:"joint_sides" joint_sides in
+  let bot_proj =
+    let plane = Plane.make bottom.(0) bottom.(1) bottom.(2) in
+    Array.map (Plane.project plane) bottom
+  in
+  let bottom_sign = Path2d.clockwise_sign' bot_proj in
+  let concave =
+    let f i =
+      let line = bot_proj.(wrap (i - 1)), bot_proj.(i) in
+      bottom_sign *. Vec2.left_of_line ~line bot_proj.(wrap (i + 1)) > 0.
+    in
+    Array.init len f
+  in
+  let top_patch =
+    compute_patches ~r_top:joint_top ~r_sides ~k_top ~k_sides ~concave top bottom
+  and bot_patch =
+    compute_patches ~r_top:joint_bot ~r_sides ~k_top:k_bot ~k_sides ~concave bottom top
+  in
+  if not debug then bad_patches ~len ~bot_patch ~top_patch bottom top;
+  let top_samples, top_edges =
+    Util.unzip_array @@ Array.map (degenerate_patch ~fn ~rev:false) top_patch
+  and bot_samples, bot_edges =
+    Util.unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch
+  in
+  let edge_points =
+    let f i acc =
+      let top_edge = [ top_edges.(i).right; top_edges.(wrap (i + 1)).left ]
+      and bot_edge = [ bot_edges.(wrap (i + 1)).left; bot_edges.(i).right ]
+      and vert_edge = [ bot_edges.(i).bot; top_edges.(i).bot ] in
+      vert_edge :: bot_edge :: top_edge :: acc
+    in
+    Util.fold_init len f []
+  and faces =
+    let top_faces =
+      Util.fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
+    and bot_faces =
+      Util.fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) []
+    and patches =
+      List.init len (fun i ->
+          [ bot_patch.(i).(4).(4)
+          ; bot_patch.(wrap (i + 1)).(4).(0)
+          ; top_patch.(wrap (i + 1)).(4).(0)
+          ; top_patch.(i).(4).(4)
+          ] )
+    in
+    List.rev top_faces :: bot_faces :: patches
+  in
+  (* TODO: simple checks. Needs is_path_simple impl to proceed. *)
+  (* TODO: horizontal and vertical curvature checks *)
+  if debug then curvature_continuity ~len ~bot_patch ~top_patch;
+  List.fold_left
+    (fun acc pts -> Poly3d.tri_mesh pts :: acc)
+    [ Poly3d.of_polygons faces ]
+    edge_points
+  |> Util.fold_init len (fun i acc -> bot_samples.(i) :: acc)
+  |> Util.fold_init len (fun i acc -> top_samples.(i) :: acc)
+  |> Poly3d.join

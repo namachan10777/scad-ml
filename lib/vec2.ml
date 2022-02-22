@@ -44,15 +44,19 @@ let lerpn ?(endpoint = true) a b n =
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
 
-let clockwise_sign a b c =
-  let _, _, z = cross (sub b a) (sub c b) in
-  Math.sign z
+let clockwise_sign ?(eps = Util.epsilon) a b c =
+  let ba = sub b a
+  and cb = sub c b in
+  let _, _, z = cross ba cb in
+  if Float.abs z <= eps *. norm ba *. norm cb then 0. else Math.sign z
 
 let colinear p1 p2 p3 =
   let a = distance p1 p2
   and b = distance p2 p3
   and c = distance p3 p1 in
   a +. b < c || b +. c < a || c +. a < b
+
+let left_of_line ?eps ~line:(a, b) t = clockwise_sign ?eps t b a
 
 let line_intersection
     ?(eps = Util.epsilon)

@@ -110,11 +110,13 @@ module type Vec = sig
     Calculate the angle between the points [a], [b], and [c]. *)
   val angle_points : t -> t -> t -> float
 
-  (** [clockwise_sign a b c]
+  (** [clockwise_sign ?eps a b c]
 
     Returns the rotational ordering of the points [a], [b], and [c] as a signed
-   float, [-1.] for clockwise, and [1.] for counter-clockwise. *)
-  val clockwise_sign : t -> t -> t -> float
+    float, [-1.] for clockwise, and [1.] for counter-clockwise. If the points
+    are colinear (not forming a valid triangle, within the tolerance of [eps]),
+    [0.] is returned. *)
+  val clockwise_sign : ?eps:float -> t -> t -> t -> float
 
   (** [colinear p1 p2 p3]
 

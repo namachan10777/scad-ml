@@ -51,7 +51,7 @@ let transpose a =
   let m = Array.make_matrix n_cols n_rows a.(0).(0) in
   for i = 0 to n_rows - 1 do
     for j = 0 to n_cols - 1 do
-      m.(i).(j) <- a.(j).(i)
+      m.(j).(i) <- a.(i).(j)
     done
   done;
   m

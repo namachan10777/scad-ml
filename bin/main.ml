@@ -34,4 +34,6 @@ let () =
   Sweep_test.polyholes ();
   Sweep_test.poly2d_to_scad ();
   (* Sweep_test.rounded_polyhole_sweep (); *)
-  Sweep_test.polytext ()
+  Sweep_test.polytext ();
+  Sweep_test.rounded_prism_cube ();
+  Sweep_test.rounded_prism_pointy ()

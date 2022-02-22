@@ -1,5 +1,7 @@
 include Sigs.Vec with type t = float * float
 
+val left_of_line : ?eps:float -> line:t * t -> t -> float
+
 val line_intersection
   :  ?eps:float
   -> ?bounds1:bool * bool

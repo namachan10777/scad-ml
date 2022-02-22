@@ -178,6 +178,21 @@ let unzip l =
   in
   loop [] [] (List.rev l)
 
+let unzip_array a =
+  let len = Array.length a in
+  if len = 0
+  then [||], [||]
+  else (
+    let h1, h2 = a.(0) in
+    let a1 = Array.make len h1
+    and a2 = Array.make len h2 in
+    for i = 1 to len - 1 do
+      let h1, h2 = a.(i) in
+      a1.(i) <- h1;
+      a2.(i) <- h2
+    done;
+    a1, a2 )
+
 let fold_init n f init =
   let rec loop acc i = if i < n then loop (f i acc) (i + 1) else acc in
   loop init 0

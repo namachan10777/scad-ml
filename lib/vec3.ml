@@ -37,7 +37,12 @@ let mean l =
 
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
-let clockwise_sign a b c = Math.sign @@ dot a (cross (sub b a) (sub c b))
+
+let clockwise_sign ?(eps = Util.epsilon) a b c =
+  let ba = sub b a
+  and cb = sub c b in
+  let crx = dot a (cross ba cb) in
+  if Float.abs crx <= eps *. norm ba *. norm cb then 0. else Math.sign crx
 
 let colinear p1 p2 p3 =
   let a = distance p1 p2

@@ -552,3 +552,35 @@ let polytext () =
   and oc = open_out "polytext.scad" in
   Scad.write oc scad;
   close_out oc
+
+let rounded_prism_cube () =
+  let bot = Poly2d.square ~center:true (5., 5.) |> List.rev_map Vec2.to_vec3 in
+  let top = Path3d.translate (0., 0., 5.) (Path3d.rotate (0., Float.pi /. 4., 0.) bot) in
+  let scad =
+    RoundExtrude.prism
+      ~joint_top:(-1., 1.)
+      ~joint_bot:(-1., 1.)
+      ~joint_sides:(`Flat (1.5, 1.5))
+      bot
+      top
+    |> Poly3d.to_scad
+  and oc = open_out "rounded_prism_cube.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let rounded_prism_pointy () =
+  let bot =
+    [ -4., 0., 0.; 5., 3., 0.; 0., 7., 0.; 8., 7., 0.; 20., 20., 0.; 10., 0., 0. ]
+  in
+  let top = Path3d.translate (0., 0., 5.) bot in
+  let scad =
+    RoundExtrude.prism
+      ~joint_top:(0.25, 0.25)
+      ~joint_bot:(0.25, 0.25)
+      ~joint_sides:(`Flat (2.5, 2.5))
+      bot
+      top
+    |> Poly3d.to_scad
+  and oc = open_out "rounded_prism_pointy.scad" in
+  Scad.write oc scad;
+  close_out oc

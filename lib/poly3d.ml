@@ -153,6 +153,19 @@ let mesh_of_layer ?(reverse = false) layer =
   in
   { n_points; points; faces = [ (if reverse then List.rev face else face) ] }
 
+let of_polygons polys =
+  let lengths = Util.array_of_list_map List.length polys in
+  let n = Array.length lengths in
+  let offsets =
+    let a = Array.make (n + 1) 0 in
+    for i = 1 to n - 1 do
+      a.(i) <- a.(i - 1) + lengths.(i - 1)
+    done;
+    a
+  in
+  let faces = List.init n (fun i -> List.init lengths.(i) (fun j -> j + offsets.(i))) in
+  { n_points = offsets.(n); points = List.concat polys; faces }
+
 let polyhole_partition_vec2 ?rev ~holes outer =
   let points, faces = PolyHoles.partition ?rev ~holes outer in
   make ~points ~faces

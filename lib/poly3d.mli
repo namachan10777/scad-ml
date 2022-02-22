@@ -49,6 +49,11 @@ val tri_mesh : ?looped:bool -> ?reverse:bool -> Vec3.t list list -> t
     patch mesh to be combined with other meshes to produce a complete shape. *)
 val mesh_of_layer : ?reverse:bool -> Vec3.t list -> t
 
+(** [of_polygons polys]
+
+    Create a polyhedron mesh from a list of polygonal faces. *)
+val of_polygons : Vec3.t list list -> t
+
 val polyhole_partition_vec2 : ?rev:bool -> holes:Vec2.t list list -> Vec2.t list -> t
 val polyhole_partition : ?rev:bool -> holes:Vec3.t list list -> Vec3.t list -> t
 
