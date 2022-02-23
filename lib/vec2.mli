@@ -10,8 +10,6 @@ val line_intersection
   -> t * t
   -> t option
 
-val unbounded_intersection_exn : ?eps:float -> t * t -> t * t -> t
-
 (** [line_normal p1 p2]
 
     Calculates the normal (perpendicular vector) of the line between [p1] and

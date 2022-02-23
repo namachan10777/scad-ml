@@ -119,11 +119,6 @@ let line_intersection
     in
     if good then Some (add a1 (mul_scalar (sub a2 a1) a_frac)) else None )
 
-let unbounded_intersection_exn ?eps l1 l2 =
-  match line_intersection ?eps l1 l2 with
-  | Some p -> p
-  | None   -> invalid_arg "No intersection between parallel line segments."
-
 let line_normal (x1, y1) (x2, y2) = normalize (y1 -. y2, x2 -. x1)
 let get_x (x, _) = x
 let get_y (_, y) = y

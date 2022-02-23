@@ -15,7 +15,11 @@ let segment_extension ((_, a2) as sa) ((b1, _) as sb) =
 let chamfer ~centre ~delta p1 p2 p3 =
   let endline =
     let dist =
-      let intersect = Vec2.unbounded_intersection_exn (p1, p3) (centre, p2) in
+      let intersect =
+        match Vec2.line_intersection (p1, p3) (centre, p2) with
+        | Some p -> p
+        | None   -> failwith "Offset: chamfer centre line is parallel (no intersect)"
+      in
       Math.sign delta *. Vec2.(norm (centre <-> intersect))
     in
     shift_segment ~d:(delta -. dist) (p1, p3)
