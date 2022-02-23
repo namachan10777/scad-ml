@@ -172,7 +172,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     let w = Util.index_wrap ~len in
     let f (i, pts, sps) sp =
       let p = shape.(i) in
-      if (not (V.colinear shape.(w (i - 1)) p shape.(w (i + 1)))) || Option.is_none sp
+      if (not (V.collinear shape.(w (i - 1)) p shape.(w (i + 1)))) || Option.is_none sp
       then i + 1, p :: pts, sp :: sps
       else i + 1, pts, sps
     in
@@ -184,7 +184,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
       match shape_spec with
       | Mix mix                      -> prune_mixed_spec mix
       | Flat { shape; spec; closed } ->
-        let shape = P.prune_colinear' (Array.of_list shape) in
+        let shape = P.prune_collinear' (Array.of_list shape) in
         let len = Array.length shape in
         let get_spec =
           if closed

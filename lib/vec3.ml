@@ -44,7 +44,7 @@ let clockwise_sign ?(eps = Util.epsilon) a b c =
   let crx = dot a (cross ba cb) in
   if Float.abs crx <= eps *. norm ba *. norm cb then 0. else Math.sign crx
 
-let colinear p1 p2 p3 =
+let collinear p1 p2 p3 =
   let a = distance p1 p2
   and b = distance p2 p3
   and c = distance p3 p1 in
@@ -57,6 +57,37 @@ let lerpn ?(endpoint = true) a b n =
   List.init n (fun i ->
       let u = Float.of_int i /. d in
       lerp a b u )
+
+let distance_to_vector p v = norm (sub p (mul_scalar v (dot p v)))
+
+let closest_simplex1 ?(eps = Util.epsilon) p1 p2 =
+  if norm (sub p2 p1) <= eps *. (norm p1 +. norm p2) /. 2.
+  then p1, [ p1 ]
+  else (
+    let c = sub p2 p1 in
+    let t = -1. *. dot p1 c /. dot c c in
+    if t < 0.
+    then p1, [ p1 ]
+    else if t > 1.
+    then p2, [ p2 ]
+    else add p1 (mul_scalar c t), [ p1; p2 ] )
+
+let line_closest_point ?(bounds = false, false) (p1, p2) t =
+  match bounds with
+  | false, false ->
+    let n = normalize (sub p1 p2) in
+    add p2 (mul_scalar n (dot (sub t p2) n))
+  | true, true   -> add t (fst @@ closest_simplex1 (sub p1 t) (sub p2 t))
+  | b1, b2       ->
+    let p1, p2 = if b1 && not b2 then p1, p2 else p2, p1 in
+    let seg_vec = normalize (sub p2 p1) in
+    let projection = dot (sub t p1) seg_vec in
+    if projection <= 0. then p1 else add p1 (mul_scalar seg_vec projection)
+
+let distance_to_line ?(bounds = false, false) ((p1, p2) as line) t =
+  match bounds with
+  | false, false -> distance_to_vector (sub t p1) (normalize (sub p2 p1))
+  | bounds       -> norm (sub t (line_closest_point ~bounds line t))
 
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y

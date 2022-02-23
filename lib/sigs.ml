@@ -114,14 +114,14 @@ module type Vec = sig
 
     Returns the rotational ordering of the points [a], [b], and [c] as a signed
     float, [-1.] for clockwise, and [1.] for counter-clockwise. If the points
-    are colinear (not forming a valid triangle, within the tolerance of [eps]),
+    are collinear (not forming a valid triangle, within the tolerance of [eps]),
     [0.] is returned. *)
   val clockwise_sign : ?eps:float -> t -> t -> t -> float
 
-  (** [colinear p1 p2 p3]
+  (** [collinear p1 p2 p3]
 
     Returns [true] if [p2] lies on the line between [p1] and [p3]. *)
-  val colinear : t -> t -> t -> bool
+  val collinear : t -> t -> t -> bool
 
   (** [lerp a b u]
 
@@ -134,6 +134,15 @@ module type Vec = sig
     is [true], the last vector will be equal to [b], otherwise, it will be about
     [a + (b - a) * (1 - 1 / n)]. *)
   val lerpn : ?endpoint:bool -> t -> t -> int -> t list
+
+  (** [distance_to_vector p v]
+
+    Distance from point [p] to the line passing through the origin with unit
+    direction [v]. *)
+  val distance_to_vector : t -> t -> float
+
+  val distance_to_line : ?bounds:bool * bool -> t * t -> t -> float
+  val line_closest_point : ?bounds:bool * bool -> t * t -> t -> t
 
   (** {1 Utilities} *)
 

@@ -7,8 +7,10 @@ module type S = sig
   val cummulative_travel : vec list -> float list
   val to_continuous : vec list -> float -> vec
   val resample : freq:[< `N of int | `Spacing of float ] -> vec list -> vec list
-  val prune_colinear' : vec array -> vec array
-  val prune_colinear : vec list -> vec list
+  val noncollinear_triple : ?eps:float -> vec list -> (vec * vec * vec) option
+  val is_collinear : ?eps:float -> vec list -> bool
+  val prune_collinear' : vec array -> vec array
+  val prune_collinear : vec list -> vec list
   val deriv : ?closed:bool -> ?h:float -> vec list -> vec list
   val deriv_nonuniform : ?closed:bool -> h:float list -> vec list -> vec list
   val tangents : ?uniform:bool -> ?closed:bool -> vec list -> vec list
@@ -95,17 +97,43 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     and f = to_continuous path in
     List.init n (fun i -> f @@ (Float.of_int i *. step))
 
-  let prune_colinear_rev' path =
+  let noncollinear_triple ?(eps = Util.epsilon) = function
+    | [] | [ _ ] | [ _; _ ]   -> None
+    | hd :: (p :: tl as rest) ->
+      let furthest_point, dist =
+        let f (fp, dist) p =
+          let d = V.distance hd p in
+          if d > dist then p, d else fp, dist
+        in
+        List.fold_left f (p, V.distance hd p) tl
+      in
+      if dist <= eps
+      then None
+      else (
+        let n = V.(div_scalar (sub hd furthest_point) dist)
+        and threshold = dist *. eps in
+        let offline, _ =
+          let f (op, offset) p =
+            let off = V.distance_to_vector (V.sub p hd) n in
+            if off > offset then Some p, off else op, offset
+          in
+          List.fold_left f (None, threshold) rest
+        in
+        Option.map (fun op -> hd, furthest_point, op) offline )
+
+  let is_collinear ?eps path = Option.is_none (noncollinear_triple ?eps path)
+
+  let prune_collinear_rev' path =
     let len = Array.length path in
     let w = Util.index_wrap ~len in
     let f i acc =
       let p = path.(i) in
-      if not (V.colinear path.(w (i - 1)) p path.(w (i + 1))) then p :: acc else acc
+      if not (V.collinear path.(w (i - 1)) p path.(w (i + 1))) then p :: acc else acc
     in
     Util.fold_init len f []
 
-  let prune_colinear' path = Util.array_of_list_rev (prune_colinear_rev' path)
-  let prune_colinear path = List.rev @@ prune_colinear_rev' (Array.of_list path)
+  let prune_collinear' path = Util.array_of_list_rev (prune_collinear_rev' path)
+  let prune_collinear path = List.rev @@ prune_collinear_rev' (Array.of_list path)
 
   let deriv ?(closed = false) ?(h = 1.) path =
     let path = Array.of_list path in

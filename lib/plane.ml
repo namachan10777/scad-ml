@@ -10,7 +10,7 @@ let coefficients { a; b; c; d } = a, b, c, d
 let make p1 p2 p3 =
   let ((a, b, c) as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
   let n = Vec3.norm crx in
-  if Math.approx 0. n then invalid_arg "Plane points must not be colinear";
+  if Math.approx 0. n then invalid_arg "Plane points must not be collinear";
   { a = a /. n; b = b /. n; c = c /. n; d = Vec3.dot crx p1 /. n }
 
 let of_normal ?(point = Vec3.zero) ((x, y, z) as normal) =

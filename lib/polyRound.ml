@@ -114,7 +114,7 @@ let prune_radii_points rps =
   and ps = Array.map Vec2.of_vec3 rps in
   let f i acc =
     let ((x, y, r) as rp) = rps.(i) in
-    if (not (Vec2.colinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+    if (not (Vec2.collinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
     then rp :: acc
     else acc
   in

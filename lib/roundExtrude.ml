@@ -328,17 +328,6 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     poly, { left = top; right = bot; top = left; bot = right }
 
-(* rtop is either scalar or a tuple in bosl, I'll just enforce tuple input here
-    (can deal with converting from config params in rounded_prism) *)
-(* rsides is an array of tuples (r/joint value for either side of edge) *)
-(* ksides is an array of k values. ktop is scalar (applies to whole top) *)
-(* concave is bool for whether the corner idx is concave *)
-(* in args to rounded_prism, these could be a flat value, but for simplicity,
-   should be expanded out to the correct length (n) before being given to this
-   internal function. (and length of the lists given to rounded prism should be
-   confirmed to be the correct length when converted to array there as well
-   (invalid_arg is not correct)) *)
-(* return an array/list of patches of length n (length of top) *)
 let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave top bot =
   let len = Array.length top
   and plane = Plane.make top.(0) top.(1) top.(2)
@@ -421,22 +410,36 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
   in
   Array.init len f
 
-(* TODO: needs an is_colinear implementation is Path to proceed. *)
-let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp = ()
-(* for i = 0 to len - 1 do *)
-(*   for j = 0 to 4 do *)
-(*     let vline = *)
-(*       [ tp.(i).(2).(j) *)
-(*       ; tp.(i).(3).(j) *)
-(*       ; tp.(i).(4).(j) *)
-(*       ; bp.(i).(2).(j) *)
-(*       ; bp.(i).(3).(j) *)
-(*       ; bp.(i).(4).(j) *)
-(*       ] *)
-(*     in *)
-(*     if not (Path3d.is_colinear vline) then failwith "Curvature continuity failure." *)
-(*   done *)
-(* done *)
+let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp =
+  let check line =
+    if not (Path3d.is_collinear line) then failwith "Curvature continuity failure."
+  and w = Util.index_wrap ~len in
+  let horiz p i j =
+    [ p.(i).(j).(2)
+    ; p.(i).(j).(3)
+    ; p.(i).(j).(4)
+    ; p.(w (i + 1)).(j).(0)
+    ; p.(w (i + 1)).(j).(1)
+    ; p.(w (i + 1)).(j).(2)
+    ]
+  in
+  ignore w;
+  for i = 0 to len - 1 do
+    for j = 0 to 4 do
+      (* verify vertical edges *)
+      check
+        [ tp.(i).(2).(j)
+        ; tp.(i).(3).(j)
+        ; tp.(i).(4).(j)
+        ; bp.(i).(2).(j)
+        ; bp.(i).(3).(j)
+        ; bp.(i).(4).(j)
+        ];
+      (* verify horizontal edges *)
+      check (horiz tp i j);
+      check (horiz bp i j)
+    done
+  done
 
 let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
   let open Vec3 in
@@ -474,6 +477,19 @@ let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
   check ~show ~msg:"Joint lengths too large at bottom edges" (patch_bad bp);
   check ~show ~msg:"Joint length too large on the top face at edges" (patch_in_bad tp);
   check ~show ~msg:"Joint length too large on the bottom face at edges" (patch_in_bad bp)
+
+let roundover_interference label face =
+  let proj = List.map (Plane.project (Path3d.to_plane face)) face in
+  if not (Path2d.is_simple proj)
+  then (
+    let msg =
+      Printf.sprintf
+        "Roundovers interfere with eachother on the %s face: either the shape is self \
+         intersecting or the %s joint length is too large."
+        label
+        label
+    in
+    failwith msg )
 
 let prism
     ?(debug = false)
@@ -531,6 +547,11 @@ let prism
   and bot_samples, bot_edges =
     Util.unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch
   in
+  let top_faces =
+    Util.fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
+  and bot_faces =
+    Util.fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) []
+  in
   let edge_points =
     let f i acc =
       let top_edge = [ top_edges.(i).right; top_edges.(wrap (i + 1)).left ]
@@ -540,11 +561,7 @@ let prism
     in
     Util.fold_init len f []
   and faces =
-    let top_faces =
-      Util.fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
-    and bot_faces =
-      Util.fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) []
-    and patches =
+    let patches =
       List.init len (fun i ->
           [ bot_patch.(i).(4).(4)
           ; bot_patch.(wrap (i + 1)).(4).(0)
@@ -554,9 +571,9 @@ let prism
     in
     List.rev top_faces :: bot_faces :: patches
   in
-  (* TODO: simple checks. Needs is_path_simple impl to proceed. *)
-  (* TODO: horizontal and vertical curvature checks *)
-  if debug then curvature_continuity ~len ~bot_patch ~top_patch;
+  if not debug then curvature_continuity ~len ~bot_patch ~top_patch;
+  if not debug then roundover_interference "top" top_faces;
+  if not debug then roundover_interference "bottom" bot_faces;
   List.fold_left
     (fun acc pts -> Poly3d.tri_mesh pts :: acc)
     [ Poly3d.of_polygons faces ]

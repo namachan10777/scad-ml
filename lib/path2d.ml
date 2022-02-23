@@ -30,6 +30,65 @@ let bounds = function
     let left, right, top, bot = List.fold_left f (x, x, y, y) tl in
     { left; right; top; bot }
 
+let self_intersections' ?(eps = Util.epsilon) path =
+  let len = Array.length path in
+  if len < 3
+  then []
+  else (
+    let intersects = ref [] in
+    for i = 0 to len - 3 do
+      let a1 = path.(i)
+      and a2 = path.(i + 1) in
+      let seg_normal =
+        let x, y = Vec2.sub a2 a1 in
+        Vec2.(normalize (-.y, x))
+      in
+      let vals = Array.map (fun p -> Vec2.dot p seg_normal) path
+      and ref_v = Vec2.dot path.(i) seg_normal
+      and last_signal = ref 0
+      and start = i + 2 in
+      for j = 0 to len - start - 1 do
+        let v = vals.(j + start) -. ref_v in
+        if Float.abs v >= eps
+        then (
+          let signal = Int.of_float @@ Math.sign v in
+          if signal * !last_signal < 0
+          then (
+            let b1 = path.(j + start)
+            and b2 = path.(j + start + 1) in
+            let intersect =
+              Vec2.line_intersection
+                ~bounds1:(true, true)
+                ~bounds2:(true, true)
+                (a1, a2)
+                (b1, b2)
+            in
+            Option.iter (fun p -> intersects := p :: !intersects) intersect );
+          last_signal := signal )
+      done
+    done;
+    !intersects )
+
+let self_intersections ?eps path = self_intersections' ?eps (Array.of_list path)
+
+let is_simple' ?eps ?(closed = false) path =
+  let len = Array.length path in
+  if len < 3
+  then true
+  else (
+    let reversal = ref false
+    and i = ref 0
+    and last = len - if closed then 1 else 2 in
+    while (not !reversal) && !i < last do
+      let v1 = Vec2.sub path.(!i + 1) path.(!i)
+      and v2 = Vec2.sub path.(Util.index_wrap ~len (!i + 2)) path.(!i + 1) in
+      reversal := Math.approx Vec2.(dot v1 v2 /. norm v1 /. norm v2) (-1.);
+      incr i
+    done;
+    if !reversal then false else List.length (self_intersections' ?eps path) = 0 )
+
+let is_simple ?eps ?closed path = is_simple' ?eps ?closed (Array.of_list path)
+
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =
@@ -56,7 +115,7 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   arc ?init ?rev ?fn ~centre ~radius ~start angle
 
 let arc_through ?init ?rev ?fn ((x1, y1) as p1) ((x2, y2) as p2) ((x3, y3) as p3) =
-  if Vec2.colinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
+  if Vec2.collinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
   let centre =
     let d = (2. *. (x1 -. x3) *. (y3 -. y2)) +. (2. *. (x2 -. x3) *. (y1 -. y3))
     and m1 = Vec2.dot p1 p1 -. Vec2.dot p3 p3
