@@ -1,13 +1,13 @@
 include Sigs.Vec with type t = float * float
 
-val left_of_line : ?eps:float -> line:t * t -> t -> float
+val left_of_line : ?eps:float -> line:line -> t -> float
 
 val line_intersection
   :  ?eps:float
   -> ?bounds1:bool * bool
   -> ?bounds2:bool * bool
-  -> t * t
-  -> t * t
+  -> line
+  -> line
   -> t option
 
 (** [line_normal p1 p2]

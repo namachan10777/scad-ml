@@ -16,6 +16,8 @@ val self_intersections' : ?eps:float -> Vec2.t array -> Vec2.t list
 val self_intersections : ?eps:float -> Vec2.t list -> Vec2.t list
 val is_simple' : ?eps:float -> ?closed:bool -> Vec2.t array -> bool
 val is_simple : ?eps:float -> ?closed:bool -> Vec2.t list -> bool
+val centroid : ?eps:float -> Vec2.t list -> Vec2.t
+val area : ?signed:bool -> Vec2.t list -> float
 
 val arc
   :  ?init:Vec2.t list

@@ -159,6 +159,32 @@ let to_plane = function
   | []         -> invalid_arg "Empty path cannot be converted to plane."
   | point :: t -> Plane.of_normal ~point (normal t)
 
+let centroid ?(eps = Util.epsilon) = function
+  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
+  | p0 :: p1 :: tl as t   ->
+    let plane = to_plane t in
+    if not @@ Plane.are_points_on ~eps plane t
+    then invalid_arg "Polygon must be coplanar.";
+    let n = Plane.normal plane in
+    let f (area_sum, p_sum, p1) p2 =
+      let area = Vec3.(dot (cross (sub p2 p0) (sub p1 p0)) n) in
+      area +. area_sum, Vec3.(add p_sum (add p0 (add p1 p2))), p2
+    in
+    let area_sum, p_sum, _ = List.fold_left f (0., Vec3.zero, p1) tl in
+    if Math.approx ~eps area_sum 0.
+    then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
+    Vec3.(div_scalar p_sum (area_sum /. 3.))
+
+let area ?(signed = false) = function
+  | [] | [ _ ] | [ _; _ ] -> 0.
+  | p0 :: p1 :: tl as t   ->
+    let plane = to_plane t in
+    if not @@ Plane.are_points_on plane t then invalid_arg "Polygon must be coplanar.";
+    let n = Plane.normal plane in
+    let f (area, p1) p2 = (area +. Vec3.(dot (cross (sub p1 p0) (sub p2 p0)) n)), p2 in
+    let area, _ = List.fold_left f (0., p1) tl in
+    if signed then area else Float.abs area
+
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)
 let rotate_about_pt r p = List.map (Vec3.rotate_about_pt r p)

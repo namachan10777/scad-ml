@@ -1,5 +1,10 @@
 type t = float * float
 
+type line =
+  { a : t
+  ; b : t
+  }
+
 let zero = 0., 0.
 let horizontal_op op (x1, y1) (x2, y2) = op x1 x2, op y1 y2
 let add = horizontal_op ( +. )
@@ -57,7 +62,7 @@ let collinear p1 p2 p3 =
   a +. b < c || b +. c < a || c +. a < b
 
 let distance_to_vector p v = norm (sub p (mul_scalar v (dot p v)))
-let left_of_line ?eps ~line:(a, b) t = clockwise_sign ?eps t b a
+let left_of_line ?eps ~line t = clockwise_sign ?eps t line.b line.a
 
 let closest_simplex1 ?(eps = Util.epsilon) p1 p2 =
   if norm (sub p2 p1) <= eps *. (norm p1 +. norm p2) /. 2.
@@ -71,42 +76,42 @@ let closest_simplex1 ?(eps = Util.epsilon) p1 p2 =
     then p2, [ p2 ]
     else add p1 (mul_scalar c t), [ p1; p2 ] )
 
-let line_closest_point ?(bounds = false, false) (p1, p2) t =
+let line_closest_point ?(bounds = false, false) ~line t =
   match bounds with
   | false, false ->
-    let n = normalize (sub p1 p2) in
-    add p2 (mul_scalar n (dot (sub t p2) n))
-  | true, true   -> add t (fst @@ closest_simplex1 (sub p1 t) (sub p2 t))
+    let n = normalize (sub line.a line.b) in
+    add line.b (mul_scalar n (dot (sub t line.b) n))
+  | true, true   -> add t (fst @@ closest_simplex1 (sub line.a t) (sub line.b t))
   | b1, b2       ->
-    let p1, p2 = if b1 && not b2 then p1, p2 else p2, p1 in
-    let seg_vec = normalize (sub p2 p1) in
-    let projection = dot (sub t p1) seg_vec in
-    if projection <= 0. then p1 else add p1 (mul_scalar seg_vec projection)
+    let line = if b1 && not b2 then line else { a = line.b; b = line.a } in
+    let seg_vec = normalize (sub line.b line.a) in
+    let projection = dot (sub t line.a) seg_vec in
+    if projection <= 0. then line.a else add line.a (mul_scalar seg_vec projection)
 
-let distance_to_line ?(bounds = false, false) ((p1, p2) as line) t =
+let distance_to_line ?(bounds = false, false) ~line t =
   match bounds with
-  | false, false -> distance_to_vector (sub t p1) (normalize (sub p2 p1))
-  | bounds       -> norm (sub t (line_closest_point ~bounds line t))
+  | false, false -> distance_to_vector (sub t line.a) (normalize (sub line.b line.a))
+  | bounds       -> norm (sub t (line_closest_point ~bounds ~line t))
 
 let line_intersection
     ?(eps = Util.epsilon)
     ?(bounds1 = false, false)
     ?(bounds2 = false, false)
-    (a1, a2)
-    (b1, b2)
+    l1
+    l2
   =
-  let da = sub a1 a2
-  and db = sub b1 b2 in
-  let _, _, denominator = cross da db in
+  let d1 = sub l1.a l1.b
+  and d2 = sub l2.a l2.b in
+  let _, _, denominator = cross d1 d2 in
   if Math.approx ~eps denominator 0.
   then None
   else (
-    let v = sub a1 b1 in
+    let v = sub l1.a l2.a in
     let a_frac =
-      let _, _, num = cross v db in
+      let _, _, num = cross v d2 in
       num /. denominator
     and b_frac =
-      let _, _, num = cross v da in
+      let _, _, num = cross v d1 in
       num /. denominator
     in
     let good =
@@ -117,7 +122,7 @@ let line_intersection
       && ((not bn_b1) || b_frac >= 0. -. eps)
       && ((not bn_b2) || b_frac <= 1. +. eps)
     in
-    if good then Some (add a1 (mul_scalar (sub a2 a1) a_frac)) else None )
+    if good then Some (add l1.a (mul_scalar (sub l1.b l1.a) a_frac)) else None )
 
 let line_normal (x1, y1) (x2, y2) = normalize (y1 -. y2, x2 -. x1)
 let get_x (x, _) = x

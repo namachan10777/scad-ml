@@ -37,10 +37,9 @@ let self_intersections' ?(eps = Util.epsilon) path =
   else (
     let intersects = ref [] in
     for i = 0 to len - 3 do
-      let a1 = path.(i)
-      and a2 = path.(i + 1) in
+      let l1 = Vec2.{ a = path.(i); b = path.(i + 1) } in
       let seg_normal =
-        let x, y = Vec2.sub a2 a1 in
+        let x, y = Vec2.sub l1.b l1.a in
         Vec2.(normalize (-.y, x))
       in
       let vals = Array.map (fun p -> Vec2.dot p seg_normal) path
@@ -54,14 +53,9 @@ let self_intersections' ?(eps = Util.epsilon) path =
           let signal = Int.of_float @@ Math.sign v in
           if signal * !last_signal < 0
           then (
-            let b1 = path.(j + start)
-            and b2 = path.(j + start + 1) in
+            let l2 = Vec2.{ a = path.(j + start); b = path.(j + start + 1) } in
             let intersect =
-              Vec2.line_intersection
-                ~bounds1:(true, true)
-                ~bounds2:(true, true)
-                (a1, a2)
-                (b1, b2)
+              Vec2.line_intersection ~bounds1:(true, true) ~bounds2:(true, true) l1 l2
             in
             Option.iter (fun p -> intersects := p :: !intersects) intersect );
           last_signal := signal )
@@ -88,6 +82,27 @@ let is_simple' ?eps ?(closed = false) path =
     if !reversal then false else List.length (self_intersections' ?eps path) = 0 )
 
 let is_simple ?eps ?closed path = is_simple' ?eps ?closed (Array.of_list path)
+
+let centroid ?(eps = Util.epsilon) = function
+  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
+  | p0 :: p1 :: tl        ->
+    let f (area_sum, p_sum, p1) p2 =
+      let _, _, area = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
+      area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
+    in
+    let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
+    if Math.approx ~eps area_sum 0.
+    then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
+    Vec2.(div_scalar p_sum (area_sum /. 3.))
+
+let area ?(signed = false) = function
+  | [] | [ _ ] | [ _; _ ] -> 0.
+  | p0 :: p1 :: tl        ->
+    let f (area, p1) p2 =
+      (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
+    in
+    let area, _ = List.fold_left f (0., p1) tl in
+    if signed then area else Float.abs area
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in

@@ -1,32 +1,35 @@
-let shift_segment ~d (p1, p2) =
-  let shift = Vec2.(add (mul_scalar (Vec2.line_normal p1 p2) d)) in
-  shift p1, shift p2
+let shift_segment ~d Vec2.{ a; b } =
+  let shift = Vec2.(add (mul_scalar (Vec2.line_normal a b) d)) in
+  Vec2.{ a = shift a; b = shift b }
 
 (* Get the intersection point between two segments, or their common point if
    they already share one. *)
-let segment_extension ((_, a2) as sa) ((b1, _) as sb) =
-  if Vec2.(norm (sub a2 b1) < 1e-6)
+let segment_extension (Vec2.{ b = b1; _ } as s1) (Vec2.{ a = a2; _ } as s2) =
+  if Vec2.(norm (sub b1 a2) < 1e-6)
   then a2
   else (
-    match Vec2.line_intersection sa sb with
+    match Vec2.line_intersection s1 s2 with
     | Some inter -> inter
     | None       -> failwith "Offset: path contains segment that reverses direction." )
 
 let chamfer ~centre ~delta p1 p2 p3 =
   let endline =
+    let seg = Vec2.{ a = p1; b = p3 } in
     let dist =
       let intersect =
-        match Vec2.line_intersection (p1, p3) (centre, p2) with
+        match Vec2.(line_intersection seg { a = centre; b = p2 }) with
         | Some p -> p
         | None   -> failwith "Offset: chamfer centre line is parallel (no intersect)"
       in
       Math.sign delta *. Vec2.(norm (centre <-> intersect))
     in
-    shift_segment ~d:(delta -. dist) (p1, p3)
+    shift_segment ~d:(delta -. dist) seg
   in
   (* if endline segment is colinear with either input segment, return middle *)
   match
-    Vec2.line_intersection endline (p1, p2), Vec2.line_intersection endline (p2, p3)
+    Vec2.(
+      ( line_intersection endline { a = p1; b = p2 }
+      , line_intersection endline { a = p2; b = p3 } ))
   with
   | Some i1, Some i2 -> [ i1; i2 ]
   | _                -> [ p2 ]
@@ -74,10 +77,10 @@ let good_segments ~quality ~closed ~d path shifted_segs =
     else (
       let j = ref 0
       and good = ref false
-      and p1, p2 = shifted_segs.(i) in
+      and Vec2.{ a = ssa; b = ssb } = shifted_segs.(i) in
       while (not !good) && !j < quality + 2 do
         let a = alphas.(!j) in
-        let pt = Vec2.(add (mul_scalar p1 a) (mul_scalar p2 (1. -. a))) in
+        let pt = Vec2.(add (mul_scalar ssa a) (mul_scalar ssb (1. -. a))) in
         good := point_dist pt > d;
         incr j
       done;
@@ -96,7 +99,9 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
   and len = Array.length path' in
   let shifted_segs =
     (* last looping segment ignored later if not closed *)
-    let f i = shift_segment ~d (path'.(i), path'.(Util.index_wrap ~len (i + 1))) in
+    let f i =
+      shift_segment ~d Vec2.{ a = path'.(i); b = path'.(Util.index_wrap ~len (i + 1)) }
+    in
     List.init len f
   in
   let good =
@@ -123,8 +128,9 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
         if (i = 0 || i = len_good - 1) && not closed
         then false
         else (
-          let prev_a, prev_b = good_segs.(Util.index_wrap ~len:len_good (i - 1))
-          and a, b = good_segs.(i)
+          let Vec2.{ a = prev_a; b = prev_b } =
+            good_segs.(Util.index_wrap ~len:len_good (i - 1))
+          and Vec2.{ a; b } = good_segs.(i)
           and c = sharp_corners.(i) in
           Vec2.(dot (sub b a) (sub a c)) > 0.
           && Vec2.(dot (sub prev_b prev_a) (sub c prev_b)) > 0. )
@@ -139,8 +145,8 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
       let f i =
         if round i
         then (
-          let _, prev_b = good_segs.(Util.index_wrap ~len:len_good (i - 1))
-          and a, _ = good_segs.(i) in
+          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:len_good (i - 1))
+          and Vec2.{ a; _ } = good_segs.(i) in
           chamfer ~delta:d ~centre:good_path.(i) prev_b sharp_corners.(i) a )
         else [ sharp_corners.(i) ]
       in
@@ -150,8 +156,8 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
       let f i =
         if round i
         then (
-          let _, prev_b = good_segs.(Util.index_wrap ~len:len_good (i - 1))
-          and a, _ = good_segs.(i)
+          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:len_good (i - 1))
+          and Vec2.{ a; _ } = good_segs.(i)
           and centre = good_path.(i) in
           let steps =
             let frags = Float.of_int @@ Util.helical_fragments ?fn ?fs ?fa d in

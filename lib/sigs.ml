@@ -1,6 +1,11 @@
 module type Vec = sig
   type t
 
+  type line =
+    { a : t
+    ; b : t
+    }
+
   (** Zero vector = [(0., 0., 0.)] *)
   val zero : t
 
@@ -141,8 +146,8 @@ module type Vec = sig
     direction [v]. *)
   val distance_to_vector : t -> t -> float
 
-  val distance_to_line : ?bounds:bool * bool -> t * t -> t -> float
-  val line_closest_point : ?bounds:bool * bool -> t * t -> t -> t
+  val distance_to_line : ?bounds:bool * bool -> line:line -> t -> float
+  val line_closest_point : ?bounds:bool * bool -> line:line -> t -> t
 
   (** {1 Utilities} *)
 

@@ -64,6 +64,14 @@ val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMat
   Calculate the normal vector of the path [t]. *)
 val normal : t -> Vec3.t
 
+val centroid : ?eps:float -> Vec3.t list -> Vec3.t
+
+(** [area ?signed t]
+
+  Calculate the area of the co-planar path (describing a polygon) [t]. If
+  [signed] is [true], the signed area is returned. *)
+val area : ?signed:bool -> t -> float
+
 (** [coplanar ?eps t]
 
   Returns [true] if all points in [t] are coplanar, within the tolerance [eps].

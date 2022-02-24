@@ -383,8 +383,8 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
-              (fc2, add fc2 (of_vec3 prev))
-              (po2, add po2 (of_vec3 in_prev)))
+              { a = fc2; b = add fc2 (of_vec3 prev) }
+              { a = po2; b = add po2 (of_vec3 in_prev) })
           |> Option.is_none
         and next_degen =
           let no2 = Vec2.of_vec3 next_offset in
@@ -392,8 +392,8 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
-              (fc2, add fc2 (of_vec3 next))
-              (no2, add no2 (of_vec3 in_next)))
+              { a = fc2; b = add fc2 (of_vec3 next) }
+              { a = no2; b = add no2 (of_vec3 in_next) })
           |> Option.is_none
         in
         fill_row
@@ -531,7 +531,7 @@ let prism
   let bottom_sign = Path2d.clockwise_sign' bot_proj in
   let concave =
     let f i =
-      let line = bot_proj.(wrap (i - 1)), bot_proj.(i) in
+      let line = Vec2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in
       bottom_sign *. Vec2.left_of_line ~line bot_proj.(wrap (i + 1)) > 0.
     in
     Array.init len f

@@ -1,5 +1,10 @@
 type t = float * float * float
 
+type line =
+  { a : t
+  ; b : t
+  }
+
 let zero = 0., 0., 0.
 let horizontal_op op (x1, y1, z1) (x2, y2, z2) = op x1 x2, op y1 y2, op z1 z2
 let add = horizontal_op ( +. )
@@ -72,22 +77,22 @@ let closest_simplex1 ?(eps = Util.epsilon) p1 p2 =
     then p2, [ p2 ]
     else add p1 (mul_scalar c t), [ p1; p2 ] )
 
-let line_closest_point ?(bounds = false, false) (p1, p2) t =
+let line_closest_point ?(bounds = false, false) ~line t =
   match bounds with
   | false, false ->
-    let n = normalize (sub p1 p2) in
-    add p2 (mul_scalar n (dot (sub t p2) n))
-  | true, true   -> add t (fst @@ closest_simplex1 (sub p1 t) (sub p2 t))
+    let n = normalize (sub line.a line.b) in
+    add line.b (mul_scalar n (dot (sub t line.b) n))
+  | true, true   -> add t (fst @@ closest_simplex1 (sub line.a t) (sub line.b t))
   | b1, b2       ->
-    let p1, p2 = if b1 && not b2 then p1, p2 else p2, p1 in
-    let seg_vec = normalize (sub p2 p1) in
-    let projection = dot (sub t p1) seg_vec in
-    if projection <= 0. then p1 else add p1 (mul_scalar seg_vec projection)
+    let line = if b1 && not b2 then line else { a = line.b; b = line.a } in
+    let seg_vec = normalize (sub line.b line.a) in
+    let projection = dot (sub t line.a) seg_vec in
+    if projection <= 0. then line.a else add line.a (mul_scalar seg_vec projection)
 
-let distance_to_line ?(bounds = false, false) ((p1, p2) as line) t =
+let distance_to_line ?(bounds = false, false) ~line t =
   match bounds with
-  | false, false -> distance_to_vector (sub t p1) (normalize (sub p2 p1))
-  | bounds       -> norm (sub t (line_closest_point ~bounds line t))
+  | false, false -> distance_to_vector (sub t line.a) (normalize (sub line.b line.a))
+  | bounds       -> norm (sub t (line_closest_point ~bounds ~line t))
 
 let get_x (x, _, _) = x
 let get_y (_, y, _) = y
