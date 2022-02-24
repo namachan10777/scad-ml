@@ -8,6 +8,18 @@ type offset =
 
 type spec = Spec : offset list -> spec
 
+type hole_spec =
+  [ `Same
+  | `Flip
+  | `Custom of spec
+  ]
+
+type hole =
+  { hole : Vec2.t list
+  ; top_spec : hole_spec option
+  ; bot_spec : hole_spec option
+  }
+
 let quantize = Math.quant ~q:(1. /. 1024.)
 
 let radius_of_spec = function
@@ -74,6 +86,9 @@ let custom l =
     (List.map (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z }) l)
 
 let flip_d (Spec l) = Spec (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
+
+let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape =
+  { hole = shape; bot_spec = bot; top_spec = top }
 
 let polyhole_partition ?rev ~holes outer =
   let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3d.normal outer in
@@ -153,21 +168,7 @@ let sweep'
 
 (* TODO: think about the API here. Should it be separate functions since there
     are so many optionals, including ones that are only relevant for holes? Or no? *)
-let sweep
-    ?check_valid
-    ?winding
-    ?fn
-    ?fs
-    ?fa
-    ?mode
-    ?caps
-    ?top
-    ?bot
-    ?holes
-    ?(flip_hole_top_d = false)
-    ?(flip_hole_bot_d = false)
-    ~transforms
-    shape
+let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transforms shape
   =
   let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
   match holes with
@@ -176,12 +177,16 @@ let sweep
     poly
   | Some holes ->
     let tunnel_bots, tunnel_tops, tunnels =
-      let hole_bot_spec = if flip_hole_bot_d then Option.map flip_d bot else bot
-      and hole_top_spec = if flip_hole_top_d then Option.map flip_d top else top in
-      let f (bots, tops, tuns) hole =
-        let bot, top, tunnel =
-          sweep ~winding:`CW ~caps:`Open ?top:hole_top_spec ?bot:hole_bot_spec hole
-        in
+      let hole_spec outer_spec = function
+        | Some `Same          -> outer_spec
+        | Some `Flip          -> Option.map flip_d outer_spec
+        | Some (`Custom spec) -> Some spec
+        | None                -> None
+      in
+      let f (bots, tops, tuns) { hole; bot_spec; top_spec } =
+        let bot = hole_spec bot bot_spec
+        and top = hole_spec top top_spec in
+        let bot, top, tunnel = sweep ~winding:`CW ~caps:`Open ?top ?bot hole in
         bot :: bots, top :: tops, tunnel :: tuns
       in
       List.fold_left f ([], [], []) holes

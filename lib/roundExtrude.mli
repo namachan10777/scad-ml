@@ -5,11 +5,24 @@ type offset =
 
 type spec
 
+type hole_spec =
+  [ `Same
+  | `Flip
+  | `Custom of spec
+  ]
+
+type hole =
+  { hole : Vec2.t list
+  ; top_spec : hole_spec option
+  ; bot_spec : hole_spec option
+  }
+
 val chamf : ?angle:float -> ?cut:float -> ?width:float -> ?height:float -> unit -> spec
 val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> spec
 val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> spec
 val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> spec
 val custom : offset list -> spec
+val hole : ?bot:hole_spec option -> ?top:hole_spec option -> Vec2.t list -> hole
 
 val sweep
   :  ?check_valid:int option
@@ -21,9 +34,7 @@ val sweep
   -> ?caps:[ `Capped | `Open ]
   -> ?top:spec
   -> ?bot:spec
-  -> ?holes:Vec2.t list list
-  -> ?flip_hole_top_d:bool
-  -> ?flip_hole_bot_d:bool
+  -> ?holes:hole list
   -> transforms:MultMatrix.t list
   -> Vec2.t list
   -> Poly3d.t

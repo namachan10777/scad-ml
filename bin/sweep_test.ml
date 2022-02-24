@@ -520,7 +520,11 @@ let rounded_polyhole_sweep () =
     let holes =
       let s = Poly2d.circle ~fn:90 2.
       and d = 2. in
-      Poly2d.[ translate (-.d, -.d) s; translate (d, d) s ]
+      Poly2d.(
+        RoundExtrude.
+          [ hole ~bot:(Some `Same) @@ translate (-.d, -.d) s
+          ; hole ~bot:(Some `Same) @@ translate (d, d) s
+          ])
     and outer =
       Poly2d.square ~center:true (10., 10.)
       |> Rounding2d.(flat ~spec:(chamf (`Width 1.)))
@@ -531,7 +535,6 @@ let rounded_polyhole_sweep () =
         ~transforms
         ~bot:(circ (`Radius (-0.8)))
         ~top:(circ (`Radius 0.5))
-        ~flip_hole_top_d:true
         ~holes
         outer)
     |> Poly3d.to_scad
