@@ -5,7 +5,7 @@ type t =
   ; w : float
   }
 
-let id = { x = 0.; y = 0.; z = 0.; w = 0. }
+let id = { x = 0.; y = 0.; z = 0.; w = 1. }
 let coefficients { x; y; z; w } = x, y, z, w
 
 let make ax angle =
