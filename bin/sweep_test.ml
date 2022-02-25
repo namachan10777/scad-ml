@@ -70,7 +70,7 @@ let spline_path () =
   and square = Poly2d.square ~center:true (v2 2. 5.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
-    List.map (fun Vec2.{ x; y } -> Scad.translate (v3 x y 0.) s) control_pts
+    List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
     Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
@@ -84,7 +84,7 @@ let arc_points () =
   let arc = Path2d.arc_through ~fn:5 (v2 10. 10.) (v2 20. 20.) (v2 10. 30.) in
   let scad =
     List.mapi
-      (fun i Vec2.{ x; y } ->
+      (fun i { x; y } ->
         Scad.text ~size:5. (Printf.sprintf "%i" i)
         |> Scad.color Color.Red
         |> Scad.translate (v3 x y 0.) )
@@ -98,7 +98,7 @@ let arc_points_3d () =
   let arc = Path3d.arc_through ~fn:5 (v3 10. 10. 0.) (v3 20. 20. 10.) (v3 10. 30. 20.) in
   let scad =
     List.mapi
-      (fun i Vec3.{ x; y; z } ->
+      (fun i { x; y; z } ->
         Scad.text ~size:5. (Printf.sprintf "%i" i)
         |> Scad.color Color.Red
         |> Scad.translate { x; y; z } )
@@ -308,7 +308,7 @@ let sweep_starburst ~euler =
   let scad =
     let paths =
       let d = 20.
-      and p Vec3.{ x; y; z } = [ v3 x y z; v3 (x *. 2.) (y *. 2.) (z *. 2.) ] in
+      and p { x; y; z } = [ v3 x y z; v3 (x *. 2.) (y *. 2.) (z *. 2.) ] in
       let out = [ v3 d 0. 0.; v3 d 0. d; v3 d 0. (-.d) ] in
       let f i =
         List.map (fun s -> Vec3.rotate (v3 0. 0. Float.(pi /. 4. *. i)) s |> p) out
@@ -340,7 +340,7 @@ let tri_mesh_poly () =
   close_out oc
 
 let rounding_basic () =
-  let shape = [ v2 (-4.) 0.; v2 5. 3.; v2 0. 7.; v2 8. 7.; v2 20. 20.; v2 10. 0. ] in
+  let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
   let shape_spec =
     let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
     Rounding2d.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
@@ -365,7 +365,7 @@ let rounding_basic () =
   close_out oc
 
 let offset_poly () =
-  let shape = [ v2 (-4.) 0.; v2 5. 3.; v2 0. 7.; v2 8. 7.; v2 20. 20.; v2 10. 0. ] in
+  let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
   let scad =
     let rounded =
       Scad.polygon (Poly2d.offset (`Radius (-0.5)) shape)
@@ -441,11 +441,11 @@ let offset_linear_extrude () =
   close_out oc
 
 let bezier_path () =
-  let control_pts = [ v2 0. 10.; v2 10. 40.; v2 20. 40.; v2 30. (-20.); v2 40. (-40.) ]
+  let control_pts = Vec2.[ v 0. 10.; v 10. 40.; v 20. 40.; v 30. (-20.); v 40. (-40.) ]
   and square = Poly2d.square ~center:true (v2 2. 2.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
-    List.map (fun Vec2.{ x; y } -> Scad.translate (v3 x y 0.) s) control_pts
+    List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = Bezier2d.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
     Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
@@ -539,7 +539,7 @@ let poly2d_to_scad () =
 let rounded_polyhole_sweep () =
   let transforms =
     let bez =
-      Bezier3d.of_path [ v3 0. 0. 2.; v3 0. 20. 20.; v3 40. 10. 0.; v3 50. 10. 5. ]
+      Bezier3d.of_path Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
     in
     Path3d.to_transforms ~euler:false (Bezier3d.curve ~fn:20 bez)
   in
@@ -602,7 +602,7 @@ let rounded_prism_cube () =
 
 let rounded_prism_pointy () =
   let bot =
-    [ v3 (-4.) 0. 0.; v3 5. 3. 0.; v3 0. 7. 0.; v3 8. 7. 0.; v3 20. 20. 0.; v3 10. 0. 0. ]
+    Vec3.[ v (-4.) 0. 0.; v 5. 3. 0.; v 0. 7. 0.; v 8. 7. 0.; v 20. 20. 0.; v 10. 0. 0. ]
   in
   let top = Path3d.translate (v3 0. 0. 5.) bot in
   let scad =

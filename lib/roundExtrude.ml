@@ -81,7 +81,7 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
         (v2 0. (Float.abs joint))
         (v2 (-.joint) (Float.abs joint))
     |> List.tl
-    |> List.map (fun Vec2.{ x = d; y = z } -> { d = quantize d; z = quantize z }) )
+    |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
 
 let custom l =
   Spec

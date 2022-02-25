@@ -1,3 +1,4 @@
+open Vec
 open Util
 
 let invtan run rise =
@@ -141,7 +142,7 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
       else fun i -> round_3_points (get (i - 1)) (get i) (get (i + 1))
     in
     fun i ->
-      let Vec3.{ x; y; z = r } = get i in
+      let { x; y; z = r } = get i in
       if Float.equal r 0.
       then [ Vec2.v x y ]
       else (
@@ -158,7 +159,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
   let ps = Array.make len Vec2.zero
   and radii = Array.make len 0. in
   for i = 0 to len - 1 do
-    let Vec3.{ x; y; z = r } = Array.unsafe_get rps i in
+    let { x; y; z = r } = Array.unsafe_get rps i in
     Array.unsafe_set ps i (Vec2.v x y);
     Array.unsafe_set radii i r
   done;
@@ -181,7 +182,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
         let local_sign =
           Path2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
         in
-        let Vec2.{ x; y } = get_op j in
+        let { x; y } = get_op j in
         (* The overall polygon rotation is enforced to be CCW, so if the local
                sign is positive (CW), subtract from the radius instead *)
         let r' = Float.max min_r (radii.(j) +. (offset *. local_sign *. -1.)) in

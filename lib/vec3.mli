@@ -1,4 +1,4 @@
-type t = Vec.V3t.t =
+type t = Vec.v3 =
   { x : float
   ; y : float
   ; z : float

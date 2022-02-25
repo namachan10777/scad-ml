@@ -7,6 +7,7 @@ type bounds =
   ; bot : float
   }
 
+val of_tups : (float * float) list -> Vec2.t list
 val clockwise_sign' : Vec2.t array -> float
 val is_clockwise' : Vec2.t array -> bool
 val clockwise_sign : Vec2.t list -> float

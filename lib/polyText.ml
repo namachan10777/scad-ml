@@ -1,5 +1,5 @@
-open Vec
 open Cairo
+open Vec
 
 type glyph_outline =
   { outer : Vec2.t list
@@ -18,7 +18,7 @@ let path_to_outlines path =
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
   let ps, _, _ = Path.fold path f ([], [], v2 0. 0.) in
-  List.rev_map (List.map @@ fun Vec2.{ x; y } -> v2 x (-.y)) ps
+  List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) ps
 
 let pathdata_to_outlines ?(fn = 16) data =
   let f (paths, ps, last_p) = function
@@ -30,7 +30,7 @@ let pathdata_to_outlines ?(fn = 16) data =
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
   let ps, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in
-  List.rev_map (List.map @@ fun Vec2.{ x; y } -> v2 x (-.y)) ps
+  List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) ps
 
 let glyph_outline ?(center = false) ?weight ~font char =
   let s = String.of_seq (Seq.return char)

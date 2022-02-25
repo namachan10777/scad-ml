@@ -1,6 +1,8 @@
 open Vec
 include Path.Make (Vec3)
 
+let of_tups = List.map Vec3.of_tup
+
 let arc ?init ?rev ?fn ~centre ~radius ~start angle =
   let arc =
     Path2d.arc ?rev ?fn ~centre:(Vec3.to_vec2 centre) ~radius ~start angle
@@ -48,7 +50,7 @@ let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   in
   List.init ((n_frags * n_turns) + 1) f
 
-let scaler ~len Vec2.{ x; y } =
+let scaler ~len { x; y } =
   let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int len) (v3 x y 1.) in
   fun i -> MultMatrix.scaling @@ Vec3.map (fun a -> (a *. Float.of_int i) +. 1.) step
 
@@ -70,7 +72,7 @@ let to_transforms ?(euler = false) ?scale ?twist path =
         Quaternion.(to_multmatrix @@ of_euler Float.(v3 (pi /. 2.) 0. (pi /. 2.)))
       in
       fun i ->
-        let Vec3.{ x = dx; y = dy; z = dz } =
+        let { x = dx; y = dy; z = dz } =
           if i = 0
           then Vec3.(p.(1) -@ p.(0))
           else if i = len - 1

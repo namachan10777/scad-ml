@@ -1,4 +1,4 @@
-type t = Vec.V3t.t =
+type t = Vec.v3 =
   { x : float
   ; y : float
   ; z : float
@@ -114,7 +114,7 @@ let ( -$ ) = ssub
 let ( *$ ) = smul
 let ( /$ ) = sdiv
 let to_vec2 { x; y; _ } = Vec.v2 x y
-let of_vec2 ?(z = 0.) Vec.V2t.{ x; y } = { x; y; z }
+let of_vec2 ?(z = 0.) ({ x; y } : Vec.v2) = { x; y; z }
 
 let rotate_x theta { x; y; z } =
   let s = Float.sin theta

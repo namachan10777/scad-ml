@@ -17,6 +17,17 @@ module Math = Math
 module Plane = Plane
 module PolyText = PolyText
 
+type v3 = Vec.v3 =
+  { x : float
+  ; y : float
+  ; z : float
+  }
+
+type v2 = Vec.v2 =
+  { x : float
+  ; y : float
+  }
+
 let v2 = Vec.v2
 let v3 = Vec.v3
 

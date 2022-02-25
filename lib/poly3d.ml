@@ -191,7 +191,7 @@ let enforce_winding w shape =
 let sweep ?(winding = `CCW) ?caps ~transforms shape =
   let shape = enforce_winding winding shape in
   List.map
-    (fun m -> List.map (fun Vec2.{ x; y } -> MultMatrix.transform m (Vec3.v x y 0.)) shape)
+    (fun m -> List.map (fun { x; y } -> MultMatrix.transform m (Vec3.v x y 0.)) shape)
     transforms
   |> of_layers ?caps
 

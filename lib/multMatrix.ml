@@ -1,3 +1,5 @@
+open Vec
+
 type t = float array array
 
 let of_row_list_exn l =
@@ -26,7 +28,7 @@ let of_row_list l =
   try Ok (of_row_list_exn l) with
   | Failure e -> Error e
 
-let of_rotmatrix r Vec3.{ x; y; z } =
+let of_rotmatrix r { x; y; z } =
   let g = RotMatrix.get r in
   [| [| g 0 0; g 0 1; g 0 2; x |]
    ; [| g 1 0; g 1 1; g 1 2; y |]
@@ -34,21 +36,21 @@ let of_rotmatrix r Vec3.{ x; y; z } =
    ; [| 0.; 0.; 0.; 1. |]
   |]
 
-let scaling Vec3.{ x; y; z } =
+let scaling { x; y; z } =
   [| [| x; 0.; 0.; 0. |]
    ; [| 0.; y; 0.; 0. |]
    ; [| 0.; 0.; z; 0. |]
    ; [| 0.; 0.; 0.; 1. |]
   |]
 
-let translation Vec3.{ x; y; z } =
+let translation { x; y; z } =
   [| [| 1.; 0.; 0.; x |]
    ; [| 0.; 1.; 0.; y |]
    ; [| 0.; 0.; 1.; z |]
    ; [| 0.; 0.; 0.; 1. |]
   |]
 
-let transform t Vec3.{ x; y; z } =
+let transform t { x; y; z } =
   let v = [| x; y; z; 1. |]
   and a = Array.make 4 0. in
   for i = 0 to 3 do

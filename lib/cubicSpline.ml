@@ -85,8 +85,8 @@ let fit ?(boundary = `Natural) ps =
   for n = 0 to len - 2 do
     let r = m.(!row)
     and n4 = n * 4
-    and Vec2.{ x = x0; y = y0 } = ps.(n)
-    and Vec2.{ x = x1; y = y1 } = ps.(n + 1) in
+    and { x = x0; y = y0 } = ps.(n)
+    and { x = x1; y = y1 } = ps.(n + 1) in
     let () =
       r.(n4) <- Float.pow x0 3.;
       r.(n4 + 1) <- Float.pow x0 2.;
@@ -105,7 +105,7 @@ let fit ?(boundary = `Natural) ps =
   done;
   (* first derivative *)
   for n = 0 to len - 3 do
-    let Vec2.{ x = x1; _ } = ps.(n + 1)
+    let { x = x1; _ } = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
     r.(n4) <- 3. *. Float.pow x1 2.;
@@ -118,7 +118,7 @@ let fit ?(boundary = `Natural) ps =
   done;
   (* second derivative *)
   for n = 0 to len - 3 do
-    let Vec2.{ x = x1; _ } = ps.(n + 1)
+    let { x = x1; _ } = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
     r.(n4) <- 6. *. x1;
@@ -148,8 +148,8 @@ let fit ?(boundary = `Natural) ps =
     | `Periodic  ->
       (* first derivative of first and last point equal *)
       let r = m.(!row)
-      and Vec2.{ x = x0; _ } = ps.(0)
-      and Vec2.{ x = xn; _ } = ps.(len - 1) in
+      and { x = x0; _ } = ps.(0)
+      and { x = xn; _ } = ps.(len - 1) in
       let () =
         r.(0) <- 3. *. Float.pow x0 2.;
         r.(1) <- 2. *. x0;
@@ -167,8 +167,8 @@ let fit ?(boundary = `Natural) ps =
       r.(solution_idx - 3) <- -2.
     | `Natural   ->
       let r = m.(!row)
-      and Vec2.{ x = x0; _ } = ps.(0)
-      and Vec2.{ x = xn; _ } = ps.(len - 1) in
+      and { x = x0; _ } = ps.(0)
+      and { x = xn; _ } = ps.(len - 1) in
       let () =
         r.(0) <- 6. *. x0;
         r.(1) <- 2.;
@@ -226,8 +226,8 @@ let interpolate_path t n =
 let path_to_3d ?(plane = `XY) ps =
   let f =
     match plane with
-    | `XY -> fun Vec2.{ x; y } -> v3 x y 0.
-    | `YZ -> fun Vec2.{ x = y; y = z } -> v3 0. y z
-    | `XZ -> fun Vec2.{ x; y = z } -> v3 x 0. z
+    | `XY -> fun { x; y } -> v3 x y 0.
+    | `YZ -> fun { x = y; y = z } -> v3 0. y z
+    | `XZ -> fun { x; y = z } -> v3 x 0. z
   in
   List.map f ps

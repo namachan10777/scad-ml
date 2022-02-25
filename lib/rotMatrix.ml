@@ -1,3 +1,5 @@
+open Vec
+
 type t = float array array
 
 let of_row_list_exn l =
@@ -44,7 +46,7 @@ let to_euler t =
   let z = Float.atan2 t.(1).(0) t.(0).(0) in
   Vec3.v x y z
 
-let transform t Vec3.{ x; y; z } =
+let transform t { x; y; z } =
   let v = [| x; y; z |]
   and a = Array.make 3 0. in
   for i = 0 to 2 do
@@ -52,7 +54,7 @@ let transform t Vec3.{ x; y; z } =
       a.(i) <- a.(i) +. (t.(i).(j) *. v.(j))
     done
   done;
-  Vec3.v a.(0) a.(1) a.(2)
+  v3 a.(0) a.(1) a.(2)
 
 let to_string t =
   let row i =

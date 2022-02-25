@@ -10,12 +10,12 @@ type t =
 let coefficients { a; b; c; d } = a, b, c, d
 
 let make p1 p2 p3 =
-  let (Vec3.{ x; y; z } as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
+  let ({ x; y; z } as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
   let n = Vec3.norm crx in
   if Math.approx 0. n then invalid_arg "Plane points must not be collinear";
   { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot crx p1 /. n }
 
-let of_normal ?(point = Vec3.zero) (Vec3.{ x; y; z } as normal) =
+let of_normal ?(point = Vec3.zero) ({ x; y; z } as normal) =
   let n = Vec3.norm normal in
   if Math.approx 0. n then invalid_arg "Normal cannot be zero.";
   { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot normal point /. n }

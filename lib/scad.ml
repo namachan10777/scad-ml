@@ -304,7 +304,7 @@ let to_string t =
       Printf.sprintf
         "%spolygon(points=%s%s, convexity=%d);\n"
         indent
-        (string_of_list (fun Vec2.{ x; y } -> Printf.sprintf "[%f, %f]" x y) points)
+        (string_of_list (fun Vec.{ x; y } -> Printf.sprintf "[%f, %f]" x y) points)
         ( Option.map (string_of_list (string_of_list string_of_int)) paths
         |> maybe_fmt ", paths=%s" )
         convexity

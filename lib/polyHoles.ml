@@ -1,5 +1,7 @@
 (* https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 
+open Vec
+
 type tag =
   { n : int
   ; idx : int
@@ -41,7 +43,7 @@ let outer_intersect p outer =
   let seg_idx = ref 0
   and out_x = ref Float.infinity
   and out_y = ref 0. in
-  let update i Vec2.{ x = inter_x; y = inter_y } =
+  let update i { x = inter_x; y = inter_y } =
     if inter_x < !out_x
     then (
       seg_idx := i;
@@ -76,8 +78,8 @@ let bridge_to_outer { p = { x; y } as pt; _ } outer =
     let { p = { x = seg_x; _ } as seg; _ } = outer.(seg_idx)
     and { p = { x = next_x; _ } as next; _ } = outer.(next_idx) in
     if seg_x > x || next_x <= x
-    then seg_idx, fun (Vec2.{ y = cy; _ } as cp) -> cy < y && in_tri seg pt cp intersect
-    else next_idx, fun (Vec2.{ y = cy; _ } as cp) -> cy > y && in_tri cp pt next intersect
+    then seg_idx, fun ({ y = cy; _ } as cp) -> cy < y && in_tri seg pt cp intersect
+    else next_idx, fun ({ y = cy; _ } as cp) -> cy > y && in_tri cp pt next intersect
   in
   let idx = ref first
   and min_x = ref @@ Vec2.get_x outer.(first).p in
@@ -158,7 +160,7 @@ let insert_bridge (bridge_start, bridge_end) polys =
   and rest = Array.init (n_poly - 1) (fun j -> polys.((poly_idx + 1 + j) mod n_poly)) in
   Array.concat [ [| end_to_start; start_to_end |]; rest ]
 
-let partition ?(rev = false) ?(lift = fun Vec2.{ x; y } -> Vec3.v x y 0.) ~holes outer =
+let partition ?(rev = false) ?(lift = fun { x; y } -> Vec3.v x y 0.) ~holes outer =
   let outer_sign = Path2d.clockwise_sign outer in
   let flipped = Float.equal (-1.) outer_sign in
   let outer = if flipped then List.rev outer else outer in

@@ -1,5 +1,7 @@
 include Path.S with type vec := Vec3.t
 
+val of_tups : (float * float * float) list -> Vec3.t list
+
 val arc
   :  ?init:Vec3.t list
   -> ?rev:bool

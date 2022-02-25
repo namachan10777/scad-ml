@@ -12,13 +12,13 @@ let circle ?(fn = 30) r =
   in
   List.init fn f
 
-let square ?(center = false) Vec2.{ x; y } =
+let square ?(center = false) { x; y } =
   if center
   then (
     let x' = x /. 2.
     and y' = y /. 2. in
-    [ v2 x' y'; v2 (-.x') y'; v2 (-.x') (-.y'); v2 x' (-.y') ] )
-  else [ v2 0. 0.; v2 x 0.; v2 x y; v2 0. y ]
+    Vec2.[ v x' y'; v (-.x') y'; v (-.x') (-.y'); v x' (-.y') ] )
+  else Vec2.[ v 0. 0.; v x 0.; v x y; v 0. y ]
 
 let offset = Offset2d.offset
 let translate = Path2d.translate

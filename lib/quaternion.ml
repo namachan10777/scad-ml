@@ -9,7 +9,7 @@ let id = { x = 0.; y = 0.; z = 0.; w = 1. }
 let coefficients { x; y; z; w } = x, y, z, w
 
 let make ax angle =
-  let Vec3.{ x; y; z } = Vec3.normalize ax in
+  let Vec.{ x; y; z } = Vec3.normalize ax in
   let s = Float.sin (angle /. 2.) in
   { x = x *. s; y = y *. s; z = z *. s; w = Float.cos (angle /. 2.) }
 
@@ -72,7 +72,7 @@ let of_rotmatrix m =
     and z = 0.25 *. s in
     { x; y; z; w }
 
-let of_euler Vec3.{ x = roll; y = pitch; z = yaw } =
+let of_euler Vec.{ x = roll; y = pitch; z = yaw } =
   let open Float in
   let cy = cos (yaw *. 0.5)
   and sy = sin (yaw *. 0.5)
@@ -91,10 +91,10 @@ let to_rotmatrix { x; y; z; w } =
     let len_sqr = (x *. x) +. (y *. y) +. (z *. z) +. (w *. w) in
     if len_sqr != 0. then 2. /. len_sqr else 0.
   in
-  let (Vec3.{ z = zs; _ } as xyzs) = Vec3.(smul (v x y z) s) in
-  let Vec3.{ x = xsw; y = ysw; z = zsw } = Vec3.smul xyzs w in
-  let Vec3.{ x = xsx; y = ysx; z = zsx } = Vec3.smul xyzs x
-  and Vec3.{ y = ysy; z = zsy; _ } = Vec3.smul xyzs y
+  let Vec.({ z = zs; _ } as xyzs) = Vec3.(smul (v x y z) s) in
+  let Vec.{ x = xsw; y = ysw; z = zsw } = Vec3.smul xyzs w in
+  let Vec.{ x = xsx; y = ysx; z = zsx } = Vec3.smul xyzs x
+  and Vec.{ y = ysy; z = zsy; _ } = Vec3.smul xyzs y
   and zsz = z *. zs in
   RotMatrix.of_row_list_exn
     [ 1. -. ysy -. zsz, ysx -. zsw, zsx +. ysw
@@ -131,9 +131,9 @@ let slerp a b =
     | d when d > 0.9995 -> add a (smul (sub b a) v) |> normalize
     | d -> compute a b d
 
-let rotate_vec3 t Vec3.{ x; y; z } =
+let rotate_vec3 t Vec.{ x; y; z } =
   let r = { x; y; z; w = 0. } in
-  mul (mul t r) (conj t) |> fun { x; y; z; _ } -> Vec3.{ x; y; z }
+  mul (mul t r) (conj t) |> fun { x; y; z; _ } -> Vec.{ x; y; z }
 
 let rotate_vec3_about_pt t p vec = Vec3.(rotate_vec3 t (vec +@ p) -@ p)
 
@@ -150,6 +150,6 @@ let alignment v1 v2 =
     in
     make axis Float.pi )
   else (
-    let Vec3.{ x; y; z } = Vec3.(cross v1 v2) in
+    let Vec.{ x; y; z } = Vec3.(cross v1 v2) in
     let w = Vec3.((norm v1 *. norm v2) +. dot v1 v2) in
     normalize { x; y; z; w } )

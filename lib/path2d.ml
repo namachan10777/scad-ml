@@ -8,6 +8,8 @@ type bounds =
   ; bot : float
   }
 
+let of_tups = List.map Vec2.of_tup
+
 let clockwise_sign' (ps : Vec2.t array) =
   let len = Array.length ps
   and sum = ref 0. in
@@ -23,9 +25,9 @@ let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
 let bounds = function
-  | []                  -> invalid_arg "Cannot calculate bounds for empty path."
-  | Vec2.{ x; y } :: tl ->
-    let f (left, right, top, bot) Vec2.{ x; y } =
+  | []             -> invalid_arg "Cannot calculate bounds for empty path."
+  | { x; y } :: tl ->
+    let f (left, right, top, bot) { x; y } =
       Float.(min left x, max right x, max top y, min bot y)
     in
     let left, right, top, bot = List.fold_left f (x, x, y, y) tl in
@@ -88,7 +90,7 @@ let centroid ?(eps = Util.epsilon) = function
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
   | p0 :: p1 :: tl        ->
     let f (area_sum, p_sum, p1) p2 =
-      let Vec3.{ z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
+      let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
       area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
     in
     let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
@@ -116,7 +118,7 @@ let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(c : Vec2.t) ~radius ~sta
 let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   let radius = Vec2.distance centre p1
   and start =
-    let Vec2.{ x; y } = Vec2.sub p1 centre in
+    let { x; y } = Vec2.sub p1 centre in
     Float.atan2 y x
   and angle =
     let a = Vec2.angle_points p1 centre p2
