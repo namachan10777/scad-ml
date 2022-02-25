@@ -281,7 +281,11 @@ let to_string t =
     | l  -> List.fold_left ( ^ ) ", " l
   in
   let rec arrange_elms indent =
-    List.fold_left (fun stmts scad -> stmts ^ print indent scad) ""
+    List.fold_left (fun stmts scad -> Printf.sprintf "%s%s" stmts (print indent scad)) ""
+  (* let rec arrange_elms indent scads = *)
+  (*   let buf = Buffer.create 100 in *)
+  (*   List.iter (fun scad -> Buffer.add_string buf (print indent scad)) scads; *)
+  (*   buf *)
   and print indent = function
     | Cylinder { r1; r2; h; center; fa; fs; fn } ->
       Printf.sprintf
@@ -328,56 +332,56 @@ let to_string t =
         "%stranslate(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Rotate (r, scad) ->
       Printf.sprintf
         "%srotate(%s)\n%s"
         indent
         (Vec3.deg_of_rad r |> Vec3.to_string)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | VectorRotate (axis, r, scad) ->
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
         (deg_of_rad r)
         (Vec3.to_string axis)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | MultMatrix (mat, scad) ->
       Printf.sprintf
         "%smultmatrix(%s)\n%s"
         indent
         (MultMatrix.to_string mat)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Union elements ->
       Printf.sprintf
         "%sunion(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Intersection elements ->
       Printf.sprintf
         "%sintersection(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Difference (minuend, subtrahend) ->
       Printf.sprintf
         "%sdifference(){\n%s%s%s}\n"
         indent
-        (print (indent ^ "\t") minuend)
-        (arrange_elms (indent ^ "\t") subtrahend)
+        (print (Printf.sprintf "%s\t" indent) minuend)
+        (arrange_elms (Printf.sprintf "%s\t" indent) subtrahend)
         indent
     | Minkowski elements ->
       Printf.sprintf
         "%sminkowski(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Hull elements ->
       Printf.sprintf
         "%shull(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Polyhedron { points; faces; convexity } ->
       Printf.sprintf
@@ -393,13 +397,13 @@ let to_string t =
         x
         y
         z
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Projection { src; cut } ->
       Printf.sprintf
         "%sprojection(cut=%B){\n%s%s}\n"
         indent
         cut
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
         indent
     | LinearExtrude
         { src; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
@@ -415,7 +419,7 @@ let to_string t =
         x
         y
         fn
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | RotateExtrude { src; angle; convexity; fa; fs; fn } ->
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
@@ -423,19 +427,19 @@ let to_string t =
         (Option.map deg_of_rad angle |> maybe_fmt "angle=%f")
         convexity
         (string_of_f_ fa fs fn)
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | Scale (p, scad) ->
       Printf.sprintf
         "%sscale(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Resize (p, scad) ->
       Printf.sprintf
         "%sresize(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Offset { src; offset } ->
       Printf.sprintf
         "%soffset(%s)\n%s"
@@ -444,7 +448,7 @@ let to_string t =
         | `Radius r  -> Printf.sprintf "r = %f" r
         | `Delta d   -> Printf.sprintf "delta = %f" d
         | `Chamfer d -> Printf.sprintf "delta = %f, chamfer=true" d )
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | Import { file; convexity; dxf_layer } ->
       Printf.sprintf
         "%simport(\"%s\", convexity=%i%s);\n"
@@ -458,13 +462,13 @@ let to_string t =
         indent
         (Color.to_string color)
         (maybe_fmt ", alpha=%f" alpha)
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | Render { src; convexity } ->
       Printf.sprintf
         "%srender(convexity=%i)\n%s"
         indent
         convexity
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
   in
   print "" (unpack t)
 
