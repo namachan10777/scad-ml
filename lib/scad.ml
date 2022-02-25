@@ -261,13 +261,20 @@ let to_string t =
     | Some x -> f x
     | None   -> default
   and deg_of_rad r = 180.0 *. r /. Float.pi in
-  let string_of_list f = function
+  let string_of_list f l =
+    match l with
     | h :: t ->
-      List.fold_left
-        (fun acc a -> Printf.sprintf "%s, %s" acc (f a))
-        (Printf.sprintf "[%s" (f h))
-        t
-      ^ "]"
+      let b = Buffer.create 100 in
+      let append a =
+        Buffer.add_char b ',';
+        Buffer.add_char b ' ';
+        Buffer.add_string b (f a)
+      in
+      Buffer.add_char b '[';
+      Buffer.add_string b (f h);
+      List.iter append t;
+      Buffer.add_char b ']';
+      Buffer.contents b
     | []     -> "[]"
   and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
   and string_of_f_ fa fs fn =
