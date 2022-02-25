@@ -1,3 +1,5 @@
+open Vec
+
 type t =
   { a : float
   ; b : float
@@ -8,41 +10,41 @@ type t =
 let coefficients { a; b; c; d } = a, b, c, d
 
 let make p1 p2 p3 =
-  let ((a, b, c) as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
+  let (Vec3.{ x; y; z } as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in
   let n = Vec3.norm crx in
   if Math.approx 0. n then invalid_arg "Plane points must not be collinear";
-  { a = a /. n; b = b /. n; c = c /. n; d = Vec3.dot crx p1 /. n }
+  { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot crx p1 /. n }
 
-let of_normal ?(point = Vec3.zero) ((x, y, z) as normal) =
+let of_normal ?(point = Vec3.zero) (Vec3.{ x; y; z } as normal) =
   let n = Vec3.norm normal in
   if Math.approx 0. n then invalid_arg "Normal cannot be zero.";
   { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot normal point /. n }
 
 let project { a; b; c; d } =
-  let n = a, b, c in
-  let cp = Vec3.(div_scalar (mul_scalar n d) (dot n n)) in
-  let rot = Quaternion.(to_multmatrix @@ alignment n (0., 0., 1.)) in
+  let n = v3 a b c in
+  let cp = Vec3.(sdiv (smul n d) (dot n n)) in
+  let rot = Quaternion.(to_multmatrix @@ alignment n (v3 0. 0. 1.)) in
   let m = MultMatrix.(mul rot (translation (Vec3.negate cp))) in
   fun p -> Vec3.to_vec2 @@ MultMatrix.transform m p
 
 let lift { a; b; c; d } =
-  let n = a, b, c in
-  let cp = Vec3.(div_scalar (mul_scalar n d) (dot n n)) in
-  let rot = Quaternion.(to_multmatrix @@ alignment (0., 0., 1.) n) in
+  let n = v3 a b c in
+  let cp = Vec3.(sdiv (smul n d) (dot n n)) in
+  let rot = Quaternion.(to_multmatrix @@ alignment (v3 0. 0. 1.) n) in
   let m = MultMatrix.(mul (translation cp) rot) in
   fun p -> MultMatrix.transform m (Vec3.of_vec2 p)
 
-let normal { a; b; c; _ } = Vec3.normalize (a, b, c)
-let offset { a; b; c; d } = d /. Vec3.norm (a, b, c)
+let normal { a; b; c; _ } = Vec3.normalize (v3 a b c)
+let offset { a; b; c; d } = d /. Vec3.norm (v3 a b c)
 
 let normalize { a; b; c; d } =
-  let n = Vec3.norm (a, b, c) in
+  let n = Vec3.norm (v3 a b c) in
   { a = a /. n; b = b /. n; c = c /. n; d = d /. n }
 
-let distance_to_point { a; b; c; d } p = Vec3.dot (a, b, c) p -. d
+let distance_to_point { a; b; c; d } p = Vec3.dot (v3 a b c) p -. d
 
 let greatest_distance { a; b; c; d } ps =
-  let normal = a, b, c in
+  let normal = v3 a b c in
   let f (min, max) p =
     let n = Vec3.dot p normal in
     Float.min min n, Float.max max n

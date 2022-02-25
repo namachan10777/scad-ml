@@ -1,4 +1,14 @@
-include Sigs.Vec with type t = float * float * float
+type t = Vec.V3t.t =
+  { x : float
+  ; y : float
+  ; z : float
+  }
+
+include Vec.S with type t := t
+
+val v : float -> float -> float -> t
+val of_tup : float * float * float -> t
+val to_tup : t -> float * float * float
 
 (** {1 Transformations}
 
@@ -57,5 +67,4 @@ val projection : t -> t
 
 (** {1 2d - 3d conversion} *)
 
-val to_vec2 : t -> float * float
-val of_vec2 : ?z:float -> float * float -> t
+val of_vec2 : ?z:float -> Vec.v2 -> t

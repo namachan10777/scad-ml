@@ -1,3 +1,5 @@
+open Vec
+
 (* placeholder module, will likely have this stuff in poly3d as rounded_extrude *)
 module R2 = Rounding.Make (Vec2) (Path2d)
 
@@ -75,11 +77,11 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
         ~fn:(Int.max 1 fn + 2)
         ~curv
         ~spec:(`Joint joint)
-        (0., 0.)
-        (0., Float.abs joint)
-        (-.joint, Float.abs joint)
+        Vec2.zero
+        (v2 0. (Float.abs joint))
+        (v2 (-.joint) (Float.abs joint))
     |> List.tl
-    |> List.map (fun (d, z) -> { d = quantize d; z = quantize z }) )
+    |> List.map (fun Vec2.{ x = d; y = z } -> { d = quantize d; z = quantize z }) )
 
 let custom l =
   Spec
@@ -194,7 +196,7 @@ let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transf
     let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
     let bot_lid = polyhole_partition ~rev:true ~holes:tunnel_bots outer_bot
     and top_lid = polyhole_partition ~holes:tunnel_tops outer_top in
-    Poly3d.join (Poly3d.translate (0., 0., 0.) bot_lid :: top_lid :: outer :: tunnels)
+    Poly3d.join (Poly3d.translate Vec3.zero bot_lid :: top_lid :: outer :: tunnels)
 
 (* TODO: add holes *)
 let linear_extrude
@@ -223,7 +225,7 @@ let linear_extrude
   and s = Float.max 0. (height -. bot_height -. top_height) /. Float.of_int slices
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
-    List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. z)
+    List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3d.to_transforms ?scale ?twist
   in
   sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
@@ -345,39 +347,35 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
     and next = Vec3.sub top.(Util.index_wrap ~len (i + 1)) top.(i)
     and edge = Vec3.sub bot.(i) top.(i) in
     let prev_offset =
-      let s =
-        Vec3.(mul_scalar (normalize prev) (rside_prev /. Float.sin (angle prev edge)))
-      in
+      let s = Vec3.(smul (normalize prev) (rside_prev /. Float.sin (angle prev edge))) in
       Vec3.add top.(i) s
     and next_offset =
-      let s =
-        Vec3.(mul_scalar (normalize next) (rside_next /. Float.sin (angle next edge)))
-      in
+      let s = Vec3.(smul (normalize next) (rside_next /. Float.sin (angle next edge))) in
       Vec3.add top.(i) s
     and down =
       let edge_angle =
         rt_down /. Float.sin (Float.abs (Plane.line_angle plane (bot.(i), top.(i))))
       in
-      Vec3.(mul_scalar (normalize edge) edge_angle)
+      Vec3.(smul (normalize edge) edge_angle)
     and fill_row p1 p2 p3 =
       [| p1; Vec3.lerp p2 p1 k_sides.(i); p2; Vec3.lerp p2 p3 k_sides.(i); p3 |]
     in
     let row0 =
       let in_prev =
-        let a = Vec3.(sub next (mul_scalar prev (dot next prev /. dot prev prev))) in
-        Vec3.(mul_scalar (normalize a) concave_sign)
+        let a = Vec3.(sub next (smul prev (dot next prev /. dot prev prev))) in
+        Vec3.(smul (normalize a) concave_sign)
       and in_next =
-        let a = Vec3.(sub prev (mul_scalar next (dot prev next /. dot next next))) in
-        Vec3.(mul_scalar (normalize a) concave_sign)
+        let a = Vec3.(sub prev (smul next (dot prev next /. dot next next))) in
+        Vec3.(smul (normalize a) concave_sign)
       and far_corner =
         let num =
           let s = concave_sign *. abs_rt_in in
-          Vec3.(mul_scalar (normalize (add (normalize prev) (normalize next))) s)
+          Vec3.(smul (normalize (add (normalize prev) (normalize next))) s)
         in
-        Vec3.(add top.(i) @@ div_scalar num (Float.sin (Vec3.angle prev next /. 2.)))
+        Vec3.(add top.(i) @@ sdiv num (Float.sin (Vec3.angle prev next /. 2.)))
       in
-      let prev_corner = Vec3.(add prev_offset (mul_scalar in_prev abs_rt_in))
-      and next_corner = Vec3.(add next_offset (mul_scalar in_next abs_rt_in)) in
+      let prev_corner = Vec3.(add prev_offset (smul in_prev abs_rt_in))
+      and next_corner = Vec3.(add next_offset (smul in_next abs_rt_in)) in
       if concave_sign < 0.
       then fill_row prev_corner far_corner next_corner
       else (

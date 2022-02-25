@@ -45,7 +45,7 @@ type d3 = three_d t
 
     Creates a cube in the first octant, with the given xyz [dimensions]. When
     [center] is true, the cube is centered on the origin. *)
-val cube : ?center:bool -> float * float * float -> d3
+val cube : ?center:bool -> Vec3.t -> d3
 
 (** [sphere ?fa ?fs ?fn radius]
 
@@ -105,7 +105,7 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> float * float -> d2
+val square : ?center:bool -> Vec.v2 -> d2
 
 (** [circle ?fa ?fs ?fn radius]
 
@@ -123,7 +123,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> d2
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> (float * float) list -> d2
+val polygon : ?convexity:int -> ?paths:int list list -> Vec.v2 list -> d2
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -201,7 +201,7 @@ val multmatrix : MultMatrix.t -> 's t -> 's t
 
     Mirrors [t] on a plane through the origin, defined by the normal vector
     [ax]. *)
-val mirror : float * float * float -> 's t -> 's t
+val mirror : Vec3.t -> 's t -> 's t
 
 (** [quaternion q t]
 
@@ -219,12 +219,12 @@ val quaternion_about_pt : Quaternion.t -> Vec3.t -> 's t -> 's t
 (** [scale factors t]
 
     Scales [t] by the given [factors] in xyz. *)
-val scale : float * float * float -> 's t -> 's t
+val scale : Vec3.t -> 's t -> 's t
 
 (** [resize dimensions t]
 
     Adjusts the size of [t] to match the given [dimensions]. *)
-val resize : float * float * float -> 's t -> 's t
+val resize : Vec3.t -> 's t -> 's t
 
 (** [offset offset t]
 
@@ -367,7 +367,7 @@ val linear_extrude
   -> ?convexity:int
   -> ?twist:int
   -> ?slices:int
-  -> ?scale:float * float
+  -> ?scale:Vec.v2
   -> ?fn:int
   -> d2
   -> d3

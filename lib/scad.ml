@@ -12,7 +12,7 @@ type scad =
       ; fn : int option
       }
   | Cube of
-      { size : float * float * float
+      { size : Vec3.t
       ; center : bool
       }
   | Sphere of
@@ -22,7 +22,7 @@ type scad =
       ; fn : int option
       }
   | Square of
-      { size : float * float
+      { size : Vec2.t
       ; center : bool
       }
   | Circle of
@@ -32,7 +32,7 @@ type scad =
       ; fn : int option
       }
   | Polygon of
-      { points : (float * float) list
+      { points : Vec2.t list
       ; paths : int list list option
       ; convexity : int
       }
@@ -56,7 +56,7 @@ type scad =
       ; faces : int list list
       ; convexity : int
       }
-  | Mirror of (float * float * float) * scad
+  | Mirror of Vec3.t * scad
   | Projection of
       { src : scad
       ; cut : bool
@@ -68,7 +68,7 @@ type scad =
       ; convexity : int
       ; twist : int option
       ; slices : int
-      ; scale : float * float
+      ; scale : Vec2.t
       ; fn : int
       }
   | RotateExtrude of
@@ -79,8 +79,8 @@ type scad =
       ; fs : float option
       ; fn : int option
       }
-  | Scale of (float * float * float) * scad
-  | Resize of (float * float * float) * scad
+  | Scale of Vec3.t * scad
+  | Resize of Vec3.t * scad
   | Offset of
       { src : scad
       ; offset : [ `Radius of float | `Delta of float | `Chamfer of float ]
@@ -214,7 +214,7 @@ let linear_extrude
     ?(convexity = 10)
     ?twist
     ?(slices = 20)
-    ?(scale = 1.0, 1.0)
+    ?(scale = Vec2.v 1. 1.)
     ?(fn = 16)
     (D2 src)
   =
@@ -292,19 +292,19 @@ let to_string t =
         r2
         center
         (string_of_f_ fa fs fn)
-    | Cube { size = w, h, d; center } ->
-      Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent w h d center
+    | Cube { size = { x; y; z }; center } ->
+      Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent x y z center
     | Sphere { r; fa; fs; fn } ->
       Printf.sprintf "%ssphere(%f%s);\n" indent r (string_of_f_ fa fs fn)
-    | Square { size = w, h; center } ->
-      Printf.sprintf "%ssquare(size=[%f, %f], center=%B);\n" indent w h center
+    | Square { size = { x; y }; center } ->
+      Printf.sprintf "%ssquare(size=[%f, %f], center=%B);\n" indent x y center
     | Circle { r; fa; fs; fn } ->
       Printf.sprintf "%scircle(%f%s);\n" indent r (string_of_f_ fa fs fn)
     | Polygon { points; paths; convexity } ->
       Printf.sprintf
         "%spolygon(points=%s%s, convexity=%d);\n"
         indent
-        (string_of_list (fun (w, h) -> Printf.sprintf "[%f, %f]" w h) points)
+        (string_of_list (fun Vec2.{ x; y } -> Printf.sprintf "[%f, %f]" x y) points)
         ( Option.map (string_of_list (string_of_list string_of_int)) paths
         |> maybe_fmt ", paths=%s" )
         convexity
@@ -386,7 +386,7 @@ let to_string t =
         (string_of_list Vec3.to_string points)
         (string_of_list (string_of_list string_of_int) faces)
         convexity
-    | Mirror ((x, y, z), scad) ->
+    | Mirror ({ x; y; z }, scad) ->
       Printf.sprintf
         "%smirror(v=[%f, %f, %f])\n%s"
         indent
@@ -401,8 +401,8 @@ let to_string t =
         cut
         (print (indent ^ "\t") src)
         indent
-    | LinearExtrude { src; height; center; convexity; twist; slices; scale = sx, sy; fn }
-      ->
+    | LinearExtrude
+        { src; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
       Printf.sprintf
         "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=[%f, %f], $fn=%d)\n\
          %s"
@@ -412,8 +412,8 @@ let to_string t =
         convexity
         (maybe_fmt "twist=%d, " twist)
         slices
-        sx
-        sy
+        x
+        y
         fn
         (print (indent ^ "\t") src)
     | RotateExtrude { src; angle; convexity; fa; fs; fn } ->

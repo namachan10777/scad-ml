@@ -77,21 +77,21 @@ val linear_extrude
   -> ?twist:float
   -> ?center:bool
   -> height:float
-  -> (float * float) list
+  -> Vec2.t list
   -> t
 
 val helix_extrude
   :  ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale:float * float
+  -> ?scale:Vec2.t
   -> ?twist:float
   -> ?left:bool
   -> n_turns:int
   -> pitch:float
   -> ?r2:float
   -> float
-  -> (float * float) list
+  -> Vec2.t list
   -> t
 
 val cartesian_plot

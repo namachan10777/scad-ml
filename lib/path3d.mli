@@ -33,7 +33,7 @@ val helix
   -> float
   -> t
 
-val scaler : len:int -> float * float -> int -> MultMatrix.t
+val scaler : len:int -> Vec2.t -> int -> MultMatrix.t
 val twister : len:int -> float -> int -> MultMatrix.t
 
 (** [to_transforms t]

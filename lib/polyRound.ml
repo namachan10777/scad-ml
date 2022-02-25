@@ -13,21 +13,17 @@ let invtan run rise =
   | -1, 1  -> (2. *. Float.pi) -. a
   | _      -> invalid_arg "Run and rise cannot both = 0."
 
-let get_angle (x1, y1) (x2, y2) =
-  if Float.(equal x1 x2 && equal y1 y2) then 0. else invtan (x2 -. x1) (y2 -. y1)
+let get_angle p1 p2 = if Vec2.equal p1 p2 then 0. else invtan (p2.x -. p1.x) (p2.y -. p1.y)
 
 (* TODO: consider a check that notices when the shape implodes due to too great
     of offset. This can lead to extrude errors that may be confusing. *)
 let offset_poly ~offset ps =
   let cw_sign = Math.sign offset *. Path2d.clockwise_sign' ps *. -1.
   and len = Array.length ps in
-  let parallel_follow (x1, y1) (x2, y2) (x3, y3) =
+  let parallel_follow p1 p2 p3 =
     if Float.equal offset 0.
-    then x2, y2 (* return middle point if offset is zero *)
+    then p2 (* return middle point if offset is zero *)
     else (
-      let p1 = x1, y1
-      and p2 = x2, y2
-      and p3 = x3, y3 in
       let path_angle = Vec2.angle_points p1 p2 p3
       and local_sign = Path2d.clockwise_sign' [| p1; p2; p3 |] in
       let radius = cw_sign *. local_sign *. offset /. Float.sin (path_angle /. 2.)
@@ -36,15 +32,17 @@ let offset_poly ~offset ps =
           let tan_dist = offset /. Float.tan (path_angle /. 2.) in
           let tangent_point a b =
             let theta = get_angle a b in
-            x2 -. (Float.cos theta *. tan_dist), y2 -. (Float.sin theta *. tan_dist)
+            Vec2.v
+              (p2.x -. (Float.cos theta *. tan_dist))
+              (p2.y -. (Float.sin theta *. tan_dist))
           in
           Vec2.mean [ tangent_point p1 p2; tangent_point p3 p2 ]
         in
         get_angle mid_tangent p2
       in
-      let cx = x2 -. (Float.cos angle_to_centre *. radius)
-      and cy = y2 -. (Float.sin angle_to_centre *. radius) in
-      cx, cy )
+      let cx = p2.x -. (Float.cos angle_to_centre *. radius)
+      and cy = p2.y -. (Float.sin angle_to_centre *. radius) in
+      Vec2.v cx cy )
   and out = Array.make len Vec2.zero in
   for i = 0 to len - 1 do
     out.(i)
@@ -52,12 +50,12 @@ let offset_poly ~offset ps =
   done;
   out
 
-let round_5_points (x1, y1, _) (x2, y2, r2) (x3, y3, r3) (x4, y4, r4) (x5, y5, _) =
-  let p1 = x1, y1
-  and p2 = x2, y2
-  and p3 = x3, y3
-  and p4 = x4, y4
-  and p5 = x5, y5 in
+let round_5_points rp1 rp2 rp3 rp4 rp5 =
+  let p1 = Vec2.of_vec3 rp1
+  and p2 = Vec2.of_vec3 rp2
+  and p3 = Vec2.of_vec3 rp3
+  and p4 = Vec2.of_vec3 rp4
+  and p5 = Vec2.of_vec3 rp5 in
   let half_a2 = Vec2.angle_points p1 p2 p3 /. 2.
   and half_a3 = Vec2.angle_points p2 p3 p4 /. 2.
   and half_a4 = Vec2.angle_points p3 p4 p5 /. 2.
@@ -66,17 +64,25 @@ let round_5_points (x1, y1, _) (x2, y2, r2) (x3, y3, r3) (x4, y4, r4) (x5, y5, _
   let new_r =
     let open Float in
     let f23 =
-      d23 *. tan half_a2 *. tan half_a3 /. ((r2 *. tan half_a3) +. (r3 *. tan half_a2))
+      d23
+      *. tan half_a2
+      *. tan half_a3
+      /. ((rp2.z *. tan half_a3) +. (rp3.z *. tan half_a2))
     and f34 =
-      d34 *. tan half_a3 *. tan half_a4 /. ((r3 *. tan half_a4) +. (r4 *. tan half_a3))
+      d34
+      *. tan half_a3
+      *. tan half_a4
+      /. ((rp3.z *. tan half_a4) +. (rp4.z *. tan half_a3))
     in
     (* smallest radius after applying factors is selected to replace r3 *)
-    min r3 (min (f23 *. r3) (f34 *. r3))
+    min rp3.z (min (f23 *. rp3.z) (f34 *. rp3.z))
   in
   let tan_dist = new_r /. Float.tan half_a3 in
   let tangent_point a b =
     let theta = get_angle a b in
-    x3 -. (Float.cos theta *. tan_dist), y3 -. (Float.sin theta *. tan_dist)
+    Vec2.v
+      (rp3.x -. (Float.cos theta *. tan_dist))
+      (rp3.y -. (Float.sin theta *. tan_dist))
   in
   let t23 = tangent_point p2 p3
   and t34 = tangent_point p4 p3 in
@@ -84,27 +90,29 @@ let round_5_points (x1, y1, _) (x2, y2, r2) (x3, y3, r3) (x4, y4, r4) (x5, y5, _
     (* find centre with angle to mid point between tangents *)
     let radius = new_r /. Float.sin half_a3
     and angle = get_angle (Vec2.mean [ t23; t34 ]) p3 in
-    x3 -. (Float.cos angle *. radius), y3 -. (Float.sin angle *. radius)
+    Vec2.v (rp3.x -. (Float.cos angle *. radius)) (rp3.y -. (Float.sin angle *. radius))
   in
   t23, t34, centre
 
-let round_3_points (x1, y1, _) (x2, y2, r2) (x3, y3, _) =
-  let p1 = x1, y1
-  and p2 = x2, y2
-  and p3 = x3, y3 in
+let round_3_points rp1 rp2 rp3 =
+  let p1 = Vec2.of_vec3 rp1
+  and p2 = Vec2.of_vec3 rp2
+  and p3 = Vec2.of_vec3 rp3 in
   let path_angle = Vec2.angle_points p1 p2 p3 in
-  let tan_dist = r2 /. Float.tan (path_angle /. 2.)
-  and radius = r2 /. Float.sin (path_angle /. 2.) in
+  let tan_dist = rp2.z /. Float.tan (path_angle /. 2.)
+  and radius = rp2.z /. Float.sin (path_angle /. 2.) in
   let tangent_point a b =
     let theta = get_angle a b in
-    x2 -. (Float.cos theta *. tan_dist), y2 -. (Float.sin theta *. tan_dist)
+    Vec2.v
+      (rp2.x -. (Float.cos theta *. tan_dist))
+      (rp2.y -. (Float.sin theta *. tan_dist))
   in
   let t12 = tangent_point p1 p2
   and t23 = tangent_point p2 p3 in
   let centre =
     (* find centre with angle to mid point between tangents *)
     let angle = get_angle (Vec2.mean [ t12; t23 ]) p2 in
-    x2 -. (Float.cos angle *. radius), y2 -. (Float.sin angle *. radius)
+    Vec2.v (rp2.x -. (Float.cos angle *. radius)) (rp2.y -. (Float.sin angle *. radius))
   in
   t12, t23, centre
 
@@ -113,8 +121,8 @@ let prune_radii_points rps =
   let w = index_wrap ~len
   and ps = Array.map Vec2.of_vec3 rps in
   let f i acc =
-    let ((x, y, r) as rp) = rps.(i) in
-    if (not (Vec2.collinear ps.(w (i - 1)) (x, y) ps.(w (i + 1)))) || Float.equal 0. r
+    let Vec3.({ x; y; z = r } as rp) = rps.(i) in
+    if (not Vec2.(collinear ps.(w (i - 1)) (v x y) ps.(w (i + 1)))) || Float.equal 0. r
     then rp :: acc
     else acc
   in
@@ -133,9 +141,9 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
       else fun i -> round_3_points (get (i - 1)) (get i) (get (i + 1))
     in
     fun i ->
-      let x, y, r = get i in
+      let Vec3.{ x; y; z = r } = get i in
       if Float.equal r 0.
-      then [ x, y ]
+      then [ Vec2.v x y ]
       else (
         let p1, p2, centre = round i in
         Path2d.arc_about_centre ~fn ~centre p1 p2 )
@@ -150,8 +158,8 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
   let ps = Array.make len Vec2.zero
   and radii = Array.make len 0. in
   for i = 0 to len - 1 do
-    let x, y, r = Array.unsafe_get rps i in
-    Array.unsafe_set ps i (x, y);
+    let Vec3.{ x; y; z = r } = Array.unsafe_get rps i in
+    Array.unsafe_set ps i (Vec2.v x y);
     Array.unsafe_set radii i r
   done;
   (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
@@ -173,11 +181,11 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
         let local_sign =
           Path2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
         in
-        let x, y = get_op j in
+        let Vec2.{ x; y } = get_op j in
         (* The overall polygon rotation is enforced to be CCW, so if the local
                sign is positive (CW), subtract from the radius instead *)
         let r' = Float.max min_r (radii.(j) +. (offset *. local_sign *. -1.)) in
-        x, y, r'
+        Vec3.v x y r'
       and z = z_sign *. step in
       Array.init len adjust_radii
       |> polyround' ~fn
@@ -221,7 +229,7 @@ let polyround_extrude
   and s = height /. Float.of_int slices
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
-    List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
+    List.init (slices + 1) (fun i -> Vec3.v 0. 0. ((Float.of_int i *. s) +. bot))
     |> Path3d.to_transforms ?scale ?twist
   in
   polyround_sweep ?min_r ?fn ?cap_fn ~r1 ~r2 ~transforms rps

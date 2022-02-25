@@ -1,5 +1,13 @@
-include Sigs.Vec with type t = float * float
+type t = Vec.V2t.t =
+  { x : float
+  ; y : float
+  }
 
+include Vec.S with type t := t
+
+val v : float -> float -> t
+val of_tup : float * float -> t
+val to_tup : t -> float * float
 val left_of_line : ?eps:float -> line:line -> t -> float
 
 val line_intersection
@@ -51,5 +59,5 @@ val mirror : t -> t -> t
 
 (** {1 2d - 3d conversion} *)
 
-val of_vec3 : float * float * float -> t
-val to_vec3 : ?z:float -> t -> float * float * float
+val of_vec3 : Vec.v3 -> t
+val to_vec3 : ?z:float -> t -> Vec.v3

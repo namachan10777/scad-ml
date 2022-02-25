@@ -4,16 +4,16 @@ let () =
   (* Sweep_test.path (); *)
   (* Sweep_test.spiral_2d (); *)
   (* Sweep_test.wave_cylinder (); *)
-  Sweep_test.spline_path ();
+  (* Sweep_test.spline_path (); *)
   (* Sweep_test.bezier_path (); *)
-  Sweep_test.arc_points ();
-  Sweep_test.arc_points_3d ();
+  (* Sweep_test.arc_points (); *)
+  (* Sweep_test.arc_points_3d (); *)
   (* Sweep_test.rounded_poly (); *)
   (* Sweep_test.polyround_basic (); *)
   (* Sweep_test.polyround_parametric (); *)
-  (* Sweep_test.polyround_triangle_extrude ();
-   * Sweep_test.polyround_basic_extrude ();
-   * Sweep_test.polyround_sweep (); *)
+  (* Sweep_test.polyround_triangle_extrude (); *)
+  (* Sweep_test.polyround_basic_extrude (); *)
+  (* Sweep_test.polyround_sweep (); *)
   (* Sweep_test.resample_path (); *)
   (* Sweep_test.poly_linear_extrude (); *)
   (* Sweep_test.polyround_linear_extrude (); *)
@@ -33,7 +33,7 @@ let () =
   (* Sweep_test.bezier_path (); *)
   Sweep_test.polyholes ();
   Sweep_test.poly2d_to_scad ();
-  (* Sweep_test.rounded_polyhole_sweep (); *)
+  Sweep_test.rounded_polyhole_sweep ();
   Sweep_test.polytext ();
   Sweep_test.rounded_prism_cube ();
   Sweep_test.rounded_prism_pointy ()

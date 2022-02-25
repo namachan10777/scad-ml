@@ -1,3 +1,5 @@
+open Vec
+
 type t = Vec2.t list
 
 (* module Round : Rounding.S with type vec := Vec2.t = Rounding.Make (Vec2) (Path2d) *)
@@ -6,17 +8,17 @@ let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
   let f i =
     let a = s *. Float.of_int i in
-    r *. Float.cos a, r *. Float.sin a
+    v2 (r *. Float.cos a) (r *. Float.sin a)
   in
   List.init fn f
 
-let square ?(center = false) (x, y) =
+let square ?(center = false) Vec2.{ x; y } =
   if center
   then (
     let x' = x /. 2.
     and y' = y /. 2. in
-    [ x', y'; -.x', y'; -.x', -.y'; x', -.y' ] )
-  else [ 0., 0.; x, 0.; x, y; 0., y ]
+    [ v2 x' y'; v2 (-.x') y'; v2 (-.x') (-.y'); v2 x' (-.y') ] )
+  else [ v2 0. 0.; v2 x 0.; v2 x y; v2 0. y ]
 
 let offset = Offset2d.offset
 let translate = Path2d.translate

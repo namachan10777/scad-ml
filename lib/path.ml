@@ -23,7 +23,7 @@ module type S = sig
     -> float
 end
 
-module Make (V : Sigs.Vec) : S with type vec := V.t = struct
+module Make (V : Vec.S) : S with type vec := V.t = struct
   type vec = V.t
   type t = vec list
 
@@ -110,7 +110,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       if dist <= eps
       then None
       else (
-        let n = V.(div_scalar (sub hd furthest_point) dist)
+        let n = V.(sdiv (sub hd furthest_point) dist)
         and threshold = dist *. eps in
         let offline, _ =
           let f (op, offset) p =
@@ -146,13 +146,13 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       else
         function
         | 0 when len < 3 -> V.sub (g 1) (g 0)
-        | 0 -> V.(sub (mul_scalar (sub (g 1) (g 0)) 3.) (sub (g 2) (g 1)))
+        | 0 -> V.(sub (smul (sub (g 1) (g 0)) 3.) (sub (g 2) (g 1)))
         | i when i = len - 1 && len < 3 -> V.sub (g (-1)) (g (-2))
         | i when i = len - 1 ->
-          V.(sub (sub (g (-3)) (g (-2))) (mul_scalar (sub (g (-2)) (g (-1))) 3.))
+          V.(sub (sub (g (-3)) (g (-2))) (smul (sub (g (-2)) (g (-1))) 3.))
         | i -> calc i
     in
-    List.init (len - Bool.to_int (not closed)) (fun i -> V.div_scalar (f i) (2. *. h))
+    List.init (len - Bool.to_int (not closed)) (fun i -> V.sdiv (f i) (2. *. h))
 
   let deriv_nonuniform ?(closed = false) ~h path =
     let path = Array.of_list path
@@ -177,14 +177,14 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         and v2 = path.(w (i + 1)) in
         let v1 = if h2 < h1 then V.lerp vc v1 (h2 /. h1) else v1
         and v2 = if h1 < h2 then V.lerp vc v2 (h1 /. h2) else v2 in
-        V.(div_scalar (sub v2 v1) (2. *. Float.min h1 h2))
+        V.(sdiv (sub v2 v1) (2. *. Float.min h1 h2))
       in
       if closed
       then calc
       else
         function
-        | 0 -> V.(div_scalar (sub path.(1) path.(0)) h.(0))
-        | i when i = len - 1 -> V.(div_scalar (sub path.(i) path.(i - 1)) h.(i - 1))
+        | 0 -> V.(sdiv (sub path.(1) path.(0)) h.(0))
+        | i when i = len - 1 -> V.(sdiv (sub path.(i) path.(i - 1)) h.(i - 1))
         | i -> calc i
     in
     List.init (len - Bool.to_int (not closed)) f

@@ -32,7 +32,21 @@ module type S = sig
   val corners : ?fn:int -> ?fa:float -> ?fs:float -> shape_spec -> vec list
 end
 
-module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struct
+module type Arc = sig
+  type vec
+
+  val arc_about_centre
+    :  ?init:vec list
+    -> ?rev:bool
+    -> ?fn:int
+    -> ?dir:[ `CW | `CCW ]
+    -> centre:vec
+    -> vec
+    -> vec
+    -> vec list
+end
+
+module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
   module Bz = Bezier.Make (V)
   module P = Path.Make (V)
 
@@ -108,11 +122,11 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
         and prev = V.(normalize (sub p1 p2))
         and next = V.(normalize (sub p3 p2)) in
         V.
-          [ add p2 (mul_scalar prev d)
-          ; add p2 (mul_scalar prev (curv *. d))
+          [ add p2 (smul prev d)
+          ; add p2 (smul prev (curv *. d))
           ; p2
-          ; add p2 (mul_scalar next (curv *. d))
-          ; add p2 (mul_scalar next d)
+          ; add p2 (smul next (curv *. d))
+          ; add p2 (smul next d)
           ]
       | None   -> smooth_bez_fill ~curv p1 p2 p3
     in
@@ -129,7 +143,7 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
       | `Width w -> w /. Float.sin (V.angle_points p1 p2 p3 /. 2.) /. 2.
     and prev = V.(normalize (sub p1 p2))
     and next = V.(normalize (sub p3 p2)) in
-    V.[ add p2 (mul_scalar prev dist); add p2 (mul_scalar next dist) ]
+    V.[ add p2 (smul prev dist); add p2 (smul next dist) ]
 
   let circle_corner ?fn ?(fa = Util.fa) ?(fs = Util.fs) ~spec p1 p2 p3 =
     let half_angle = V.angle_points p1 p2 p3 /. 2. in
@@ -146,13 +160,13 @@ module Make (V : Sigs.Vec) (Arc : Sigs.ArcProvider with type vec := V.t) = struc
     in
     let prev = V.(normalize (sub p1 p2))
     and next = V.(normalize (sub p3 p2)) in
-    let p1' = V.(add p2 (mul_scalar prev dist))
-    and p3' = V.(add p2 (mul_scalar next dist)) in
+    let p1' = V.(add p2 (smul prev dist))
+    and p3' = V.(add p2 (smul next dist)) in
     if is_180
     then [ p1'; p3' ]
     else (
       let centre =
-        V.(add p2 (mul_scalar (normalize @@ add prev next) (rad /. Float.sin half_angle)))
+        V.(add p2 (smul (normalize @@ add prev next) (rad /. Float.sin half_angle)))
       and fn =
         let frags = Float.of_int @@ Util.helical_fragments ?fn ~fa ~fs rad in
         Float.(to_int @@ max 3. @@ ceil (((pi /. 2.) -. half_angle) /. pi *. frags))

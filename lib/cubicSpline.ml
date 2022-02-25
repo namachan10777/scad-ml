@@ -1,3 +1,5 @@
+open Vec
+
 type boundary =
   [ `Quadratic
   | `NotAKnot
@@ -72,7 +74,9 @@ let rref m =
 (* Implementation based on:
    https://github.com/Simsso/Online-Tools/blob/master/src/page/logic/cubic-spline-interpolation.js *)
 let fit ?(boundary = `Natural) ps =
-  let ps = List.sort_uniq (fun (x1, _) (x2, _) -> Float.compare x1 x2) ps |> Array.of_list
+  let ps =
+    let f (p1 : Vec2.t) (p2 : Vec2.t) = Float.compare p1.x p2.x in
+    Array.of_list @@ List.sort_uniq f ps
   and row = ref 0 in
   let len = Array.length ps in
   let solution_idx = (len - 1) * 4 in
@@ -81,8 +85,8 @@ let fit ?(boundary = `Natural) ps =
   for n = 0 to len - 2 do
     let r = m.(!row)
     and n4 = n * 4
-    and x0, y0 = ps.(n)
-    and x1, y1 = ps.(n + 1) in
+    and Vec2.{ x = x0; y = y0 } = ps.(n)
+    and Vec2.{ x = x1; y = y1 } = ps.(n + 1) in
     let () =
       r.(n4) <- Float.pow x0 3.;
       r.(n4 + 1) <- Float.pow x0 2.;
@@ -101,7 +105,7 @@ let fit ?(boundary = `Natural) ps =
   done;
   (* first derivative *)
   for n = 0 to len - 3 do
-    let x1, _ = ps.(n + 1)
+    let Vec2.{ x = x1; _ } = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
     r.(n4) <- 3. *. Float.pow x1 2.;
@@ -114,7 +118,7 @@ let fit ?(boundary = `Natural) ps =
   done;
   (* second derivative *)
   for n = 0 to len - 3 do
-    let x1, _ = ps.(n + 1)
+    let Vec2.{ x = x1; _ } = ps.(n + 1)
     and r = m.(!row)
     and n4 = n * 4 in
     r.(n4) <- 6. *. x1;
@@ -144,8 +148,8 @@ let fit ?(boundary = `Natural) ps =
     | `Periodic  ->
       (* first derivative of first and last point equal *)
       let r = m.(!row)
-      and x0, _ = ps.(0)
-      and xn, _ = ps.(len - 1) in
+      and Vec2.{ x = x0; _ } = ps.(0)
+      and Vec2.{ x = xn; _ } = ps.(len - 1) in
       let () =
         r.(0) <- 3. *. Float.pow x0 2.;
         r.(1) <- 2. *. x0;
@@ -163,8 +167,8 @@ let fit ?(boundary = `Natural) ps =
       r.(solution_idx - 3) <- -2.
     | `Natural   ->
       let r = m.(!row)
-      and x0, _ = ps.(0)
-      and xn, _ = ps.(len - 1) in
+      and Vec2.{ x = x0; _ } = ps.(0)
+      and Vec2.{ x = xn; _ } = ps.(len - 1) in
       let () =
         r.(0) <- 6. *. x0;
         r.(1) <- 2.;
@@ -180,8 +184,8 @@ let fit ?(boundary = `Natural) ps =
   rref m;
   for i = 0 to len - 2 do
     let idx = i * 4 in
-    xmins.(i) <- fst ps.(i);
-    xmaxs.(i) <- fst ps.(i + 1);
+    xmins.(i) <- ps.(i).x;
+    xmaxs.(i) <- ps.(i + 1).x;
     coefs.(i)
       <- { a = m.(idx).(solution_idx)
          ; b = m.(idx + 1).(solution_idx)
@@ -205,7 +209,7 @@ let extrapolate { len; xmins; xmaxs; coefs } x =
   !y
 
 let extrapolate_path t xs =
-  List.filter_map (fun x -> Option.map (fun y -> x, y) (extrapolate t x)) xs
+  List.filter_map (fun x -> Option.map (fun y -> v2 x y) (extrapolate t x)) xs
 
 let interpolate_path t n =
   let xmin = t.xmins.(0)
@@ -214,7 +218,7 @@ let interpolate_path t n =
   let f i pts =
     let x = xmin +. (Float.of_int i *. step) in
     match extrapolate t x with
-    | Some y -> (x, y) :: pts
+    | Some y -> v2 x y :: pts
     | None   -> pts
   in
   List.rev @@ Util.fold_init n f []
@@ -222,8 +226,8 @@ let interpolate_path t n =
 let path_to_3d ?(plane = `XY) ps =
   let f =
     match plane with
-    | `XY -> fun (x, y) -> x, y, 0.
-    | `YZ -> fun (y, z) -> 0., y, z
-    | `XZ -> fun (x, z) -> x, 0., z
+    | `XY -> fun Vec2.{ x; y } -> v3 x y 0.
+    | `YZ -> fun Vec2.{ x = y; y = z } -> v3 0. y z
+    | `XZ -> fun Vec2.{ x; y = z } -> v3 x 0. z
   in
   List.map f ps

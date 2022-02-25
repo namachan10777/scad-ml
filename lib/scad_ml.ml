@@ -17,6 +17,9 @@ module Math = Math
 module Plane = Plane
 module PolyText = PolyText
 
+let v2 = Vec.v2
+let v3 = Vec.v3
+
 (** A rotation matrix.
 
     Used in conjunction with {!module:Quaternion} to provide an additional means

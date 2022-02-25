@@ -51,32 +51,32 @@ val mul : t -> t -> t
     Negation of all elements of [t]. *)
 val negate : t -> t
 
-(** [add_scalar t s]
+(** [sadd t s]
 
     Add [s] to the magnitude of [t], leaving the imaginary parts unchanged. *)
-val add_scalar : t -> float -> t
+val sadd : t -> float -> t
 
-(** [sub_scalar t s]
+(** [ssub t s]
 
     Subtract [s] from the magnitude of [t], leaving the imaginary parts
     unchanged. *)
-val sub_scalar : t -> float -> t
+val ssub : t -> float -> t
 
-(** [scalar_sub_quat t s]
+(** [ssub_neg t s]
 
     Negate the imaginary parts of [t], and subtract the magnitude from [s] to
     obtain the new magnitude. *)
-val scalar_sub_quat : t -> float -> t
+val ssub_neg : t -> float -> t
 
-(** [mul_scalar t s]
+(** [smul t s]
 
     Element-wise multiplication of [t] by [s]. *)
-val mul_scalar : t -> float -> t
+val smul : t -> float -> t
 
 (** [div_scalar t s]
 
     Element-wise division of [t] by [s]. *)
-val div_scalar : t -> float -> t
+val sdiv : t -> float -> t
 
 (** {1 Vector Math} *)
 

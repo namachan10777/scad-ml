@@ -1,3 +1,4 @@
+open Vec
 include Path.Make (Vec3)
 
 let arc ?init ?rev ?fn ~centre ~radius ~start angle =
@@ -43,17 +44,17 @@ let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
     let i = Float.of_int i in
     let r = r1 +. (r_step *. i)
     and a = a_step *. i in
-    Float.(r *. cos a, r *. sin a, h_step *. i)
+    Float.(v3 (r *. cos a) (r *. sin a) (h_step *. i))
   in
   List.init ((n_frags * n_turns) + 1) f
 
-let scaler ~len (x, y) =
-  let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int len) (x, y, 1.) in
+let scaler ~len Vec2.{ x; y } =
+  let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int len) (v3 x y 1.) in
   fun i -> MultMatrix.scaling @@ Vec3.map (fun a -> (a *. Float.of_int i) +. 1.) step
 
 let twister ~len r =
   let step = r /. Float.of_int len in
-  fun i -> Quaternion.(to_multmatrix @@ make (0., 0., 1.) (step *. Float.of_int i))
+  fun i -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (step *. Float.of_int i))
 
 let to_transforms ?(euler = false) ?scale ?twist path =
   let p = Array.of_list path in
@@ -65,26 +66,28 @@ let to_transforms ?(euler = false) ?scale ?twist path =
   and transform =
     if euler
     then (
-      let m = Quaternion.(to_multmatrix @@ of_euler Float.(pi /. 2., 0., pi /. 2.)) in
+      let m =
+        Quaternion.(to_multmatrix @@ of_euler Float.(v3 (pi /. 2.) 0. (pi /. 2.)))
+      in
       fun i ->
-        let dx, dy, dz =
+        let Vec3.{ x = dx; y = dy; z = dz } =
           if i = 0
-          then Vec3.(p.(1) <-> p.(0))
+          then Vec3.(p.(1) -@ p.(0))
           else if i = len - 1
-          then Vec3.(p.(i) <-> p.(i - 1))
-          else Vec3.(p.(i + 1) <-> p.(i - 1))
+          then Vec3.(p.(i) -@ p.(i - 1))
+          else Vec3.(p.(i + 1) -@ p.(i - 1))
         in
         let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
         and az = Float.atan2 dy dx in
-        MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) (of_euler (0., -.ay, az))) m
-      )
+        let q = Quaternion.of_euler (v3 0. (-.ay) az) in
+        MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) q) m )
     else (
       let accum_qs =
         let local i =
           let p1 = p.(i)
           and p2 = p.(i + 1)
           and p3 = p.(i + 2) in
-          Quaternion.alignment Vec3.(normalize (p2 <-> p1)) Vec3.(normalize (p3 <-> p2))
+          Quaternion.alignment Vec3.(normalize (p2 -@ p1)) Vec3.(normalize (p3 -@ p2))
         in
         match List.init (len - 2) local with
         | []       -> [| Quaternion.id |]
@@ -104,10 +107,10 @@ let to_transforms ?(euler = false) ?scale ?twist path =
                  tangent of the path. Adjust for sign of major axes to prevent
                  inconsistent flipping. *)
           let similarity a b = Vec3.dot a b /. Vec3.(norm a *. norm b)
-          and n = Vec3.(normalize (p.(1) <-> p.(0))) in
-          let z = similarity n (0., 0., 1.)
-          and x = similarity n (1., 0., 0.)
-          and y = similarity n (0., 1., 0.) in
+          and n = Vec3.(normalize (p.(1) -@ p.(0))) in
+          let z = similarity n (v3 0. 0. 1.)
+          and x = similarity n (v3 1. 0. 0.)
+          and y = similarity n (v3 0. 1. 0.) in
           let abs_x = Float.abs x
           and abs_y = Float.abs y
           and abs_z = Float.abs z
@@ -118,16 +121,16 @@ let to_transforms ?(euler = false) ?scale ?twist path =
             if Float.compare (Float.abs (a -. b)) 0.01 = 1 then Float.compare a b else 0
           in
           match comp abs_x abs_y, comp abs_x abs_z, comp abs_y abs_z with
-          | 1, 1, _   -> sgn_x, 0., 0. (* x-axis *)
-          | -1, _, 1  -> 0., sgn_y, 0. (* y-axis *)
-          | 0, -1, -1 -> 0., 0., sgn_z (* xy equal, but less than z *)
-          | 0, _, _   -> 0., sgn_y, 0. (* xy equal, roughly following plane *)
-          | _         -> 0., 0., sgn_z
+          | 1, 1, _   -> v3 sgn_x 0. 0. (* x-axis *)
+          | -1, _, 1  -> v3 0. sgn_y 0. (* y-axis *)
+          | 0, -1, -1 -> v3 0. 0. sgn_z (* xy equal, but less than z *)
+          | 0, _, _   -> v3 0. sgn_y 0. (* xy equal, roughly following plane *)
+          | _         -> v3 0. 0. sgn_z
         in
-        let d = Vec3.normalize Vec3.(p.(1) <-> p.(0)) in
+        let d = Vec3.normalize Vec3.(p.(1) -@ p.(0)) in
         MultMatrix.mul
           Quaternion.(to_multmatrix @@ alignment cardinal d)
-          Quaternion.(to_multmatrix @@ alignment (0., 0., 1.) cardinal)
+          Quaternion.(to_multmatrix @@ alignment (v3 0. 0. 1.) cardinal)
       in
       fun i ->
         if i = 0
@@ -173,7 +176,7 @@ let centroid ?(eps = Util.epsilon) = function
     let area_sum, p_sum, _ = List.fold_left f (0., Vec3.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec3.(div_scalar p_sum (area_sum /. 3.))
+    Vec3.(sdiv p_sum (area_sum /. 3.))
 
 let area ?(signed = false) = function
   | [] | [ _ ] | [ _; _ ] -> 0.

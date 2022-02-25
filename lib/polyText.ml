@@ -1,35 +1,36 @@
+open Vec
 open Cairo
 
 type glyph_outline =
-  { outer : (float * float) list
-  ; inner : (float * float) list list
+  { outer : Vec2.t list
+  ; inner : Vec2.t list list
   }
 
 let path_to_outlines path =
   (* NOTE: Path.fold returns empty for me, while conversion to array first then
     folding works as expected. Perhaps open up an issue? *)
   let f ?(fn = 16) (paths, ps, last_p) = function
-    | MOVE_TO (x, y) -> paths, ps, (x, y)
-    | LINE_TO (x, y) -> paths, last_p :: ps, (x, y)
+    | MOVE_TO (x, y) -> paths, ps, v2 x y
+    | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
-      let bez = Bezier2d.make' [| last_p; x1, y1; x2, y2; x3, y3 |] in
-      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, (x3, y3)
+      let bez = Bezier2d.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
+      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
-  let ps, _, _ = Path.fold path f ([], [], (0., 0.)) in
-  List.rev_map (List.map @@ fun (x, y) -> x, -.y) ps
+  let ps, _, _ = Path.fold path f ([], [], v2 0. 0.) in
+  List.rev_map (List.map @@ fun Vec2.{ x; y } -> v2 x (-.y)) ps
 
 let pathdata_to_outlines ?(fn = 16) data =
   let f (paths, ps, last_p) = function
-    | MOVE_TO (x, y) -> paths, ps, (x, y)
-    | LINE_TO (x, y) -> paths, last_p :: ps, (x, y)
+    | MOVE_TO (x, y) -> paths, ps, v2 x y
+    | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
-      let bez = Bezier2d.make' [| last_p; x1, y1; x2, y2; x3, y3 |] in
-      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, (x3, y3)
+      let bez = Bezier2d.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
+      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
-  let ps, _, _ = Array.fold_left f ([], [], (0., 0.)) data in
-  List.rev_map (List.map @@ fun (x, y) -> x, -.y) ps
+  let ps, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in
+  List.rev_map (List.map @@ fun Vec2.{ x; y } -> v2 x (-.y)) ps
 
 let glyph_outline ?(center = false) ?weight ~font char =
   let s = String.of_seq (Seq.return char)

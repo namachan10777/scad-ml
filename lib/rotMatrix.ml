@@ -42,9 +42,9 @@ let to_euler t =
       (Float.sqrt ((t.(2).(1) *. t.(2).(1)) +. (t.(2).(2) *. t.(2).(2))))
   in
   let z = Float.atan2 t.(1).(0) t.(0).(0) in
-  x, y, z
+  Vec3.v x y z
 
-let transform t (x, y, z) =
+let transform t Vec3.{ x; y; z } =
   let v = [| x; y; z |]
   and a = Array.make 3 0. in
   for i = 0 to 2 do
@@ -52,7 +52,7 @@ let transform t (x, y, z) =
       a.(i) <- a.(i) +. (t.(i).(j) *. v.(j))
     done
   done;
-  a.(0), a.(1), a.(2)
+  Vec3.v a.(0) a.(1) a.(2)
 
 let to_string t =
   let row i =

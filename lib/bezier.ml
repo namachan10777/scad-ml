@@ -102,7 +102,7 @@ module type S = sig
   val closest_point : ?n:int -> ?max_err:float -> (float -> vec) -> vec -> float
 end
 
-module Make (V : Sigs.Vec) : S with type vec := V.t = struct
+module Make (V : Vec.S) : S with type vec := V.t = struct
   module P = Path.Make (V)
 
   let coefs' ps =
@@ -112,7 +112,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     for i = 0 to n do
       let row = bm.(i) in
       for j = 0 to n do
-        m.(i) <- V.add m.(i) (V.mul_scalar ps.(j) row.(j))
+        m.(i) <- V.add m.(i) (V.smul ps.(j) row.(j))
       done
     done;
     m
@@ -125,7 +125,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
     fun u ->
       let pt = ref V.zero in
       for i = 0 to n do
-        pt := V.add !pt (V.mul_scalar m.(i) (Float.pow u (Float.of_int i)))
+        pt := V.add !pt (V.smul m.(i) (Float.pow u (Float.of_int i)))
       done;
       !pt
 
@@ -166,7 +166,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
         let mx = ref Float.min_float
         and p = Array.unsafe_get path in
         for i = 0 to n_segs - 2 do
-          let mid_point = V.div_scalar (V.add (p i) (p (i + 2))) 2. in
+          let mid_point = V.sdiv (V.add (p i) (p (i + 2))) 2. in
           mx := Float.max !mx (V.distance (p (i + 1)) mid_point)
         done;
         !mx
@@ -296,13 +296,13 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
       let p1 = ps.(i)
       and p2 = ps.(Util.index_wrap ~len:len_ps (i + 1)) in
       let seg_len = V.distance p2 p1 in
-      let seg_vec = V.(div_scalar (sub p2 p1) seg_len)
+      let seg_vec = V.(sdiv (sub p2 p1) seg_len)
       and t1 = tangents.(i) (* second tangent pointing backwards *)
       and t2 = V.negate tangents.(Util.index_wrap ~len:len_ts (i + 1)) in
       (* total component of tangents parallel to the segment *)
       let parallel = Float.abs (V.dot t1 seg_vec) +. Float.abs (V.dot t2 seg_vec)
-      and normal1 = V.(sub t1 (mul_scalar seg_vec (dot t1 seg_vec)))
-      and normal2 = V.(sub t2 (mul_scalar seg_vec (dot t2 seg_vec))) in
+      and normal1 = V.(sub t1 (smul seg_vec (dot t1 seg_vec)))
+      and normal2 = V.(sub t2 (smul seg_vec (dot t2 seg_vec))) in
       let p = Array.map (fun a -> a.(0)) (power_poly normal1 normal2) in
       let uextreme =
         let p_norm = Float.sqrt (Array.fold_left (fun sum a -> (a *. a) +. sum) 0. p) in
@@ -326,7 +326,7 @@ module Make (V : Sigs.Vec) : S with type vec := V.t = struct
           sum -. (2. *. min)
       in
       let l = Float.min (seg_len /. parallel) (get_size i seg_len /. scale) in
-      V.(add p2 (mul_scalar t2 l)) :: V.(add p1 (mul_scalar t1 l)) :: p1 :: acc
+      V.(add p2 (smul t2 l)) :: V.(add p1 (smul t1 l)) :: p1 :: acc
     in
     List.rev (ps.(len_ps - 1) :: Util.fold_init len_ts f [])
 

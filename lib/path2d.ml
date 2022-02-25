@@ -1,3 +1,4 @@
+open Vec
 include Path.Make (Vec2)
 
 type bounds =
@@ -7,13 +8,13 @@ type bounds =
   ; bot : float
   }
 
-let clockwise_sign' ps =
+let clockwise_sign' (ps : Vec2.t array) =
   let len = Array.length ps
   and sum = ref 0. in
   for i = 0 to len - 1 do
-    let x0, y0 = ps.(Util.index_wrap ~len i)
-    and x1, y1 = ps.(Util.index_wrap ~len (i + 1)) in
-    sum := !sum +. ((x0 -. x1) *. (y0 +. y1))
+    let p1 = ps.(Util.index_wrap ~len i)
+    and p2 = ps.(Util.index_wrap ~len (i + 1)) in
+    sum := !sum +. ((p1.x -. p2.x) *. (p1.y +. p2.y))
   done;
   Float.(of_int @@ compare !sum 0.)
 
@@ -22,9 +23,9 @@ let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
 let bounds = function
-  | []           -> invalid_arg "Cannot calculate bounds for empty path."
-  | (x, y) :: tl ->
-    let f (left, right, top, bot) (x, y) =
+  | []                  -> invalid_arg "Cannot calculate bounds for empty path."
+  | Vec2.{ x; y } :: tl ->
+    let f (left, right, top, bot) Vec2.{ x; y } =
       Float.(min left x, max right x, max top y, min bot y)
     in
     let left, right, top, bot = List.fold_left f (x, x, y, y) tl in
@@ -39,8 +40,8 @@ let self_intersections' ?(eps = Util.epsilon) path =
     for i = 0 to len - 3 do
       let l1 = Vec2.{ a = path.(i); b = path.(i + 1) } in
       let seg_normal =
-        let x, y = Vec2.sub l1.b l1.a in
-        Vec2.(normalize (-.y, x))
+        let d = Vec2.sub l1.b l1.a in
+        Vec2.(normalize (v2 (-.d.y) d.x))
       in
       let vals = Array.map (fun p -> Vec2.dot p seg_normal) path
       and ref_v = Vec2.dot path.(i) seg_normal
@@ -87,13 +88,13 @@ let centroid ?(eps = Util.epsilon) = function
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
   | p0 :: p1 :: tl        ->
     let f (area_sum, p_sum, p1) p2 =
-      let _, _, area = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
+      let Vec3.{ z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
       area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
     in
     let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec2.(div_scalar p_sum (area_sum /. 3.))
+    Vec2.(sdiv p_sum (area_sum /. 3.))
 
 let area ?(signed = false) = function
   | [] | [ _ ] | [ _; _ ] -> 0.
@@ -104,18 +105,19 @@ let area ?(signed = false) = function
     let area, _ = List.fold_left f (0., p1) tl in
     if signed then area else Float.abs area
 
-let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(cx, cy) ~radius ~start angle =
+let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(c : Vec2.t) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =
-    ((Float.cos a *. radius) +. cx, (Float.sin a *. radius) +. cy) :: acc, a +. a_step
+    let p = v2 ((Float.cos a *. radius) +. c.x) ((Float.sin a *. radius) +. c.y) in
+    p :: acc, a +. a_step
   in
   fst @@ Util.fold_init (fn + 1) f (init, if rev then start else start +. angle)
 
 let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   let radius = Vec2.distance centre p1
   and start =
-    let dx, dy = Vec2.sub p1 centre in
-    Float.atan2 dy dx
+    let Vec2.{ x; y } = Vec2.sub p1 centre in
+    Float.atan2 y x
   and angle =
     let a = Vec2.angle_points p1 centre p2
     and d = Vec2.clockwise_sign p1 p2 centre in
@@ -129,15 +131,16 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   in
   arc ?init ?rev ?fn ~centre ~radius ~start angle
 
-let arc_through ?init ?rev ?fn ((x1, y1) as p1) ((x2, y2) as p2) ((x3, y3) as p3) =
+let arc_through ?init ?rev ?fn p1 p2 p3 =
   if Vec2.collinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
   let centre =
-    let d = (2. *. (x1 -. x3) *. (y3 -. y2)) +. (2. *. (x2 -. x3) *. (y1 -. y3))
+    let d =
+      (2. *. (p1.x -. p3.x) *. (p3.y -. p2.y)) +. (2. *. (p2.x -. p3.x) *. (p1.y -. p3.y))
     and m1 = Vec2.dot p1 p1 -. Vec2.dot p3 p3
     and m2 = Vec2.dot p3 p3 -. Vec2.dot p2 p2 in
-    let nx = (m1 *. (y3 -. y2)) +. (m2 *. (y3 -. y1))
-    and ny = (m1 *. (x2 -. x3)) +. (m2 *. (x1 -. x3)) in
-    nx /. d, ny /. d
+    let nx = (m1 *. (p3.y -. p2.y)) +. (m2 *. (p3.y -. p1.y))
+    and ny = (m1 *. (p2.x -. p3.x)) +. (m2 *. (p1.x -. p3.x)) in
+    v2 (nx /. d) (ny /. d)
   and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CW else `CCW in
   arc_about_centre ?init ?rev ?fn ~dir ~centre p1 p3
 

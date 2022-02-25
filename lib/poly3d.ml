@@ -1,3 +1,4 @@
+open Vec
 open Util
 
 type t =
@@ -190,7 +191,7 @@ let enforce_winding w shape =
 let sweep ?(winding = `CCW) ?caps ~transforms shape =
   let shape = enforce_winding winding shape in
   List.map
-    (fun m -> List.map (fun (x, y) -> MultMatrix.transform m (x, y, 0.)) shape)
+    (fun m -> List.map (fun Vec2.{ x; y } -> MultMatrix.transform m (Vec3.v x y 0.)) shape)
     transforms
   |> of_layers ?caps
 
@@ -199,7 +200,7 @@ let linear_extrude ?winding ?slices ?fa ?scale ?twist ?(center = false) ~height 
   let bot = if center then height /. -2. else 0.
   and s = height /. Float.of_int slices in
   let transforms =
-    List.init (slices + 1) (fun i -> 0., 0., (Float.of_int i *. s) +. bot)
+    List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. bot))
     |> Path3d.to_transforms ?scale ?twist
   in
   sweep ?winding ~transforms shape
@@ -220,10 +221,10 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
     let scale = Util.value_map_opt ~default:id (Path3d.scaler ~len) scale
     and twist = Util.value_map_opt ~default:id (Path3d.twister ~len) twist in
     let f i trans =
+      let eul = v3 ax 0. (a_step *. Float.of_int i) in
       scale i
       |> MultMatrix.mul (twist i)
-      |> MultMatrix.mul
-           Quaternion.(to_multmatrix ~trans (of_euler (ax, 0., a_step *. Float.of_int i)))
+      |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
     in
     List.mapi f path
   in
@@ -240,18 +241,18 @@ let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =
     List.init (x_steps + 1) (fun i -> (Float.of_int (x_steps - i) *. x_step) +. min_x)
   in
   let edge y =
-    (max_x, y, 0.)
-    :: (min_x, y, 0.)
-    :: List.fold_left (fun acc x -> (x, y, 0.0001) :: acc) [] xs_rev
+    v3 max_x y 0.
+    :: v3 min_x y 0.
+    :: List.fold_left (fun acc x -> v3 x y 0.0001 :: acc) [] xs_rev
   in
   let layers =
     let outer i layers =
       let y = (Float.of_int i *. y_step) +. min_y in
       let layer l x =
         let z = Float.max min_plot (plot ~x ~y) in
-        (x, y, z) :: l
+        v3 x y z :: l
       in
-      ((max_x, y, 0.) :: (min_x, y, 0.) :: List.fold_left layer [] xs_rev) :: layers
+      (v3 max_x y 0. :: v3 min_x y 0. :: List.fold_left layer [] xs_rev) :: layers
     in
     Util.fold_init (y_steps + 1) outer [ edge (min_y -. (0.001 *. y_step)) ]
   in
@@ -271,14 +272,14 @@ let polar_plot ?r_step ~max_r plot =
     Util.fold_init (a_steps + 1) (fun i acc -> (Float.of_int i *. step) :: acc) []
   in
   let bot =
-    let f ps a = Float.(max_r *. cos a, max_r *. sin a, 0.) :: ps in
+    let f ps a = Float.(v3 (max_r *. cos a) (max_r *. sin a) 0.) :: ps in
     List.fold_left f [] angles_rev
   in
   let f i layers =
     let r = max_r -. (Float.of_int i *. r_step) in
     let layer l a =
       let z = Float.max min_plot (plot ~r ~a) in
-      Float.(r *. cos a, r *. sin a, z) :: l
+      Float.(v3 (r *. cos a) (r *. sin a) z) :: l
     in
     List.fold_left layer [] angles_rev :: layers
   in
@@ -295,7 +296,7 @@ let axial_plot ?(fn = 60) ~min_z ~z_steps ~max_z plot =
     let z = min_z +. (Float.of_int i *. z_step) in
     let layer l a =
       let r = Float.max min_plot (plot ~z ~a) in
-      Float.(r *. cos a, r *. sin a, z) :: l
+      Float.(v3 (r *. cos a) (r *. sin a) z) :: l
     in
     List.fold_left layer [] angles_rev :: layers
   in

@@ -1,5 +1,5 @@
 let shift_segment ~d Vec2.{ a; b } =
-  let shift = Vec2.(add (mul_scalar (Vec2.line_normal a b) d)) in
+  let shift = Vec2.(add (smul (Vec2.line_normal a b) d)) in
   Vec2.{ a = shift a; b = shift b }
 
 (* Get the intersection point between two segments, or their common point if
@@ -21,7 +21,7 @@ let chamfer ~centre ~delta p1 p2 p3 =
         | Some p -> p
         | None   -> failwith "Offset: chamfer centre line is parallel (no intersect)"
       in
-      Math.sign delta *. Vec2.(norm (centre <-> intersect))
+      Math.sign delta *. Vec2.(norm (centre -@ intersect))
     in
     shift_segment ~d:(delta -. dist) seg
   in
@@ -45,7 +45,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   in
   let path_segs_norm = Array.map Vec2.norm path_segs in
   let path_segs_unit =
-    Array.map2 (fun seg norm -> Vec2.div_scalar seg norm) path_segs path_segs_norm
+    Array.map2 (fun seg norm -> Vec2.sdiv seg norm) path_segs path_segs_norm
   in
   let alphas =
     let q = Float.of_int quality +. 1. in
@@ -58,14 +58,14 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   and point_dist pt =
     let min = ref Float.max_float in
     for i = 0 to len - 1 do
-      let v = Vec2.sub pt path.(i) in
-      let proj = Vec2.dot v path_segs_unit.(i) in
+      let vec = Vec2.sub pt path.(i) in
+      let proj = Vec2.dot vec path_segs_unit.(i) in
       let seg_dist =
         if proj < 0.
-        then Vec2.norm v
+        then Vec2.norm vec
         else if proj > path_segs_norm.(i)
         then Vec2.(norm (sub pt path.(Util.index_wrap ~len (i + 1))))
-        else Vec2.(norm (sub v (mul_scalar path_segs_unit.(i) proj)))
+        else Vec2.(norm (sub vec (smul path_segs_unit.(i) proj)))
       in
       min := Float.min !min seg_dist
     done;
@@ -80,7 +80,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
       and Vec2.{ a = ssa; b = ssb } = shifted_segs.(i) in
       while (not !good) && !j < quality + 2 do
         let a = alphas.(!j) in
-        let pt = Vec2.(add (mul_scalar ssa a) (mul_scalar ssb (1. -. a))) in
+        let pt = Vec2.(add (smul ssa a) (smul ssb (1. -. a))) in
         good := point_dist pt > d;
         incr j
       done;

@@ -1,4 +1,4 @@
-include Path.S with type vec := Vec2.t
+include Path.S with type vec := Vec.v2
 
 type bounds =
   { left : float

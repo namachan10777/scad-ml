@@ -1,13 +1,14 @@
+open Vec
 include Bezier.Make (Vec2)
 
-let line_intersection ps (x1, y1) (x2, y2) =
+let line_intersection ~(line : Vec2.line) ps =
   let ps = Array.of_list ps in
   let n = Array.length ps - 1 in
   let bez_coefs = coefs' ps
-  and normal = y1 -. y2, x2 -. x1 in
+  and normal = v2 (line.a.y -. line.b.y) (line.b.x -. line.a.x) in
   let f i =
     if i = n
-    then Vec2.(dot (sub bez_coefs.(0) (x1, y1)) normal)
+    then Vec2.(dot (sub bez_coefs.(0) line.a) normal)
     else Vec2.dot bez_coefs.(n - i) normal
   in
   let roots = Math.real_roots' @@ Array.init (n + 1) f in
