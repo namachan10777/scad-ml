@@ -89,35 +89,45 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   Array.init (Array.length shifted_segs) f
 
 let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
-  let path' = Array.of_list path in
+  let path = Array.of_list path in
   let mode, d =
-    let flip = if closed then Path2d.clockwise_sign' path' *. -1. else 1. in
+    let flip = if closed then Path2d.clockwise_sign' path *. -1. else 1. in
     match offset with
     | `Delta d   -> `Delta, flip *. d
     | `Chamfer d -> `Chamfer, flip *. d
     | `Radius r  -> `Radius, flip *. r
-  and len = Array.length path' in
+  and len = Array.length path in
   let shifted_segs =
     (* last looping segment ignored later if not closed *)
     let f i =
-      shift_segment ~d Vec2.{ a = path'.(i); b = path'.(Util.index_wrap ~len (i + 1)) }
+      shift_segment ~d Vec2.{ a = path.(i); b = path.(Util.index_wrap ~len (i + 1)) }
     in
-    List.init len f
+    Array.init len f
   in
   let good =
     match check_valid with
-    | Some quality -> good_segments ~quality ~closed ~d path' (Array.of_list shifted_segs)
+    | Some quality -> good_segments ~quality ~closed ~d path shifted_segs
     | None         -> Array.make len true
   in
-  if Array.for_all not good then failwith "Offset of path is degenerate";
-  let good_segs = List.filteri (fun i _ -> good.(i)) shifted_segs |> Array.of_list
-  and good_path = List.filteri (fun i _ -> good.(i)) path |> Array.of_list in
-  let len_good = Array.length good_segs in
+  let n_good = Array.fold_left (fun sum b -> Bool.to_int b + sum) 0 good in
+  if n_good = 0 then failwith "Offset of path is degenerate";
+  let good_segs = Array.make n_good Vec2.{ a = zero; b = zero }
+  and good_path = Array.make n_good Vec2.zero in
+  let () =
+    let idx = ref 0 in
+    for i = 0 to len - 1 do
+      if good.(i)
+      then (
+        good_segs.(!idx) <- shifted_segs.(i);
+        good_path.(!idx) <- path.(i);
+        incr idx )
+    done
+  in
   let sharp_corners =
     let f i =
-      segment_extension good_segs.(Util.index_wrap ~len:len_good (i - 1)) good_segs.(i)
+      segment_extension good_segs.(Util.index_wrap ~len:n_good (i - 1)) good_segs.(i)
     in
-    Array.init len_good f
+    Array.init n_good f
   in
   let inside_corner =
     if Array.length sharp_corners = 2
@@ -125,38 +135,38 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
     else (
       let f i =
         (* if path is open, ignore ends *)
-        if (i = 0 || i = len_good - 1) && not closed
+        if (i = 0 || i = n_good - 1) && not closed
         then false
         else (
           let Vec2.{ a = prev_a; b = prev_b } =
-            good_segs.(Util.index_wrap ~len:len_good (i - 1))
+            good_segs.(Util.index_wrap ~len:n_good (i - 1))
           and Vec2.{ a; b } = good_segs.(i)
           and c = sharp_corners.(i) in
           Vec2.(dot (sub b a) (sub a c)) > 0.
           && Vec2.(dot (sub prev_b prev_a) (sub c prev_b)) > 0. )
       in
-      Array.init len_good f )
+      Array.init n_good f )
   in
   let new_corners, point_counts =
-    let round i = inside_corner.(i) || ((not closed) && (i = 0 || i = len_good - 1)) in
+    let round i = inside_corner.(i) || ((not closed) && (i = 0 || i = n_good - 1)) in
     match mode with
-    | `Delta   -> Array.to_list sharp_corners, List.init len_good (fun _ -> 1)
+    | `Delta   -> Array.to_list sharp_corners, List.init n_good (fun _ -> 1)
     | `Chamfer ->
       let f i =
         if round i
         then (
-          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:len_good (i - 1))
+          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:n_good (i - 1))
           and Vec2.{ a; _ } = good_segs.(i) in
           chamfer ~delta:d ~centre:good_path.(i) prev_b sharp_corners.(i) a )
         else [ sharp_corners.(i) ]
       in
-      let l = List.init len_good f in
+      let l = List.init n_good f in
       List.concat l, List.map List.length l
     | `Radius  ->
       let f i =
         if round i
         then (
-          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:len_good (i - 1))
+          let Vec2.{ b = prev_b; _ } = good_segs.(Util.index_wrap ~len:n_good (i - 1))
           and Vec2.{ a; _ } = good_segs.(i)
           and centre = good_path.(i) in
           let steps =
@@ -172,7 +182,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
           else [ sharp_corners.(i) ] )
         else [ sharp_corners.(i) ]
       in
-      let l = List.init len_good f in
+      let l = List.init n_good f in
       List.concat l, List.map List.length l
   in
   good, new_corners, point_counts
