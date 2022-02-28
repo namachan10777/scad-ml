@@ -231,7 +231,7 @@ let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_lay
 let legal_ext allowed file =
   let ext =
     let len = String.length file in
-    String.sub file (len - 3) 3 |> String.uncapitalize_ascii
+    String.uncapitalize_ascii @@ String.sub file (len - 3) 3
   in
   let rec aux = function
     | h :: t -> if String.equal ext h then Ok () else aux t
@@ -257,9 +257,7 @@ let color ?alpha color = map (fun src -> Color { src; color; alpha })
 let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
 
 let to_string t =
-  let value_map f ~default = function
-    | Some x -> f x
-    | None   -> default
+  let value_map = Util.value_map_opt
   and deg_of_rad r = 180.0 *. r /. Float.pi
   and buf_of_list f l =
     match l with
@@ -304,22 +302,15 @@ let to_string t =
     Buffer.add_string b (Float.to_string z);
     Buffer.add_char b ']'
   and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
-  and string_of_f_ fa fs fn =
-    [ Option.map (fun fa -> Printf.sprintf "$fa=%f" @@ deg_of_rad fa) fa
-    ; Option.map (fun fs -> Printf.sprintf "$fs=%f" fs) fs
-    ; Option.map (fun fn -> Printf.sprintf "$fn=%d" fn) fn
-    ]
-    |> List.filter_map Fun.id
-    |> function
-    | [] -> ""
-    | l  -> List.fold_left ( ^ ) ", " l
+  and string_of_f_ fa fs (fn : int option) =
+    Printf.sprintf
+      "%s%s%s"
+      (value_map ~default:"" (fun fa -> Printf.sprintf ", $fa=%f" @@ deg_of_rad fa) fa)
+      (value_map ~default:"" (Printf.sprintf ", $fs=%f") fs)
+      (value_map ~default:"" (Printf.sprintf ", $fn=%i") fn)
   in
   let rec arrange_elms indent =
     List.fold_left (fun stmts scad -> Printf.sprintf "%s%s" stmts (print indent scad)) ""
-  (* let rec arrange_elms indent scads = *)
-  (*   let buf = Buffer.create 100 in *)
-  (*   List.iter (fun scad -> Buffer.add_string buf (print indent scad)) scads; *)
-  (*   buf *)
   and print indent = function
     | Cylinder { r1; r2; h; center; fa; fs; fn } ->
       Printf.sprintf
@@ -354,10 +345,10 @@ let to_string t =
         text
         (maybe_fmt ", size=%f" size)
         (maybe_fmt ", font=\"%s\"" font)
-        (Option.map Text.h_align_to_string halign |> maybe_fmt ", halign=\"%s\"")
-        (Option.map Text.v_align_to_string valign |> maybe_fmt ", valign=\"%s\"")
+        (maybe_fmt ", halign=\"%s\"" @@ Option.map Text.h_align_to_string halign)
+        (maybe_fmt ", valign=\"%s\"" @@ Option.map Text.v_align_to_string valign)
         (maybe_fmt ", spacing=%f" spacing)
-        (Option.map Text.direction_to_string direction |> maybe_fmt ", direction=\"%s\"")
+        (maybe_fmt ", direction=\"%s\"" @@ Option.map Text.direction_to_string direction)
         (maybe_fmt ", language=\"%s\"" language)
         (maybe_fmt ", script=\"%s\"" script)
         (maybe_fmt ", $fn=\"%i\"" fn)
@@ -371,7 +362,7 @@ let to_string t =
       Printf.sprintf
         "%srotate(%s)\n%s"
         indent
-        (Vec3.deg_of_rad r |> Vec3.to_string)
+        (Vec3.to_string @@ Vec3.deg_of_rad r)
         (print (Printf.sprintf "%s\t" indent) scad)
     | VectorRotate (axis, r, scad) ->
       Printf.sprintf
@@ -458,7 +449,7 @@ let to_string t =
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
-        (Option.map deg_of_rad angle |> maybe_fmt "angle=%f")
+        (maybe_fmt "angle=%f" @@ Option.map deg_of_rad angle)
         convexity
         (string_of_f_ fa fs fn)
         (print (Printf.sprintf "%s\t" indent) src)
