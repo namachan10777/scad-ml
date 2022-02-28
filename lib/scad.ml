@@ -309,8 +309,10 @@ let to_string t =
       (value_map ~default:"" (Printf.sprintf ", $fs=%f") fs)
       (value_map ~default:"" (Printf.sprintf ", $fn=%i") fn)
   in
-  let rec arrange_elms indent =
-    List.fold_left (fun stmts scad -> Printf.sprintf "%s%s" stmts (print indent scad)) ""
+  let rec arrange_elms indent scads =
+    let buf = Buffer.create 100 in
+    List.iter (fun scad -> Buffer.add_string buf (print indent scad)) scads;
+    Buffer.contents buf
   and print indent = function
     | Cylinder { r1; r2; h; center; fa; fs; fn } ->
       Printf.sprintf
