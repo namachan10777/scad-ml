@@ -259,44 +259,36 @@ let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
 let to_string t =
   let value_map = Util.value_map_opt
   and deg_of_rad r = 180.0 *. r /. Float.pi
-  and buf_of_list f l =
-    match l with
+  and buf_add_list b f = function
     | h :: t ->
-      let b = Buffer.create 100 in
       let append a =
         Buffer.add_char b ',';
-        Buffer.add_char b ' ';
         f b a
       in
       Buffer.add_char b '[';
       f b h;
       List.iter append t;
-      Buffer.add_char b ']';
-      b
+      Buffer.add_char b ']'
     | []     ->
       let b = Buffer.create 2 in
       Buffer.add_char b '[';
-      Buffer.add_char b ']';
-      b
+      Buffer.add_char b ']'
   in
-  let buf_of_index_lists l =
-    buf_of_list
-      (fun b face ->
-        Buffer.add_buffer b
-        @@ buf_of_list (fun b i -> Buffer.add_string b (Int.to_string i)) face )
-      l
+  let buf_of_list f l =
+    let b = Buffer.create 512 in
+    buf_add_list b f l;
+    b
+  and buf_add_idxs b = buf_add_list b (fun b' i -> Buffer.add_string b' (Int.to_string i))
   and buf_add_vec2 b Vec.{ x; y } =
     Buffer.add_char b '[';
     Buffer.add_string b (Float.to_string x);
     Buffer.add_char b ',';
-    Buffer.add_char b ' ';
     Buffer.add_string b (Float.to_string y);
     Buffer.add_char b ']'
   and buf_add_vec3 b Vec.{ x; y; z } =
     Buffer.add_char b '[';
     Buffer.add_string b (Float.to_string x);
     Buffer.add_char b ',';
-    Buffer.add_char b ' ';
     Buffer.add_string b (Float.to_string y);
     Buffer.add_char b ',';
     Buffer.add_string b (Float.to_string z);
@@ -336,7 +328,7 @@ let to_string t =
         "%spolygon(points=%s%s, convexity=%d);\n"
         indent
         (Buffer.contents @@ buf_of_list buf_add_vec2 points)
-        ( Option.map (fun ps -> Buffer.contents @@ buf_of_index_lists ps) paths
+        ( Option.map (fun ps -> Buffer.contents @@ buf_of_list buf_add_idxs ps) paths
         |> maybe_fmt ", paths=%s" )
         convexity
     | Text { text; size; font; halign; valign; spacing; direction; language; script; fn }
@@ -415,7 +407,7 @@ let to_string t =
         "%spolyhedron(points=%s, faces=%s, convexity=%i);\n"
         indent
         (Buffer.contents @@ buf_of_list buf_add_vec3 points)
-        (Buffer.contents @@ buf_of_index_lists faces)
+        (Buffer.contents @@ buf_of_list buf_add_idxs faces)
         convexity
     | Mirror ({ x; y; z }, scad) ->
       Printf.sprintf
