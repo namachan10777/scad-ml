@@ -40,6 +40,9 @@ val arc_about_centre
 
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec2.t -> Vec2.t -> Vec2.t -> t
 val lift : Plane.t -> t -> Vec3.t list
+
+(** {1 Basic Transfomations} *)
+
 val translate : Vec2.t -> t -> t
 val rotate : float -> t -> t
 val rotate_about_pt : float -> Vec2.t -> t -> t
