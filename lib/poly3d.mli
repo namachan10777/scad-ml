@@ -118,7 +118,12 @@ val merge_points : ?eps:float -> t -> t
 val add_face : int list -> t -> t
 val add_faces : int list list -> t -> t
 val rev_faces : t -> t
+val volume : t -> float
+val area : t -> float
 val centroid : ?eps:float -> t -> Vec3.t
+
+(** {1 Basic Transfomations} *)
+
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t
 val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t

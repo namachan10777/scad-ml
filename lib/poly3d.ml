@@ -352,6 +352,37 @@ let add_face face t = { t with faces = face :: t.faces }
 let add_faces faces t = { t with faces = List.rev_append faces t.faces }
 let rev_faces t = { t with faces = List.map List.rev t.faces }
 
+let volume { n_points; points; faces } =
+  if n_points = 0
+  then 0.
+  else (
+    let pts = Array.of_list points in
+    let rec sum_face total_vol p1 idxs =
+      let calc total_vol p1 p2 p3 = Vec3.(dot (cross p3 p2) p1) +. total_vol in
+      match idxs with
+      | [ i2; i3 ]              -> calc total_vol p1 pts.(i2) pts.(i3)
+      | i2 :: (i3 :: _ as rest) -> sum_face (calc total_vol p1 pts.(i2) pts.(i3)) p1 rest
+      | _                       -> invalid_arg
+                                     "Polyhedron contains face with fewer than 3 points."
+    in
+    let f total_vol = function
+      | i1 :: idxs -> sum_face total_vol pts.(i1) idxs
+      | []         -> invalid_arg "Polyhedron contains empty face."
+    in
+    List.fold_left f 0. faces /. 6. )
+
+let area { n_points; points; faces } =
+  if n_points = 0
+  then 0.
+  else (
+    let pts = Array.of_list points in
+    let f sum idxs =
+      let face = List.map (fun i -> pts.(i)) idxs in
+      let poly = Path3d.(project (to_plane face) face) in
+      sum +. Poly2d.area poly
+    in
+    List.fold_left f 0. faces )
+
 let centroid ?(eps = Util.epsilon) { n_points; points; faces } =
   if n_points = 0 then invalid_arg "No centroid for empty polyhedron.";
   let pts = Array.of_list points in

@@ -39,7 +39,7 @@ let area ?(signed = false) = function
       (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
     in
     let area, _ = List.fold_left f (0., p1) tl in
-    if signed then area else Float.abs area
+    (if signed then area else Float.abs area) /. 2.
 
 let offset = Offset2d.offset
 let translate = Path2d.translate
