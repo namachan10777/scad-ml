@@ -1,6 +1,13 @@
 open Vec
 open Util
 
+module IntTbl = Hashtbl.Make (struct
+  type t = int
+
+  let equal = Int.equal
+  let hash = Fun.id
+end)
+
 type t =
   { n_points : int
   ; points : Vec3.t list
@@ -167,10 +174,6 @@ let of_polygons polys =
   let faces = List.init n (fun i -> List.init lengths.(i) (fun j -> j + offsets.(i))) in
   { n_points = offsets.(n); points = List.concat polys; faces }
 
-let polyhole_partition_vec2 ?rev ~holes outer =
-  let points, faces = PolyHoles.partition ?rev ~holes outer in
-  make ~points ~faces
-
 let polyhole_partition ?rev ~holes outer =
   let plane = Plane.of_normal @@ Path3d.normal outer in
   let project = List.map @@ Plane.project plane
@@ -313,9 +316,70 @@ let join = function
     let n_points, ps, fs = List.fold_left f (n_points, [ points ], [ faces ]) ts in
     { n_points; points = List.concat (List.rev ps); faces = List.concat (List.rev fs) }
 
+let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
+  let drop = IntTbl.create 100
+  and pts = Array.of_list points in
+  let len = Array.length pts in
+  let find_drops i =
+    for j = i + 1 to len - 1 do
+      if Vec3.approx ~eps pts.(i) pts.(j) then IntTbl.add drop j i
+    done
+  in
+  for i = 0 to len - 2 do
+    find_drops i
+  done;
+  let points =
+    let f (i, acc) p = if IntTbl.mem drop i then i + 1, acc else i + 1, p :: acc in
+    let _, points = Array.fold_left f (0, []) pts in
+    List.rev points
+  and faces =
+    let lookup = Array.make len 0
+    and off = ref 0
+    and offsets = Array.make len 0 in
+    for i = 1 to len - 1 do
+      offsets.(i) <- !off;
+      match IntTbl.find_opt drop i with
+      | Some idx ->
+        lookup.(i) <- idx - offsets.(idx);
+        incr off
+      | None     -> lookup.(i) <- i - !off
+    done;
+    List.map (List.map (fun i -> lookup.(i))) faces
+  in
+  { n_points = n_points - IntTbl.length drop; points; faces }
+
 let add_face face t = { t with faces = face :: t.faces }
 let add_faces faces t = { t with faces = List.rev_append faces t.faces }
 let rev_faces t = { t with faces = List.map List.rev t.faces }
+
+let centroid ?(eps = Util.epsilon) { n_points; points; faces } =
+  if n_points = 0 then invalid_arg "No centroid for empty polyhedron.";
+  let pts = Array.of_list points in
+  let rec sum_face total_vol weighted_sum p1 idxs =
+    let calc total_vol weighted_sum p1 p2 p3 =
+      let vol = Vec3.(dot (cross p3 p2) p1) in
+      let weighted = Vec3.(smul (add p1 (add p2 p3)) vol) in
+      vol +. total_vol, Vec3.add weighted_sum weighted
+    in
+    match idxs with
+    | [ i2; i3 ]              -> calc total_vol weighted_sum p1 pts.(i2) pts.(i3)
+    | i2 :: (i3 :: _ as rest) ->
+      let total_vol, weighted_sum = calc total_vol weighted_sum p1 pts.(i2) pts.(i3) in
+      sum_face total_vol weighted_sum p1 rest
+    | _                       -> invalid_arg
+                                   "Polyhedron contains face with fewer than 3 points."
+  in
+  let total_vol, weighted_sum =
+    let f (total_vol, weighted_sum) = function
+      | i1 :: idxs -> sum_face total_vol weighted_sum pts.(i1) idxs
+      | []         -> invalid_arg "Polyhedron contains empty face."
+    in
+    List.fold_left f (0., Vec3.zero) faces
+  in
+  if Math.approx ~eps total_vol 0.
+  then invalid_arg "The polyhedron has self-intersections.";
+  Vec3.(sdiv weighted_sum (total_vol *. 4.))
+
 let translate p t = { t with points = Path3d.translate p t.points }
 let rotate r t = { t with points = Path3d.rotate r t.points }
 let rotate_about_pt r p t = { t with points = Path3d.rotate_about_pt r p t.points }

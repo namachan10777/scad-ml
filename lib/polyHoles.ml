@@ -10,9 +10,8 @@ type tag =
 let equal_tag a b = Int.equal a.n b.n && Int.equal a.idx b.idx
 
 let compare_tag a b =
-  match Int.compare a.n b.n with
-  | 0 -> Int.compare a.idx b.idx
-  | c -> c
+  let c = Int.compare a.n b.n in
+  if Int.equal c 0 then Int.compare a.idx b.idx else c
 
 type point =
   { p : Vec2.t
@@ -25,9 +24,8 @@ module BridgeSet = Set.Make (struct
   type t = tag * tag
 
   let compare (a1, a2) (b1, b2) =
-    match compare_tag a1 b1 with
-    | 0 -> compare_tag a2 b2
-    | c -> c
+    let c = compare_tag a1 b1 in
+    if Int.equal c 0 then compare_tag a2 b2 else c
 end)
 
 (* Opposite of usual convention, but this works. Flip inputs for now. *)

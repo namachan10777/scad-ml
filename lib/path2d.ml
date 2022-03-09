@@ -1,14 +1,14 @@
 open Vec
 include Path.Make (Vec2)
 
-type bounds =
-  { left : float
-  ; right : float
-  ; top : float
-  ; bot : float
+type bbox =
+  { min : Vec2.t
+  ; max : Vec2.t
   }
 
 let of_tups = List.map Vec2.of_tup
+let of_path3 = List.map Vec2.of_vec3
+let to_path3 ?z = List.map (Vec2.to_vec3 ?z)
 
 let clockwise_sign' (ps : Vec2.t array) =
   let len = Array.length ps
@@ -23,15 +23,6 @@ let clockwise_sign' (ps : Vec2.t array) =
 let is_clockwise' ps = Float.equal 1. (clockwise_sign' ps)
 let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
-
-let bounds = function
-  | []             -> invalid_arg "Cannot calculate bounds for empty path."
-  | { x; y } :: tl ->
-    let f (left, right, top, bot) { x; y } =
-      Float.(min left x, max right x, max top y, min bot y)
-    in
-    let left, right, top, bot = List.fold_left f (x, x, y, y) tl in
-    { left; right; top; bot }
 
 let self_intersections' ?(eps = Util.epsilon) path =
   let len = Array.length path in
@@ -86,26 +77,15 @@ let is_simple' ?eps ?(closed = false) path =
 
 let is_simple ?eps ?closed path = is_simple' ?eps ?closed (Array.of_list path)
 
-let centroid ?(eps = Util.epsilon) = function
-  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
-  | p0 :: p1 :: tl        ->
-    let f (area_sum, p_sum, p1) p2 =
-      let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
-      area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
+let bbox = function
+  | []       -> invalid_arg "Cannot calculate bbox for empty path."
+  | hd :: tl ->
+    let f bb { x; y } =
+      let min = Float.{ x = min bb.min.x x; y = min bb.min.y y }
+      and max = Float.{ x = max bb.max.x x; y = max bb.max.y y } in
+      { min; max }
     in
-    let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
-    if Math.approx ~eps area_sum 0.
-    then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec2.(sdiv p_sum (area_sum /. 3.))
-
-let area ?(signed = false) = function
-  | [] | [ _ ] | [ _; _ ] -> 0.
-  | p0 :: p1 :: tl        ->
-    let f (area, p1) p2 =
-      (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
-    in
-    let area, _ = List.fold_left f (0., p1) tl in
-    if signed then area else Float.abs area
+    List.fold_left f { min = hd; max = hd } tl
 
 let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(c : Vec2.t) ~radius ~start angle =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
@@ -146,6 +126,7 @@ let arc_through ?init ?rev ?fn p1 p2 p3 =
   and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CW else `CCW in
   arc_about_centre ?init ?rev ?fn ~dir ~centre p1 p3
 
+let lift plane = List.map (Plane.lift plane)
 let translate p = List.map (Vec2.translate p)
 let rotate r = List.map (Vec2.rotate r)
 let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)

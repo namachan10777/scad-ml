@@ -54,7 +54,6 @@ val mesh_of_layer : ?reverse:bool -> Vec3.t list -> t
     Create a polyhedron mesh from a list of polygonal faces. *)
 val of_polygons : Vec3.t list list -> t
 
-val polyhole_partition_vec2 : ?rev:bool -> holes:Vec2.t list list -> Vec2.t list -> t
 val polyhole_partition : ?rev:bool -> holes:Vec3.t list list -> Vec3.t list -> t
 
 (** [sweep ?caps ?convexity ~transforms shape]
@@ -115,9 +114,11 @@ val axial_plot
   -> t
 
 val join : t list -> t
+val merge_points : ?eps:float -> t -> t
 val add_face : int list -> t -> t
 val add_faces : int list list -> t -> t
 val rev_faces : t -> t
+val centroid : ?eps:float -> t -> Vec3.t
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t
 val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t

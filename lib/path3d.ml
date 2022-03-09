@@ -1,7 +1,24 @@
 open Vec
 include Path.Make (Vec3)
 
+type bbox =
+  { min : Vec3.t
+  ; max : Vec3.t
+  }
+
 let of_tups = List.map Vec3.of_tup
+let of_path2 ?z = List.map (Vec3.of_vec2 ?z)
+let to_path2 = List.map Vec3.to_vec2
+
+let bbox = function
+  | []       -> invalid_arg "Cannot calculate bbox for empty path."
+  | hd :: tl ->
+    let f bb { x; y; z } =
+      let min = Float.{ x = min bb.min.x x; y = min bb.min.y y; z = min bb.min.z z }
+      and max = Float.{ x = max bb.max.x x; y = max bb.max.y y; z = max bb.max.z z } in
+      { min; max }
+    in
+    List.fold_left f { min = hd; max = hd } tl
 
 let arc ?init ?rev ?fn ~centre ~radius ~start angle =
   let arc =
@@ -163,6 +180,8 @@ let coplanar ?eps t =
 let to_plane = function
   | []         -> invalid_arg "Empty path cannot be converted to plane."
   | point :: t -> Plane.of_normal ~point (normal t)
+
+let project plane = List.map (Plane.project plane)
 
 let centroid ?(eps = Util.epsilon) = function
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."

@@ -511,7 +511,9 @@ let polyholes () =
       Poly2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
     and outer = List.rev @@ Poly2d.square ~center:true (v2 10. 10.) in
     let poly =
-      Poly3d.polyhole_partition_vec2 ~holes outer
+      Poly3d.polyhole_partition
+        ~holes:(List.map (List.map Vec3.of_vec2) holes)
+        (List.map Vec3.of_vec2 outer)
       |> Poly3d.to_scad
       |> Scad.color ~alpha:0.5 Color.Silver
     and reference =
@@ -573,7 +575,7 @@ let polytext () =
   let scad =
     let font = "Fira Code" in
     let PolyText.{ outer; inner } = PolyText.glyph_outline ~font 'g' in
-    let Path2d.{ left = l; right = r; top = t; bot = b } = Path2d.bounds outer in
+    let Path2d.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2d.bbox outer in
     Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
     Scad.union
       [ Poly2d.to_scad ~holes:inner outer

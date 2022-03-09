@@ -27,7 +27,9 @@ let sdiv t s = v (t.x /. s) (t.y /. s) (t.z /. s)
 let equal a b = Float.equal a.x b.x && Float.equal a.y b.y && Float.equal a.z b.z
 let norm { x; y; z } = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
 let distance a b = norm (sub a b)
-let approx ?(eps = Util.epsilon) a b = Float.(compare (distance a b) eps) < 1
+
+let approx ?(eps = Util.epsilon) a b =
+  not (Int.equal Float.(compare (distance a b) eps) 1)
 
 let normalize t =
   let n = norm t in

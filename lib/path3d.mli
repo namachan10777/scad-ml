@@ -1,6 +1,14 @@
 include Path.S with type vec := Vec3.t
 
+type bbox =
+  { min : Vec3.t
+  ; max : Vec3.t
+  }
+
 val of_tups : (float * float * float) list -> Vec3.t list
+val of_path2 : ?z:float -> Vec2.t list -> Vec3.t list
+val to_path2 : Vec3.t list -> Vec2.t list
+val bbox : Vec3.t list -> bbox
 
 val arc
   :  ?init:Vec3.t list
@@ -81,6 +89,7 @@ val area : ?signed:bool -> t -> float
 val coplanar : ?eps:float -> t -> bool
 
 val to_plane : t -> Plane.t
+val project : Plane.t -> t -> Vec2.t list
 
 (** {1 Basic Transfomations} *)
 

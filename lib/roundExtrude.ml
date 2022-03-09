@@ -1,3 +1,4 @@
+open Util
 open Vec
 
 (* placeholder module, will likely have this stuff in poly3d as rounded_extrude *)
@@ -94,7 +95,7 @@ let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape =
 
 let polyhole_partition ?rev ~holes outer =
   let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3d.normal outer in
-  let project = List.map @@ Plane.project plane
+  let project = Path3d.project plane
   and lift = Plane.lift plane in
   let holes = List.map project holes in
   let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
@@ -154,14 +155,14 @@ let sweep'
     List.hd points, Poly3d.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
-  | []      ->
+  | []       ->
     let bot_lid, bot = cap ~top:false ~m:MultMatrix.id bot
     and top_lid, top = cap ~top:true ~m:MultMatrix.id top in
     bot_lid, top_lid, Poly3d.join [ bot; top ]
-  | hd :: _ ->
+  | hd :: tl ->
     let mid, last_transform =
       let f (acc, _last) m = lift m shape :: acc, m in
-      List.fold_left f ([], hd) transforms
+      List.fold_left f (f ([], hd) hd) tl
     in
     let mid = Poly3d.of_layers ~caps:`Open (List.rev mid)
     and bot_lid, bot = cap ~top:false ~m:hd bot
@@ -196,9 +197,8 @@ let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transf
     let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
     let bot_lid = polyhole_partition ~rev:true ~holes:tunnel_bots outer_bot
     and top_lid = polyhole_partition ~holes:tunnel_tops outer_top in
-    Poly3d.join (Poly3d.translate Vec3.zero bot_lid :: top_lid :: outer :: tunnels)
+    Poly3d.join (bot_lid :: top_lid :: outer :: tunnels)
 
-(* TODO: add holes *)
 let linear_extrude
     ?check_valid
     ?winding
@@ -213,10 +213,11 @@ let linear_extrude
     ?caps
     ?top
     ?bot
+    ?holes
     ~height
     shape
   =
-  let slices = Util.helical_slices ?fa ?fn:slices twist
+  let slices = helical_slices ?fa ?fn:slices twist
   and (Spec top_spec) = Option.value ~default:(Spec []) top
   and (Spec bot_spec) = Option.value ~default:(Spec []) bot in
   let bot_height = List.fold_left (fun _ { z; _ } -> z) 0. bot_spec
@@ -228,7 +229,7 @@ let linear_extrude
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3d.to_transforms ?scale ?twist
   in
-  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ~transforms shape
+  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transforms shape
 
 type patch_edges =
   { left : Path3d.t
@@ -240,10 +241,8 @@ type patch_edges =
 let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
   let trans_bezpatch = Math.transpose bezpatch
   and n_rows, n_cols = Math.mat_dims bezpatch in
-  let row_degen = Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) bezpatch
-  and col_degen =
-    Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) trans_bezpatch
-  in
+  let row_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) bezpatch
+  and col_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) trans_bezpatch in
   let top_degen = row_degen.(0)
   and bot_degen = row_degen.(n_rows - 1)
   and left_degen = col_degen.(0)
@@ -253,7 +252,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
   and top_degen_case ~rev bp =
     let row_max =
       let full_degen =
-        let row_degen = Array.map (Util.array_all_equal @@ Vec3.approx ~eps:0.) bp in
+        let row_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) bp in
         let r = Float.(to_int @@ ceil ((of_int n_rows /. 2.) -. 1.)) in
         n_rows >= 4 && Array.for_all Fun.id (Array.sub row_degen 1 r)
       in
@@ -269,9 +268,9 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
              Bezier3d.(curve ~fn @@ make' bezpatch.(i + 1)) )
     in
     let left = List.map List.hd pts
-    and right = List.map Util.last_element pts
+    and right = List.map last_element pts
     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
-    mesh, { left; right; top = List.hd pts; bot = Util.last_element pts }
+    mesh, { left; right; top = List.hd pts; bot = last_element pts }
   in
   match all_rows_degen, all_cols_degen, top_degen, bot_degen, left_degen, right_degen with
   | true, true, _, _, _, _ ->
@@ -279,18 +278,18 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     Poly3d.empty, { left = p; right = p; top = p; bot = p }
   | true, false, _, _, _, _ ->
     let col = Bezier3d.(curve ~fn @@ make' trans_bezpatch.(0)) in
-    let bot = [ Util.last_element col ] in
+    let bot = [ last_element col ] in
     Poly3d.empty, { left = col; right = col; top = [ List.hd col ]; bot }
   | false, true, _, _, _, _ ->
     let row = Bezier3d.(curve ~fn @@ make' bezpatch.(0)) in
-    let right = [ Util.last_element row ] in
+    let right = [ last_element row ] in
     Poly3d.empty, { left = [ List.hd row ]; right; top = row; bot = row }
   | false, false, false, false, false, false ->
     let pts = Bezier3d.(patch_curve ~fn @@ patch' bezpatch) in
     let left = List.map List.hd pts
-    and right = List.map Util.last_element pts
+    and right = List.map last_element pts
     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
-    mesh, { left; right; top = List.hd pts; bot = Util.last_element pts }
+    mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, true, _, _ ->
     let row_count =
       let steps = ((fn - 3) / 2) + 1 in
@@ -310,7 +309,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     let pts =
       [ bezpatch.(0).(0) ]
-      :: Util.fold_init
+      :: fold_init
            (fn - 1)
            (fun j acc ->
              let i = fn - 2 - j in
@@ -318,9 +317,9 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
            [ [ bezpatch.(0).(Array.length bezpatch - 1) ] ]
     in
     let left = List.map List.hd pts
-    and right = List.map Util.last_element pts
+    and right = List.map last_element pts
     and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
-    mesh, { left; right; top = List.hd pts; bot = Util.last_element pts }
+    mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, false, false, false -> top_degen_case ~rev trans_bezpatch
   | false, false, false, true, false, false ->
     let poly, { left; right; top; bot } =
@@ -343,8 +342,8 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
   let f i =
     let rside_prev, rside_next = r_sides.(i)
     and concave_sign = rt_in_sign *. if concave.(i) then -1. else 1.
-    and prev = Vec3.sub top.(Util.index_wrap ~len (i - 1)) top.(i)
-    and next = Vec3.sub top.(Util.index_wrap ~len (i + 1)) top.(i)
+    and prev = Vec3.sub top.(index_wrap ~len (i - 1)) top.(i)
+    and next = Vec3.sub top.(index_wrap ~len (i + 1)) top.(i)
     and edge = Vec3.sub bot.(i) top.(i) in
     let prev_offset =
       let s = Vec3.(smul (normalize prev) (rside_prev /. Float.sin (angle prev edge))) in
@@ -416,7 +415,7 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
 let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp =
   let check line =
     if not (Path3d.is_collinear line) then failwith "Curvature continuity failure."
-  and w = Util.index_wrap ~len in
+  and w = index_wrap ~len in
   let horiz p i j =
     [ p.(i).(j).(2)
     ; p.(i).(j).(3)
@@ -446,7 +445,7 @@ let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp =
 
 let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
   let open Vec3 in
-  let w = Util.index_wrap ~len in
+  let w = index_wrap ~len in
   let vert_bad i acc =
     if distance top.(i) tp.(i).(4).(2) +. distance bot.(i) bp.(i).(4).(2)
        > distance bot.(i) top.(i)
@@ -466,7 +465,7 @@ let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
     else acc
   and show (a, b) = Printf.sprintf "(%i, %i)" a b in
   let check ~show ~msg f =
-    match Util.fold_init len f [] with
+    match fold_init len f [] with
     | []  -> ()
     | bad ->
       let f acc a = Printf.sprintf "%s; %s" acc (show a) in
@@ -482,7 +481,7 @@ let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
   check ~show ~msg:"Joint length too large on the bottom face at edges" (patch_in_bad bp)
 
 let roundover_interference label face =
-  let proj = List.map (Plane.project (Path3d.to_plane face)) face in
+  let proj = Path3d.(project (to_plane face) face) in
   if not (Path2d.is_simple proj)
   then (
     let msg =
@@ -510,7 +509,7 @@ let prism
   let bottom = Array.of_list bottom
   and top = Array.of_list top in
   let len = Array.length bottom in
-  let wrap = Util.index_wrap ~len
+  let wrap = index_wrap ~len
   and unpack_sides ~name = function
     | `Flat s -> Array.make len s
     | `Mix ss ->
@@ -546,15 +545,12 @@ let prism
   in
   if not debug then bad_patches ~len ~bot_patch ~top_patch bottom top;
   let top_samples, top_edges =
-    Util.unzip_array @@ Array.map (degenerate_patch ~fn ~rev:false) top_patch
+    unzip_array @@ Array.map (degenerate_patch ~fn ~rev:false) top_patch
   and bot_samples, bot_edges =
-    Util.unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch
+    unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch
   in
-  let top_faces =
-    Util.fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
-  and bot_faces =
-    Util.fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) []
-  in
+  let top_faces = fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
+  and bot_faces = fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) [] in
   let edge_points =
     let f i acc =
       let top_edge = [ top_edges.(i).right; top_edges.(wrap (i + 1)).left ]
@@ -562,7 +558,7 @@ let prism
       and vert_edge = [ bot_edges.(i).bot; top_edges.(i).bot ] in
       vert_edge :: bot_edge :: top_edge :: acc
     in
-    Util.fold_init len f []
+    fold_init len f []
   and faces =
     let patches =
       List.init len (fun i ->
@@ -581,6 +577,6 @@ let prism
     (fun acc pts -> Poly3d.tri_mesh pts :: acc)
     [ Poly3d.of_polygons faces ]
     edge_points
-  |> Util.fold_init len (fun i acc -> bot_samples.(i) :: acc)
-  |> Util.fold_init len (fun i acc -> top_samples.(i) :: acc)
+  |> fold_init len (fun i acc -> bot_samples.(i) :: acc)
+  |> fold_init len (fun i acc -> top_samples.(i) :: acc)
   |> Poly3d.join

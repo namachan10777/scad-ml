@@ -53,6 +53,7 @@ val linear_extrude
   -> ?caps:[ `Capped | `Open ]
   -> ?top:spec
   -> ?bot:spec
+  -> ?holes:hole list
   -> height:float
   -> Vec2.t list
   -> Poly3d.t
