@@ -320,6 +320,7 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
   let drop = IntTbl.create 100
   and pts = Array.of_list points in
   let len = Array.length pts in
+  (* TODO: less naive search *)
   let find_drops i =
     for j = i + 1 to len - 1 do
       if Vec3.approx ~eps pts.(i) pts.(j) then IntTbl.add drop j i
@@ -344,6 +345,8 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
         incr off
       | None     -> lookup.(i) <- i - !off
     done;
+    (* TODO: Check for duplicate/repeat indices in faces, and skip over them,
+   dropping the whole face if there are now less than 3 points. *)
     List.map (List.map (fun i -> lookup.(i))) faces
   in
   { n_points = n_points - IntTbl.length drop; points; faces }
