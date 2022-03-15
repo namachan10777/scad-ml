@@ -203,6 +203,11 @@ let last_element = function
   | []       -> invalid_arg "No last element in empty list."
   | hd :: tl -> List.fold_left (fun _ e -> e) hd tl
 
+let prepend_opt opt l =
+  match opt with
+  | Some a -> a :: l
+  | None   -> l
+
 let helix_arc_length ~height ~r twist =
   twist *. Float.(sqrt ((r *. r) +. pow (height /. twist) 2.))
 

@@ -320,15 +320,25 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
   let drop = IntTbl.create 100
   and pts = Array.of_list points in
   let len = Array.length pts in
-  (* TODO: less naive search *)
-  let find_drops i =
-    for j = i + 1 to len - 1 do
-      if Vec3.approx ~eps pts.(i) pts.(j) then IntTbl.add drop j i
-    done
+  let () =
+    (* naive search if the mesh is small (avoid building search tree) *)
+    if len < 400
+    then
+      for i = 0 to len - 2 do
+        for j = i + 1 to len - 1 do
+          if Vec3.approx ~eps pts.(i) pts.(j) then IntTbl.add drop j i
+        done
+      done
+    else (
+      let tree = BallTree.make' pts in
+      for i = 1 to len - 1 do
+        match BallTree.search ~radius:eps tree pts.(i) with
+        | [] | [ _ ] -> ()
+        | hd :: tl   ->
+          let min_match = List.fold_left Int.min hd tl in
+          if i <> min_match then IntTbl.add drop i min_match
+      done )
   in
-  for i = 0 to len - 2 do
-    find_drops i
-  done;
   let points =
     let f (i, acc) p = if IntTbl.mem drop i then i + 1, acc else i + 1, p :: acc in
     let _, points = Array.fold_left f (0, []) pts in
@@ -345,9 +355,28 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
         incr off
       | None     -> lookup.(i) <- i - !off
     done;
-    (* TODO: Check for duplicate/repeat indices in faces, and skip over them,
-   dropping the whole face if there are now less than 3 points. *)
-    List.map (List.map (fun i -> lookup.(i))) faces
+    let rec prune_face i first last acc = function
+      | [ hd ]   ->
+        let hd' = lookup.(hd) in
+        if hd' <> last && hd' <> first && i >= 2
+        then Some (List.rev @@ (hd' :: acc))
+        else if i >= 3
+        then Some (List.rev acc)
+        else None
+      | hd :: tl ->
+        let hd' = lookup.(hd) in
+        if hd' <> last
+        then prune_face (i + 1) first hd' (hd' :: acc) tl
+        else prune_face i first last acc tl
+      | []       -> None
+    in
+    let f acc = function
+      | []       -> acc
+      | hd :: tl ->
+        let hd' = lookup.(hd) in
+        Util.prepend_opt (prune_face 1 hd' hd' [ hd' ] tl) acc
+    in
+    List.fold_left f [] faces
   in
   { n_points = n_points - IntTbl.length drop; points; faces }
 

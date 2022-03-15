@@ -47,6 +47,14 @@ let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
   sdiv sum (Int.to_float n)
 
+let mean' a =
+  let sum = ref zero
+  and len = Array.length a in
+  for i = 0 to len - 1 do
+    sum := add !sum a.(i)
+  done;
+  sdiv !sum (Int.to_float len)
+
 let lerp a b u = add (smul a (1. -. u)) (smul b u)
 
 let lerpn ?(endpoint = true) a b n =

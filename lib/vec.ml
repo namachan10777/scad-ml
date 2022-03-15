@@ -119,6 +119,11 @@ module type S = sig
     Calculate the mean / average of all vectors in [l]. *)
   val mean : t list -> t
 
+  (** [mean' a]
+
+    Calculate the mean / average of all vectors in the array [a]. *)
+  val mean' : t array -> t
+
   (** [angle a b]
 
     Calculate the angle between the vectors [a] and [b]. *)

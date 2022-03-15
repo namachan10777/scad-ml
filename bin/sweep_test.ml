@@ -566,6 +566,7 @@ let rounded_polyhole_sweep () =
         ~top:(circ (`Radius 0.5))
         ~holes
         outer)
+    (* |> Poly3d.merge_points *)
     |> Poly3d.to_scad
   and oc = open_out "rounded_polyhole_sweep.scad" in
   Scad.write oc scad;
