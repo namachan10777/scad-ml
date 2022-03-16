@@ -132,3 +132,21 @@ let rotate r = List.map (Vec2.rotate r)
 let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)
 let scale s = List.map (Vec2.scale s)
 let mirror ax = List.map (Vec2.mirror ax)
+
+let circle ?(fn = 30) r =
+  let s = 2. *. Float.pi /. Float.of_int fn in
+  let f i =
+    let a = s *. Float.of_int i in
+    v2 (r *. Float.cos a) (r *. Float.sin a)
+  in
+  List.init fn f
+
+let square ?(center = false) { x; y } =
+  if center
+  then (
+    let x' = x /. 2.
+    and y' = y /. 2. in
+    Vec2.[ v x' y'; v (-.x') y'; v (-.x') (-.y'); v x' (-.y') ] )
+  else Vec2.[ v 0. 0.; v x 0.; v x y; v 0. y ]
+
+let to_scad ?convexity t = Scad.polygon ?convexity t

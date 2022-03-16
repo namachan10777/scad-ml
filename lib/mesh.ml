@@ -74,7 +74,7 @@ let of_layers ?(caps = `Capped) layers =
     in
     { n_points = n_layers * n_facets; points; faces = List.rev faces }
 
-let tri_mesh ?(looped = false) ?(reverse = false) rows =
+let of_ragged ?(looped = false) ?(rev = false) rows =
   let starts_lenghts, points =
     let f (start, starts_lengths, points) row =
       let g (i, ps) p = i + 1, p :: ps in
@@ -147,7 +147,7 @@ let tri_mesh ?(looped = false) ?(reverse = false) rows =
         function
         | [ i0; i1; i2 ] as face ->
           if not_degen i0 i1 && not_degen i1 i2 && not_degen i2 i0
-          then if reverse then Some [ i2; i1; i0 ] else Some face
+          then if rev then Some [ i2; i1; i0 ] else Some face
           else None
         | _                      -> failwith "unreachable"
       in
@@ -155,11 +155,11 @@ let tri_mesh ?(looped = false) ?(reverse = false) rows =
     in
     { n_points = Array.length verts; points; faces }
 
-let mesh_of_layer ?(reverse = false) layer =
+let of_poly3 ?(rev = false) layer =
   let n_points, points, face =
     List.fold_left (fun (n, ps, fs) p -> n + 1, p :: ps, n :: fs) (0, [], []) layer
   in
-  { n_points; points; faces = [ (if reverse then List.rev face else face) ] }
+  { n_points; points; faces = [ (if rev then List.rev face else face) ] }
 
 let of_polygons polys =
   let lengths = Util.array_of_list_map List.length polys in
@@ -411,7 +411,7 @@ let area { n_points; points; faces } =
     let f sum idxs =
       let face = List.map (fun i -> pts.(i)) idxs in
       let poly = Path3d.(project (to_plane face) face) in
-      sum +. Poly2d.area poly
+      sum +. Poly2d.(area @@ make poly)
     in
     List.fold_left f 0. faces )
 

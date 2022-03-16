@@ -39,7 +39,15 @@ val arc_about_centre
   -> t
 
 val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec2.t -> Vec2.t -> Vec2.t -> t
+
+(** {1 3d conversion} *)
+
 val lift : Plane.t -> t -> Vec3.t list
+
+(** {1 Basic shapes} *)
+
+val circle : ?fn:int -> float -> t
+val square : ?center:bool -> Vec2.t -> t
 
 (** {1 Basic Transfomations} *)
 
@@ -48,3 +56,7 @@ val rotate : float -> t -> t
 val rotate_about_pt : float -> Vec2.t -> t -> t
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
+
+(** {1 Output} *)
+
+val to_scad : ?convexity:int -> t -> Scad.d2

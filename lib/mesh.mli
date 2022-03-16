@@ -27,7 +27,7 @@ val make : points:Vec3.t list -> faces:int list list -> t
    one layer, or if it is not rectangular (any layer differs in length). *)
 val of_layers : ?caps:caps -> Vec3.t list list -> t
 
-(** [tri_mesh ?looped ?reverse rows]
+(** [of_ragged ?looped ?reverse rows]
 
     Create a triangular mesh from a list of rows, where each row can differ in
     length relative to its neighbours by up to 2. Since the rows can be ragged,
@@ -39,15 +39,15 @@ val of_layers : ?caps:caps -> Vec3.t list list -> t
     as their lengths differ by no more than 2. Face winding order is reversed if
     [reverse] is [true]. Throws [Invalid_argument] if a row length delta of
     greater than 2 is encountered. *)
-val tri_mesh : ?looped:bool -> ?reverse:bool -> Vec3.t list list -> t
+val of_ragged : ?looped:bool -> ?rev:bool -> Vec3.t list list -> t
 
-(** [mesh_of_layer ?reverse layer]
+(** [of_poly3 ?reverse layer]
 
     Create a mesh from a single layer (a closed loop of {!Vec3.t}), returning a
     {!type:t} with a single face including all of the points. Face winding order
-    is reversed if [reverse] is [true]. This can be useful for producing a flat
+    is reversed if [rev] is [true]. This can be useful for producing a flat
     patch mesh to be combined with other meshes to produce a complete shape. *)
-val mesh_of_layer : ?reverse:bool -> Vec3.t list -> t
+val of_poly3 : ?rev:bool -> Vec3.t list -> t
 
 (** [of_polygons polys]
 

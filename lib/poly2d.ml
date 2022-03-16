@@ -1,26 +1,18 @@
 open Vec
 
-type t = Vec2.t list
+type t =
+  { outer : Vec2.t list
+  ; holes : Vec2.t list list
+  }
 
-(* module Round : Rounding.S with type vec := Vec2.t = Rounding.Make (Vec2) (Path2d) *)
+(* TODO: validate non-intersecting / enough points polygon at creation, and
+    protect the type? *)
+let make ?(holes = []) outer = { outer; holes }
+let circle ?fn r = make @@ Path2d.circle ?fn r
+let square ?center dims = make (Path2d.square ?center dims)
 
-let circle ?(fn = 30) r =
-  let s = 2. *. Float.pi /. Float.of_int fn in
-  let f i =
-    let a = s *. Float.of_int i in
-    v2 (r *. Float.cos a) (r *. Float.sin a)
-  in
-  List.init fn f
-
-let square ?(center = false) { x; y } =
-  if center
-  then (
-    let x' = x /. 2.
-    and y' = y /. 2. in
-    Vec2.[ v x' y'; v (-.x') y'; v (-.x') (-.y'); v x' (-.y') ] )
-  else Vec2.[ v 0. 0.; v x 0.; v x y; v 0. y ]
-
-let centroid ?(eps = Util.epsilon) = function
+let centroid ?(eps = Util.epsilon) { outer; _ } =
+  match outer with
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
   | p0 :: p1 :: tl        ->
     let f (area_sum, p_sum, p1) p2 =
@@ -32,25 +24,33 @@ let centroid ?(eps = Util.epsilon) = function
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
     Vec2.(sdiv p_sum (area_sum *. 3.))
 
-let area ?(signed = false) = function
-  | [] | [ _ ] | [ _; _ ] -> 0.
-  | p0 :: p1 :: tl        ->
-    let f (area, p1) p2 =
-      (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
-    in
-    let area, _ = List.fold_left f (0., p1) tl in
-    (if signed then area else Float.abs area) /. 2.
+let area ?(signed = false) { outer; holes } =
+  let aux = function
+    | [] | [ _ ] | [ _; _ ] -> 0.
+    | p0 :: p1 :: tl        ->
+      let f (area, p1) p2 =
+        (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
+      in
+      let area, _ = List.fold_left f (0., p1) tl in
+      (if signed then area else Float.abs area) /. 2.
+  in
+  aux outer -. List.fold_left (fun sum h -> aux h +. sum) 0. holes
 
-let offset = Offset2d.offset
-let translate = Path2d.translate
-let rotate = Path2d.rotate
-let rotate_about_pt = Path2d.rotate_about_pt
-let scale = Path2d.scale
-let mirror = Path2d.mirror
+let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
-let to_scad ?convexity ?holes t =
+let offset ?fn ?fs ?fa ?closed ?check_valid mode t =
+  map (Offset2d.offset ?fn ?fs ?fa ?closed ?check_valid mode) t
+
+let translate p = map (Path2d.translate p)
+let rotate r = map (Path2d.rotate r)
+let rotate_about_pt r p = map (Path2d.rotate_about_pt r p)
+let scale s = map (Path2d.scale s)
+let mirror ax = map (Path2d.mirror ax)
+
+let to_scad ?convexity { outer; holes } =
   match holes with
-  | Some holes ->
+  | []    -> Scad.polygon ?convexity outer
+  | holes ->
     let _, points, paths =
       let f (i, points, paths) h =
         let i, points, path =
@@ -59,7 +59,6 @@ let to_scad ?convexity ?holes t =
         in
         i, points, path :: paths
       in
-      List.fold_left f (0, [], []) (t :: holes)
+      List.fold_left f (0, [], []) (outer :: holes)
     in
     Scad.polygon ?convexity ~paths:(List.rev paths) (List.rev points)
-  | None       -> Scad.polygon ?convexity t

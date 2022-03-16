@@ -23,13 +23,13 @@ let path () =
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
     let transforms = Path3d.to_transforms path in
-    Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
+    Mesh.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "ml_sweep_path.scad" in
   Scad.write oc scad;
   close_out oc
 
 let spiral_2d () =
-  let square = Poly2d.square ~center:true (v2 10. 10.)
+  let square = Path2d.square ~center:true (v2 10. 10.)
   and step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
@@ -39,8 +39,8 @@ let spiral_2d () =
         (translation (v3 (10. +. (500. *. t)) 0. 0.)))
   in
   let scad =
-    Poly3d.sweep ~transforms:(List.init (Int.of_float (1. /. step) + 1) f) square
-    |> Poly3d.to_scad
+    Mesh.sweep ~transforms:(List.init (Int.of_float (1. /. step) + 1) f) square
+    |> Mesh.to_scad
   and oc = open_out "ml_spiral.scad" in
   Scad.write oc scad;
   close_out oc
@@ -60,20 +60,20 @@ let wave_cylinder () =
         (mul (rotation (v3 (rad 90.) 0. (rad t))) (translation (v3 r 0. 0.)))
         (scaling (v3 1. (h +. (s *. Float.sin (rad (t *. 6.)))) 1.)))
   in
-  let scad = Poly3d.(to_scad @@ sweep ~transforms:(List.init ((360 / 4) + 1) f) shape)
+  let scad = Mesh.(to_scad @@ sweep ~transforms:(List.init ((360 / 4) + 1) f) shape)
   and oc = open_out "ml_wave_cylinder.scad" in
   Scad.write oc scad;
   close_out oc
 
 let spline_path () =
   let control_pts = [ v2 0. 10.; v2 10. 40.; v2 20. 40.; v2 30. (-20.); v2 40. (-40.) ]
-  and square = Poly2d.square ~center:true (v2 2. 5.) in
+  and square = Path2d.square ~center:true (v2 2. 5.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
-    Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
+    Mesh.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
@@ -178,7 +178,7 @@ let polyround_parametric () =
 let polyround_triangle_extrude () =
   let radii_pts = [ v3 0. 0. 0.5; v3 10. 0. 0.5; v3 0. 10. 0.5 ] in
   let scad =
-    PolyRound.polyround_extrude ~fn:4 ~height:4. ~r1:1. ~r2:1. radii_pts |> Poly3d.to_scad
+    PolyRound.polyround_extrude ~fn:4 ~height:4. ~r1:1. ~r2:1. radii_pts |> Mesh.to_scad
   and oc = open_out "polyround_triangle_extrude_ml.scad" in
   Scad.write oc scad;
   close_out oc
@@ -195,7 +195,7 @@ let polyround_basic_extrude () =
   in
   let scad =
     PolyRound.polyround_extrude ~fn:10 ~height:0.1 ~r1:(-1.) ~r2:1. radii_pts
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "polyround_basic_extrude_ml.scad" in
   Scad.write oc scad;
   close_out oc
@@ -213,7 +213,7 @@ let polyround_sweep () =
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
     let transforms = Path3d.to_transforms ~euler:false path in
-    PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Poly3d.to_scad
+    PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Mesh.to_scad
   and oc = open_out "polyround_sweep.scad" in
   Scad.write oc scad;
   close_out oc
@@ -236,21 +236,21 @@ let resample_path () =
 
 let poly_linear_extrude () =
   let scad =
-    Poly2d.square ~center:true (v2 3. 3.)
-    |> Poly3d.linear_extrude
+    Path2d.square ~center:true (v2 3. 3.)
+    |> Mesh.linear_extrude
          ~slices:100
          ~scale:(v2 4. 4.)
          ~twist:(2. *. Float.pi)
          ~center:false
          ~height:10.
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "poly_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc
 
 let polyround_linear_extrude () =
   let scad =
-    Poly2d.square ~center:true (v2 3. 3.)
+    Path2d.square ~center:true (v2 3. 3.)
     |> List.map (Vec3.of_vec2 ~z:0.5)
     |> List.map (Vec3.translate (v3 1.5 1.5 0.))
     |> PolyRound.polyround_extrude
@@ -263,7 +263,7 @@ let polyround_linear_extrude () =
          ~r1:0.5
          ~r2:1.4
          ~height:10.
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "polyround_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc
@@ -284,14 +284,14 @@ let helix_sweep () =
     let transforms =
       Path3d.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
     in
-    Poly3d.(to_scad @@ sweep ~transforms elbow_shape)
+    Mesh.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "helix_sweep.scad" in
   Scad.write oc scad;
   close_out oc
 
 let helix_extrude () =
   let scad =
-    Poly3d.helix_extrude
+    Mesh.helix_extrude
       ~scale:(v2 1. 1.)
       ~left:true
       ~pitch:30.
@@ -299,7 +299,7 @@ let helix_extrude () =
       ~r2:100.
       50.
       elbow_shape
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "helix_extrude.scad" in
   Scad.write oc scad;
   close_out oc
@@ -318,7 +318,7 @@ let sweep_starburst ~euler =
     let flat = Scad.polygon elbow_shape |> Scad.linear_extrude ~height:1.
     and f path =
       let transforms = Path3d.to_transforms ~euler path in
-      Poly3d.sweep ~transforms elbow_shape |> Poly3d.to_scad
+      Mesh.sweep ~transforms elbow_shape |> Mesh.to_scad
     in
     Scad.union @@ (flat :: List.map f paths)
   and oc =
@@ -333,8 +333,8 @@ let tri_mesh_poly () =
     List.init 10 (fun y ->
         let y = y + 1 in
         List.init y (fun x -> Float.(v3 (of_int x) (of_int y) (of_int y))) )
-    |> Poly3d.tri_mesh
-    |> Poly3d.to_scad
+    |> Mesh.of_ragged
+    |> Mesh.to_scad
   and oc = open_out "tri_array.scad" in
   Scad.write oc scad;
   close_out oc
@@ -365,13 +365,15 @@ let rounding_basic () =
   close_out oc
 
 let offset_poly () =
-  let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
+  let shape =
+    Poly2d.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
+  in
   let scad =
     let rounded =
-      Scad.polygon (Poly2d.offset (`Radius (-0.5)) shape)
+      Poly2d.to_scad (Poly2d.offset (`Radius (-0.5)) shape)
       |> Scad.linear_extrude ~height:1.
     and pointy =
-      Scad.polygon shape
+      Poly2d.to_scad shape
       |> Scad.linear_extrude ~height:1.
       |> Scad.translate (v3 0. 0. (-0.5))
       |> Scad.color ~alpha:0.5 Color.Silver
@@ -382,7 +384,7 @@ let offset_poly () =
   close_out oc
 
 let offset_sweep () =
-  let shape = Poly2d.square ~center:true (v2 3. 3.) in
+  let shape = Path2d.square ~center:true (v2 3. 3.) in
   let shape_spec =
     (* Rounding2d.(flat ~spec:(circ (`Joint 2.))) shape *)
     Rounding2d.(flat ~spec:(circ (`Cut 0.5))) shape
@@ -416,14 +418,14 @@ let offset_sweep () =
     (* ~top:(chamf (`Cut 0.2) (`Angle (Float.pi /. 4.)))) *)
     (* ~bot:(bez (`Joint 0.2)) *)
     (* ~top:(bez (`Joint 0.2))) *)
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "offset_sweep.scad" in
   Scad.write oc scad;
   close_out oc
 
 let offset_linear_extrude () =
   let scad =
-    let shape = Poly2d.square ~center:true (v2 3. 3.) in
+    let shape = Path2d.square ~center:true (v2 3. 3.) in
     Rounding2d.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
     |> List.map (Vec2.translate (v2 1.5 1.5))
     |> RoundExtrude.linear_extrude
@@ -435,20 +437,20 @@ let offset_linear_extrude () =
          ~bot:(RoundExtrude.circ (`Radius (-0.2)))
          ~top:(RoundExtrude.bez (`Cut 0.1)) (* ~top:(RoundExtrude.chamf ~cut:(-0.1) ()) *)
          ~height:10.
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc
 
 let bezier_path () =
   let control_pts = Vec2.[ v 0. 10.; v 10. 40.; v 20. 40.; v 30. (-20.); v 40. (-40.) ]
-  and square = Poly2d.square ~center:true (v2 2. 2.) in
+  and square = Path2d.square ~center:true (v2 2. 2.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = Bezier2d.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
-    Poly3d.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
+    Mesh.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "bezier_path.scad" in
@@ -461,7 +463,7 @@ let cartesian_gravity_well () =
       let z = 50. -. (50. /. Float.sqrt ((x *. x) +. (y *. y))) in
       if z < 1. then 1. else z
     in
-    Poly3d.cartesian_plot
+    Mesh.cartesian_plot
       ~min_x:(-10.)
       ~x_steps:30
       ~max_x:0.
@@ -469,7 +471,7 @@ let cartesian_gravity_well () =
       ~y_steps:60
       ~max_y:10.
       gravity_well
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "cartesian_gravity_well.scad" in
   Scad.write oc scad;
   close_out oc
@@ -487,7 +489,7 @@ let polar_rose () =
       in
       ((15. +. (5. *. sin (r *. 10. *. pi /. 180.))) *. exp x) +. 1.
     in
-    Poly3d.polar_plot ~r_step:0.4 ~max_r:22. rose |> Poly3d.to_scad
+    Mesh.polar_plot ~r_step:0.4 ~max_r:22. rose |> Mesh.to_scad
   and oc = open_out "polar_rose.scad" in
   Scad.write oc scad;
   close_out oc
@@ -495,11 +497,11 @@ let polar_rose () =
 let axial_chalice () =
   let scad =
     let f ~z ~a:_ = Float.(5. *. (cos (log ((z /. 5.) +. 1.) *. pi) +. 2.)) in
-    let outer = Poly3d.axial_plot ~min_z:0. ~z_steps:50 ~max_z:50. f
+    let outer = Mesh.axial_plot ~min_z:0. ~z_steps:50 ~max_z:50. f
     and inner =
-      Poly3d.axial_plot ~min_z:2. ~z_steps:50 ~max_z:51. (fun ~z ~a -> f ~z ~a -. 2.)
+      Mesh.axial_plot ~min_z:2. ~z_steps:50 ~max_z:51. (fun ~z ~a -> f ~z ~a -. 2.)
     in
-    Scad.difference (Poly3d.to_scad outer) [ Poly3d.to_scad inner ]
+    Scad.difference (Mesh.to_scad outer) [ Mesh.to_scad inner ]
   and oc = open_out "axial_chalice.scad" in
   Scad.write oc scad;
   close_out oc
@@ -507,14 +509,14 @@ let axial_chalice () =
 let polyholes () =
   let scad =
     let holes =
-      let s = Poly2d.square ~center:true (v2 2. 2.) |> Poly2d.rotate (Float.pi /. 4.) in
-      Poly2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
-    and outer = List.rev @@ Poly2d.square ~center:true (v2 10. 10.) in
+      let s = Path2d.square ~center:true (v2 2. 2.) |> Path2d.rotate (Float.pi /. 4.) in
+      Path2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
+    and outer = List.rev @@ Path2d.square ~center:true (v2 10. 10.) in
     let poly =
-      Poly3d.polyhole_partition
+      Mesh.polyhole_partition
         ~holes:(List.map (List.map Vec3.of_vec2) holes)
         (List.map Vec3.of_vec2 outer)
-      |> Poly3d.to_scad
+      |> Mesh.to_scad
       |> Scad.color ~alpha:0.5 Color.Silver
     and reference =
       Scad.difference (Scad.polygon outer) (List.map Scad.polygon holes)
@@ -530,10 +532,10 @@ let polyholes () =
 let poly2d_to_scad () =
   let scad =
     let holes =
-      let s = Poly2d.square ~center:true (v2 2. 2.) |> Poly2d.rotate (Float.pi /. 4.) in
-      Poly2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
-    and outer = List.rev @@ Poly2d.square ~center:true (v2 10. 10.) in
-    Poly2d.to_scad ~holes outer
+      let s = Path2d.square ~center:true (v2 2. 2.) |> Path2d.rotate (Float.pi /. 4.) in
+      Path2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
+    and outer = List.rev @@ Path2d.square ~center:true (v2 10. 10.) in
+    Poly2d.(to_scad @@ make ~holes outer)
   and oc = open_out "poly2d_to_scad.scad" in
   Scad.write oc scad;
   close_out oc
@@ -547,15 +549,15 @@ let rounded_polyhole_sweep () =
   in
   let scad =
     let holes =
-      let s = Poly2d.circle ~fn:90 2.
+      let s = Path2d.circle ~fn:90 2.
       and d = 2. in
-      Poly2d.(
+      Path2d.(
         RoundExtrude.
           [ hole ~bot:(Some `Same) @@ translate (v2 (-.d) (-.d)) s
           ; hole ~bot:(Some `Same) @@ translate (v2 d d) s
           ])
     and outer =
-      Poly2d.square ~center:true (v2 10. 10.)
+      Path2d.square ~center:true (v2 10. 10.)
       |> Rounding2d.(flat ~spec:(chamf (`Width 1.)))
       |> Rounding2d.corners
     in
@@ -566,8 +568,8 @@ let rounded_polyhole_sweep () =
         ~top:(circ (`Radius 0.5))
         ~holes
         outer)
-    |> Poly3d.merge_points
-    |> Poly3d.to_scad
+    |> Mesh.merge_points
+    |> Mesh.to_scad
   and oc = open_out "rounded_polyhole_sweep.scad" in
   Scad.write oc scad;
   close_out oc
@@ -579,7 +581,7 @@ let polytext () =
     let Path2d.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2d.bbox outer in
     Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
     Scad.union
-      [ Poly2d.to_scad ~holes:inner outer
+      [ Poly2d.(to_scad @@ make ~holes:inner outer)
       ; Scad.text ~font ~size:8. "g" |> Scad.color ~alpha:0.5 Color.BlueViolet
       ]
   and oc = open_out "polytext.scad" in
@@ -587,7 +589,7 @@ let polytext () =
   close_out oc
 
 let rounded_prism_cube () =
-  let bot = Poly2d.square ~center:true (v2 5. 5.) |> List.rev_map Vec2.to_vec3 in
+  let bot = Path2d.square ~center:true (v2 5. 5.) |> List.rev_map Vec2.to_vec3 in
   let top =
     Path3d.translate (v3 0. 0. 5.) (Path3d.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
   in
@@ -598,7 +600,7 @@ let rounded_prism_cube () =
       ~joint_sides:(`Flat (1.5, 1.5))
       bot
       top
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "rounded_prism_cube.scad" in
   Scad.write oc scad;
   close_out oc
@@ -615,7 +617,7 @@ let rounded_prism_pointy () =
       ~joint_sides:(`Flat (2.5, 2.5))
       bot
       top
-    |> Poly3d.to_scad
+    |> Mesh.to_scad
   and oc = open_out "rounded_prism_pointy.scad" in
   Scad.write oc scad;
   close_out oc

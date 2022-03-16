@@ -37,7 +37,7 @@ val sweep
   -> ?holes:hole list
   -> transforms:MultMatrix.t list
   -> Vec2.t list
-  -> Poly3d.t
+  -> Mesh.t
 
 val linear_extrude
   :  ?check_valid:int option
@@ -56,7 +56,7 @@ val linear_extrude
   -> ?holes:hole list
   -> height:float
   -> Vec2.t list
-  -> Poly3d.t
+  -> Mesh.t
 
 val prism
   :  ?debug:bool
@@ -70,4 +70,4 @@ val prism
   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
   -> Vec3.t list
   -> Vec3.t list
-  -> Poly3d.t
+  -> Mesh.t

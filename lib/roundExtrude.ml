@@ -99,7 +99,7 @@ let polyhole_partition ?rev ~holes outer =
   and lift = Plane.lift plane in
   let holes = List.map project holes in
   let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
-  Poly3d.make ~points ~faces
+  Mesh.make ~points ~faces
 
 let sweep'
     ?check_valid
@@ -152,22 +152,22 @@ let sweep'
         List.mapi close last_shape :: List.concat faces
       | `Open   -> List.concat faces
     in
-    List.hd points, Poly3d.make ~points:List.(concat (rev points)) ~faces
+    List.hd points, Mesh.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
   | []       ->
     let bot_lid, bot = cap ~top:false ~m:MultMatrix.id bot
     and top_lid, top = cap ~top:true ~m:MultMatrix.id top in
-    bot_lid, top_lid, Poly3d.join [ bot; top ]
+    bot_lid, top_lid, Mesh.join [ bot; top ]
   | hd :: tl ->
     let mid, last_transform =
       let f (acc, _last) m = lift m shape :: acc, m in
       List.fold_left f (f ([], hd) hd) tl
     in
-    let mid = Poly3d.of_layers ~caps:`Open (List.rev mid)
+    let mid = Mesh.of_layers ~caps:`Open (List.rev mid)
     and bot_lid, bot = cap ~top:false ~m:hd bot
     and top_lid, top = cap ~top:true ~m:last_transform top in
-    bot_lid, top_lid, Poly3d.join [ bot; mid; top ]
+    bot_lid, top_lid, Mesh.join [ bot; mid; top ]
 
 (* TODO: think about the API here. Should it be separate functions since there
     are so many optionals, including ones that are only relevant for holes? Or no? *)
@@ -197,7 +197,7 @@ let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transf
     let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
     let bot_lid = polyhole_partition ~rev:true ~holes:tunnel_bots outer_bot
     and top_lid = polyhole_partition ~holes:tunnel_tops outer_top in
-    Poly3d.join (bot_lid :: top_lid :: outer :: tunnels)
+    Mesh.join (bot_lid :: top_lid :: outer :: tunnels)
 
 let linear_extrude
     ?check_valid
@@ -269,26 +269,26 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
+    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   in
   match all_rows_degen, all_cols_degen, top_degen, bot_degen, left_degen, right_degen with
   | true, true, _, _, _, _ ->
     let p = [ bezpatch.(0).(0) ] in
-    Poly3d.empty, { left = p; right = p; top = p; bot = p }
+    Mesh.empty, { left = p; right = p; top = p; bot = p }
   | true, false, _, _, _, _ ->
     let col = Bezier3d.(curve ~fn @@ make' trans_bezpatch.(0)) in
     let bot = [ last_element col ] in
-    Poly3d.empty, { left = col; right = col; top = [ List.hd col ]; bot }
+    Mesh.empty, { left = col; right = col; top = [ List.hd col ]; bot }
   | false, true, _, _, _, _ ->
     let row = Bezier3d.(curve ~fn @@ make' bezpatch.(0)) in
     let right = [ last_element row ] in
-    Poly3d.empty, { left = [ List.hd row ]; right; top = row; bot = row }
+    Mesh.empty, { left = [ List.hd row ]; right; top = row; bot = row }
   | false, false, false, false, false, false ->
     let pts = Bezier3d.(patch_curve ~fn @@ patch' bezpatch) in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
+    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, true, _, _ ->
     let row_count =
@@ -318,7 +318,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Poly3d.tri_mesh ~reverse:(not rev) pts in
+    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, false, false, false -> top_degen_case ~rev trans_bezpatch
   | false, false, false, true, false, false ->
@@ -574,9 +574,9 @@ let prism
   if not debug then roundover_interference "top" top_faces;
   if not debug then roundover_interference "bottom" bot_faces;
   List.fold_left
-    (fun acc pts -> Poly3d.tri_mesh pts :: acc)
-    [ Poly3d.of_polygons faces ]
+    (fun acc pts -> Mesh.of_ragged pts :: acc)
+    [ Mesh.of_polygons faces ]
     edge_points
   |> fold_init len (fun i acc -> bot_samples.(i) :: acc)
   |> fold_init len (fun i acc -> top_samples.(i) :: acc)
-  |> Poly3d.join
+  |> Mesh.join
