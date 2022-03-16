@@ -5,8 +5,8 @@ module type S = sig
   val ( .%() ) : t -> int -> vec
   val points : t -> vec list
   val points' : t -> vec array
-  val make' : ?leaf_size:int -> vec array -> t
   val make : ?leaf_size:int -> vec list -> t
+  val make' : ?leaf_size:int -> vec array -> t
   val search_idxs : ?radius:float -> t -> vec -> int list
   val search_points : ?radius:float -> t -> vec -> vec list
 end
@@ -127,7 +127,7 @@ struct
         if not @@ V.approx ~eps:(tree.radius +. radius) points.(tree.pivot) target
         then []
         else (
-          let children = List.concat [ aux tree.left; aux tree.right ] in
+          let children = List.rev_append (aux tree.left) (aux tree.right) in
           if V.approx ~eps:radius points.(tree.pivot) target
           then tree.pivot :: children
           else children )
