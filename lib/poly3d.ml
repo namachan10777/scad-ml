@@ -330,10 +330,10 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
         done
       done
     else (
-      let tree = BallTree.make' pts in
+      let tree = BallTree3.make' pts in
       for i = 1 to len - 1 do
-        match BallTree.search ~radius:eps tree pts.(i) with
-        | [] | [ _ ] -> ()
+        match BallTree3.search_idxs ~radius:eps tree pts.(i) with
+        | [] | [ _ ] -> () (* single result will be self *)
         | hd :: tl   ->
           let min_match = List.fold_left Int.min hd tl in
           if i <> min_match then IntTbl.add drop i min_match
