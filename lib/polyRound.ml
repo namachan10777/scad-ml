@@ -19,14 +19,14 @@ let get_angle p1 p2 = if Vec2.equal p1 p2 then 0. else invtan (p2.x -. p1.x) (p2
 (* TODO: consider a check that notices when the shape implodes due to too great
     of offset. This can lead to extrude errors that may be confusing. *)
 let offset_poly ~offset ps =
-  let cw_sign = Math.sign offset *. Path2d.clockwise_sign' ps *. -1.
+  let cw_sign = Math.sign offset *. Path2.clockwise_sign' ps *. -1.
   and len = Array.length ps in
   let parallel_follow p1 p2 p3 =
     if Float.equal offset 0.
     then p2 (* return middle point if offset is zero *)
     else (
       let path_angle = Vec2.angle_points p1 p2 p3
-      and local_sign = Path2d.clockwise_sign' [| p1; p2; p3 |] in
+      and local_sign = Path2.clockwise_sign' [| p1; p2; p3 |] in
       let radius = cw_sign *. local_sign *. offset /. Float.sin (path_angle /. 2.)
       and angle_to_centre =
         let mid_tangent =
@@ -147,7 +147,7 @@ let polyround' ?(rad_limit = true) ?(fn = 5) rps =
       then [ Vec2.v x y ]
       else (
         let p1, p2, centre = round i in
-        Path2d.arc_about_centre ~fn ~centre p1 p2 )
+        Path2.arc_about_centre ~fn ~centre p1 p2 )
   in
   List.flatten @@ List.init len f
 
@@ -164,7 +164,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
     Array.unsafe_set radii i r
   done;
   (* Ensure polygon is counter-clockwise to satisfy polyhedron assumptions. *)
-  if Float.equal (Path2d.clockwise_sign' ps) 1.
+  if Float.equal (Path2.clockwise_sign' ps) 1.
   then (
     rev_array rps;
     rev_array ps;
@@ -180,7 +180,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
       let get_op idx = Array.unsafe_get (offset_poly ~offset ps) (index_wrap ~len idx) in
       let adjust_radii j =
         let local_sign =
-          Path2d.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
+          Path2.clockwise_sign' [| get_op (j - 1); get_op j; get_op (j + 1) |]
         in
         let { x; y } = get_op j in
         (* The overall polygon rotation is enforced to be CCW, so if the local
@@ -231,7 +231,7 @@ let polyround_extrude
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
     List.init (slices + 1) (fun i -> Vec3.v 0. 0. ((Float.of_int i *. s) +. bot))
-    |> Path3d.to_transforms ?scale ?twist
+    |> Path3.to_transforms ?scale ?twist
   in
   polyround_sweep ?min_r ?fn ?cap_fn ~r1 ~r2 ~transforms rps
 

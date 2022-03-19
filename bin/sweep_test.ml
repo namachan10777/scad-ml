@@ -22,14 +22,14 @@ let path () =
   in
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path3d.to_transforms path in
+    let transforms = Path3.to_transforms path in
     Mesh.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "ml_sweep_path.scad" in
   Scad.write oc scad;
   close_out oc
 
 let spiral_2d () =
-  let square = Path2d.square ~center:true (v2 10. 10.)
+  let square = Path2.square ~center:true (v2 10. 10.)
   and step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
@@ -67,13 +67,13 @@ let wave_cylinder () =
 
 let spline_path () =
   let control_pts = [ v2 0. 10.; v2 10. 40.; v2 20. 40.; v2 30. (-20.); v2 40. (-40.) ]
-  and square = Path2d.square ~center:true (v2 2. 5.) in
+  and square = Path2.square ~center:true (v2 2. 5.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = CubicSpline.(path_to_3d @@ interpolate_path (fit control_pts) 100) in
-    Mesh.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
+    Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "spline.scad" in
@@ -81,7 +81,7 @@ let spline_path () =
   close_out oc
 
 let arc_points () =
-  let arc = Path2d.arc_through ~fn:5 (v2 10. 10.) (v2 20. 20.) (v2 10. 30.) in
+  let arc = Path2.arc_through ~fn:5 (v2 10. 10.) (v2 20. 20.) (v2 10. 30.) in
   let scad =
     List.mapi
       (fun i { x; y } ->
@@ -95,7 +95,7 @@ let arc_points () =
   close_out oc
 
 let arc_points_3d () =
-  let arc = Path3d.arc_through ~fn:5 (v3 10. 10. 0.) (v3 20. 20. 10.) (v3 10. 30. 20.) in
+  let arc = Path3.arc_through ~fn:5 (v3 10. 10. 0.) (v3 20. 20. 10.) (v3 10. 30. 20.) in
   let scad =
     List.mapi
       (fun i { x; y; z } ->
@@ -212,7 +212,7 @@ let polyround_sweep () =
   in
   let scad =
     let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path3d.to_transforms ~euler:false path in
+    let transforms = Path3.to_transforms ~euler:false path in
     PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Mesh.to_scad
   and oc = open_out "polyround_sweep.scad" in
   Scad.write oc scad;
@@ -220,8 +220,8 @@ let polyround_sweep () =
 
 let resample_path () =
   let path = [ v3 0. 0. 0.; v3 5. 5. 5.; v3 5. 5. 15. ] in
-  (* let resampled = Path3d.resample ~freq:(`N 10) path in *)
-  let resampled = Path3d.resample ~freq:(`Spacing 1.) path in
+  (* let resampled = Path3.resample ~freq:(`N 10) path in *)
+  let resampled = Path3.resample ~freq:(`Spacing 1.) path in
   let old_marks =
     let s = Scad.color Color.Red @@ Scad.sphere 0.5 in
     List.map (fun p -> Scad.translate p s) path
@@ -236,7 +236,7 @@ let resample_path () =
 
 let poly_linear_extrude () =
   let scad =
-    Path2d.square ~center:true (v2 3. 3.)
+    Path2.square ~center:true (v2 3. 3.)
     |> Mesh.linear_extrude
          ~slices:100
          ~scale:(v2 4. 4.)
@@ -250,7 +250,7 @@ let poly_linear_extrude () =
 
 let polyround_linear_extrude () =
   let scad =
-    Path2d.square ~center:true (v2 3. 3.)
+    Path2.square ~center:true (v2 3. 3.)
     |> List.map (Vec3.of_vec2 ~z:0.5)
     |> List.map (Vec3.translate (v3 1.5 1.5 0.))
     |> PolyRound.polyround_extrude
@@ -270,7 +270,7 @@ let polyround_linear_extrude () =
 
 let helix_path () =
   let scad =
-    let pts = Path3d.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
+    let pts = Path3.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
     let s = Scad.color Color.Red @@ Scad.sphere 1. in
     Scad.union @@ List.map (fun p -> Scad.translate p s) pts
   and oc = open_out "helix_path.scad" in
@@ -279,10 +279,10 @@ let helix_path () =
 
 let helix_sweep () =
   let scad =
-    let path = Path3d.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
-    (* let transforms = Path3d.to_transforms ~euler:true path in *)
+    let path = Path3.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
+    (* let transforms = Path3.to_transforms ~euler:true path in *)
     let transforms =
-      Path3d.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
+      Path3.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
     in
     Mesh.(to_scad @@ sweep ~transforms elbow_shape)
   and oc = open_out "helix_sweep.scad" in
@@ -317,7 +317,7 @@ let sweep_starburst ~euler =
     in
     let flat = Scad.polygon elbow_shape |> Scad.linear_extrude ~height:1.
     and f path =
-      let transforms = Path3d.to_transforms ~euler path in
+      let transforms = Path3.to_transforms ~euler path in
       Mesh.sweep ~transforms elbow_shape |> Mesh.to_scad
     in
     Scad.union @@ (flat :: List.map f paths)
@@ -343,16 +343,15 @@ let rounding_basic () =
   let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
   let shape_spec =
     let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
-    Rounding2d.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
-    (* Rounding2d.(flat ~spec:(circ (`Joint 2.))) shape *)
-    (* Rounding2d.(flat ~spec:(circ (`Cut 0.5))) shape *)
-    (* Rounding2d.(flat ~spec:(chamf (`Width 0.5))) shape *)
-    (* Rounding2d.(flat ~spec:(bez ~curv:0.8 (`Joint 1.))) shape *)
+    Rounding2.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
+    (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
+    (* Rounding2.(flat ~spec:(circ (`Cut 0.5))) shape *)
+    (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
+    (* Rounding2.(flat ~spec:(bez ~curv:0.8 (`Joint 1.))) shape *)
   in
   let scad =
     let rounded =
-      Scad.polygon (Rounding2d.corners ~fn:30 shape_spec)
-      |> Scad.linear_extrude ~height:1.
+      Scad.polygon (Rounding2.corners ~fn:30 shape_spec) |> Scad.linear_extrude ~height:1.
     and pointy =
       Scad.polygon shape
       |> Scad.linear_extrude ~height:1.
@@ -366,14 +365,14 @@ let rounding_basic () =
 
 let offset_poly () =
   let shape =
-    Poly2d.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
+    Poly2.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
   in
   let scad =
     let rounded =
-      Poly2d.to_scad (Poly2d.offset (`Radius (-0.5)) shape)
+      Poly2.to_scad (Poly2.offset (`Radius (-0.5)) shape)
       |> Scad.linear_extrude ~height:1.
     and pointy =
-      Poly2d.to_scad shape
+      Poly2.to_scad shape
       |> Scad.linear_extrude ~height:1.
       |> Scad.translate (v3 0. 0. (-0.5))
       |> Scad.color ~alpha:0.5 Color.Silver
@@ -384,12 +383,12 @@ let offset_poly () =
   close_out oc
 
 let offset_sweep () =
-  let shape = Path2d.square ~center:true (v2 3. 3.) in
+  let shape = Path2.square ~center:true (v2 3. 3.) in
   let shape_spec =
-    (* Rounding2d.(flat ~spec:(circ (`Joint 2.))) shape *)
-    Rounding2d.(flat ~spec:(circ (`Cut 0.5))) shape
-    (* Rounding2d.(flat ~spec:(chamf (`Width 0.5))) shape *)
-    (* Rounding2d.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
+    (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
+    Rounding2.(flat ~spec:(circ (`Cut 0.5))) shape
+    (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
+    (* Rounding2.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
   in
   let transforms =
     let step = 0.005 in
@@ -403,10 +402,10 @@ let offset_sweep () =
       v3 x y z
     in
     let path = List.init (Int.of_float (1. /. step)) f in
-    Path3d.to_transforms ~euler:false path
+    Path3.to_transforms ~euler:false path
   in
   let scad =
-    Rounding2d.corners ~fn:30 shape_spec
+    Rounding2.corners ~fn:30 shape_spec
     |> RoundExtrude.(
          sweep (* ~mode:`Chamfer *)
            ~transforms
@@ -425,8 +424,8 @@ let offset_sweep () =
 
 let offset_linear_extrude () =
   let scad =
-    let shape = Path2d.square ~center:true (v2 3. 3.) in
-    Rounding2d.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
+    let shape = Path2.square ~center:true (v2 3. 3.) in
+    Rounding2.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
     |> List.map (Vec2.translate (v2 1.5 1.5))
     |> RoundExtrude.linear_extrude
          ~slices:100
@@ -444,13 +443,13 @@ let offset_linear_extrude () =
 
 let bezier_path () =
   let control_pts = Vec2.[ v 0. 10.; v 10. 40.; v 20. 40.; v 30. (-20.); v 40. (-40.) ]
-  and square = Path2d.square ~center:true (v2 2. 2.) in
+  and square = Path2.square ~center:true (v2 2. 2.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
-    let path = Bezier2d.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
-    Mesh.(to_scad @@ sweep ~transforms:(Path3d.to_transforms ~euler:false path) square)
+    let path = Bezier2.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
+    Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
   and oc = open_out "bezier_path.scad" in
@@ -509,9 +508,9 @@ let axial_chalice () =
 let polyholes () =
   let scad =
     let holes =
-      let s = Path2d.square ~center:true (v2 2. 2.) |> Path2d.rotate (Float.pi /. 4.) in
-      Path2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
-    and outer = List.rev @@ Path2d.square ~center:true (v2 10. 10.) in
+      let s = Path2.square ~center:true (v2 2. 2.) |> Path2.rotate (Float.pi /. 4.) in
+      Path2.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
+    and outer = List.rev @@ Path2.square ~center:true (v2 10. 10.) in
     let poly =
       Mesh.polyhole_partition
         ~holes:(List.map (List.map Vec3.of_vec2) holes)
@@ -532,10 +531,10 @@ let polyholes () =
 let poly2d_to_scad () =
   let scad =
     let holes =
-      let s = Path2d.square ~center:true (v2 2. 2.) |> Path2d.rotate (Float.pi /. 4.) in
-      Path2d.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
-    and outer = List.rev @@ Path2d.square ~center:true (v2 10. 10.) in
-    Poly2d.(to_scad @@ make ~holes outer)
+      let s = Path2.square ~center:true (v2 2. 2.) |> Path2.rotate (Float.pi /. 4.) in
+      Path2.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
+    and outer = List.rev @@ Path2.square ~center:true (v2 10. 10.) in
+    Poly2.(to_scad @@ make ~holes outer)
   and oc = open_out "poly2d_to_scad.scad" in
   Scad.write oc scad;
   close_out oc
@@ -543,23 +542,23 @@ let poly2d_to_scad () =
 let rounded_polyhole_sweep () =
   let transforms =
     let bez =
-      Bezier3d.of_path Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
+      Bezier3.of_path Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
     in
-    Path3d.to_transforms ~euler:false (Bezier3d.curve ~fn:20 bez)
+    Path3.to_transforms ~euler:false (Bezier3.curve ~fn:20 bez)
   in
   let scad =
     let holes =
-      let s = Path2d.circle ~fn:90 2.
+      let s = Path2.circle ~fn:90 2.
       and d = 2. in
-      Path2d.(
+      Path2.(
         RoundExtrude.
           [ hole ~bot:(Some `Same) @@ translate (v2 (-.d) (-.d)) s
           ; hole ~bot:(Some `Same) @@ translate (v2 d d) s
           ])
     and outer =
-      Path2d.square ~center:true (v2 10. 10.)
-      |> Rounding2d.(flat ~spec:(chamf (`Width 1.)))
-      |> Rounding2d.corners
+      Path2.square ~center:true (v2 10. 10.)
+      |> Rounding2.(flat ~spec:(chamf (`Width 1.)))
+      |> Rounding2.corners
     in
     RoundExtrude.(
       sweep
@@ -578,10 +577,10 @@ let polytext () =
   let scad =
     let font = "Fira Code" in
     let PolyText.{ outer; inner } = PolyText.glyph_outline ~font 'g' in
-    let Path2d.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2d.bbox outer in
+    let Path2.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2.bbox outer in
     Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
     Scad.union
-      [ Poly2d.(to_scad @@ make ~holes:inner outer)
+      [ Poly2.(to_scad @@ make ~holes:inner outer)
       ; Scad.text ~font ~size:8. "g" |> Scad.color ~alpha:0.5 Color.BlueViolet
       ]
   and oc = open_out "polytext.scad" in
@@ -589,9 +588,9 @@ let polytext () =
   close_out oc
 
 let rounded_prism_cube () =
-  let bot = Path2d.square ~center:true (v2 5. 5.) |> List.rev_map Vec2.to_vec3 in
+  let bot = Path2.square ~center:true (v2 5. 5.) |> List.rev_map Vec2.to_vec3 in
   let top =
-    Path3d.translate (v3 0. 0. 5.) (Path3d.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
+    Path3.translate (v3 0. 0. 5.) (Path3.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
   in
   let scad =
     RoundExtrude.prism
@@ -609,7 +608,7 @@ let rounded_prism_pointy () =
   let bot =
     Vec3.[ v (-4.) 0. 0.; v 5. 3. 0.; v 0. 7. 0.; v 8. 7. 0.; v 20. 20. 0.; v 10. 0. 0. ]
   in
-  let top = Path3d.translate (v3 0. 0. 5.) bot in
+  let top = Path3.translate (v3 0. 0. 5.) bot in
   let scad =
     RoundExtrude.prism
       ~joint_top:(0.25, 0.25)

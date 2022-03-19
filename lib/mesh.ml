@@ -175,7 +175,7 @@ let of_polygons polys =
   { n_points = offsets.(n); points = List.concat polys; faces }
 
 let polyhole_partition ?rev ~holes outer =
-  let plane = Plane.of_normal @@ Path3d.normal outer in
+  let plane = Plane.of_normal @@ Path3.normal outer in
   let project = List.map @@ Plane.project plane
   and lift = Plane.lift plane in
   let holes = List.map project holes in
@@ -185,8 +185,8 @@ let polyhole_partition ?rev ~holes outer =
 let enforce_winding w shape =
   let reverse =
     match w with
-    | `CCW     -> Float.equal (Path2d.clockwise_sign shape) 1.
-    | `CW      -> Float.equal (Path2d.clockwise_sign shape) (-1.)
+    | `CCW     -> Float.equal (Path2.clockwise_sign shape) 1.
+    | `CW      -> Float.equal (Path2.clockwise_sign shape) (-1.)
     | `NoCheck -> false
   in
   if reverse then List.rev shape else shape
@@ -204,7 +204,7 @@ let linear_extrude ?winding ?slices ?fa ?scale ?twist ?(center = false) ~height 
   and s = height /. Float.of_int slices in
   let transforms =
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. bot))
-    |> Path3d.to_transforms ?scale ?twist
+    |> Path3.to_transforms ?scale ?twist
   in
   sweep ?winding ~transforms shape
 
@@ -218,11 +218,11 @@ let helix_extrude ?fn ?fa ?fs ?scale ?twist ?(left = true) ~n_turns ~pitch ?r2 r
     (a *. rot_sign) +. (Float.pi /. 2.)
   in
   let transforms =
-    let path = Path3d.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
+    let path = Path3.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
     let len = List.length path
     and id _ = MultMatrix.id in
-    let scale = Util.value_map_opt ~default:id (Path3d.scaler ~len) scale
-    and twist = Util.value_map_opt ~default:id (Path3d.twister ~len) twist in
+    let scale = Util.value_map_opt ~default:id (Path3.scaler ~len) scale
+    and twist = Util.value_map_opt ~default:id (Path3.twister ~len) twist in
     let f i trans =
       let eul = v3 ax 0. (a_step *. Float.of_int i) in
       scale i
@@ -410,8 +410,8 @@ let area { n_points; points; faces } =
     let pts = Array.of_list points in
     let f sum idxs =
       let face = List.map (fun i -> pts.(i)) idxs in
-      let poly = Path3d.(project (to_plane face) face) in
-      sum +. Poly2d.(area @@ make poly)
+      let poly = Path3.(project (to_plane face) face) in
+      sum +. Poly2.(area @@ make poly)
     in
     List.fold_left f 0. faces )
 
@@ -443,17 +443,14 @@ let centroid ?(eps = Util.epsilon) { n_points; points; faces } =
   then invalid_arg "The polyhedron has self-intersections.";
   Vec3.(sdiv weighted_sum (total_vol *. 4.))
 
-let translate p t = { t with points = Path3d.translate p t.points }
-let rotate r t = { t with points = Path3d.rotate r t.points }
-let rotate_about_pt r p t = { t with points = Path3d.rotate_about_pt r p t.points }
-let quaternion q t = { t with points = Path3d.quaternion q t.points }
-
-let quaternion_about_pt q p t =
-  { t with points = Path3d.quaternion_about_pt q p t.points }
-
+let translate p t = { t with points = Path3.translate p t.points }
+let rotate r t = { t with points = Path3.rotate r t.points }
+let rotate_about_pt r p t = { t with points = Path3.rotate_about_pt r p t.points }
+let quaternion q t = { t with points = Path3.quaternion q t.points }
+let quaternion_about_pt q p t = { t with points = Path3.quaternion_about_pt q p t.points }
 let vector_rotate ax r = quaternion (Quaternion.make ax r)
 let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
-let multmatrix m t = { t with points = Path3d.multmatrix m t.points }
-let scale s t = { t with points = Path3d.scale s t.points }
-let mirror ax t = rev_faces { t with points = Path3d.mirror ax t.points }
+let multmatrix m t = { t with points = Path3.multmatrix m t.points }
+let scale s t = { t with points = Path3.scale s t.points }
+let mirror ax t = rev_faces { t with points = Path3.mirror ax t.points }
 let to_scad ?convexity { points; faces; _ } = Scad.polyhedron ?convexity points faces

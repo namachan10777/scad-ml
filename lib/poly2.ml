@@ -8,8 +8,8 @@ type t =
 (* TODO: validate non-intersecting / enough points polygon at creation, and
     protect the type? *)
 let make ?(holes = []) outer = { outer; holes }
-let circle ?fn r = make @@ Path2d.circle ?fn r
-let square ?center dims = make (Path2d.square ?center dims)
+let circle ?fn r = make @@ Path2.circle ?fn r
+let square ?center dims = make (Path2.square ?center dims)
 
 let centroid ?(eps = Util.epsilon) { outer; _ } =
   match outer with
@@ -39,13 +39,13 @@ let area ?(signed = false) { outer; holes } =
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
 let offset ?fn ?fs ?fa ?closed ?check_valid mode t =
-  map (Offset2d.offset ?fn ?fs ?fa ?closed ?check_valid mode) t
+  map (Offset.offset ?fn ?fs ?fa ?closed ?check_valid mode) t
 
-let translate p = map (Path2d.translate p)
-let rotate r = map (Path2d.rotate r)
-let rotate_about_pt r p = map (Path2d.rotate_about_pt r p)
-let scale s = map (Path2d.scale s)
-let mirror ax = map (Path2d.mirror ax)
+let translate p = map (Path2.translate p)
+let rotate r = map (Path2.rotate r)
+let rotate_about_pt r p = map (Path2.rotate_about_pt r p)
+let scale s = map (Path2.scale s)
+let mirror ax = map (Path2.mirror ax)
 
 let to_scad ?convexity { outer; holes } =
   match holes with

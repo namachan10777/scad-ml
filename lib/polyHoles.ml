@@ -159,10 +159,10 @@ let insert_bridge (bridge_start, bridge_end) polys =
   Array.concat [ [| end_to_start; start_to_end |]; rest ]
 
 let partition ?(rev = false) ?(lift = fun { x; y } -> Vec3.v x y 0.) ~holes outer =
-  let outer_sign = Path2d.clockwise_sign outer in
+  let outer_sign = Path2.clockwise_sign outer in
   let flipped = Float.equal (-1.) outer_sign in
   let outer = if flipped then List.rev outer else outer in
-  if not @@ List.for_all (fun h -> Path2d.clockwise_sign h <> outer_sign) holes
+  if not @@ List.for_all (fun h -> Path2.clockwise_sign h <> outer_sign) holes
   then invalid_arg "Holes must have opposite winding direction of the outer polygon.";
   let holes = if flipped then List.map List.rev holes else holes in
   let pos_holes =

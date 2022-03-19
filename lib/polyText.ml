@@ -13,8 +13,8 @@ let path_to_outlines path =
     | MOVE_TO (x, y) -> paths, ps, v2 x y
     | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
-      let bez = Bezier2d.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
-      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
+      let bez = Bezier2.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
+      paths, Bezier2.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
   let ps, _, _ = Path.fold path f ([], [], v2 0. 0.) in
@@ -25,8 +25,8 @@ let pathdata_to_outlines ?(fn = 16) data =
     | MOVE_TO (x, y) -> paths, ps, v2 x y
     | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
-      let bez = Bezier2d.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
-      paths, Bezier2d.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
+      let bez = Bezier2.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
+      paths, Bezier2.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
     | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p
   in
   let ps, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in

@@ -91,7 +91,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
 let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
   let path = Array.of_list path in
   let mode, d =
-    let flip = if closed then Path2d.clockwise_sign' path *. -1. else 1. in
+    let flip = if closed then Path2.clockwise_sign' path *. -1. else 1. in
     match offset with
     | `Delta d   -> `Delta, flip *. d
     | `Chamfer d -> `Chamfer, flip *. d
@@ -178,7 +178,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
             Int.of_float (1. +. s)
           in
           if steps > 1
-          then Path2d.arc_about_centre ~fn:steps ~centre prev_b a
+          then Path2.arc_about_centre ~fn:steps ~centre prev_b a
           else [ sharp_corners.(i) ] )
         else [ sharp_corners.(i) ]
       in

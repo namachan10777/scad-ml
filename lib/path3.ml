@@ -22,7 +22,7 @@ let bbox = function
 
 let arc ?init ?rev ?fn ~centre ~radius ~start angle =
   let arc =
-    Path2d.arc ?rev ?fn ~centre:(Vec3.to_vec2 centre) ~radius ~start angle
+    Path2.arc ?rev ?fn ~centre:(Vec3.to_vec2 centre) ~radius ~start angle
     |> List.map (Vec3.of_vec2 ~z:(Vec3.get_z centre))
   in
   match init with
@@ -36,7 +36,7 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
   let p1' = project p1
   and p2' = project p2
   and centre' = project centre in
-  let arc = lift @@ Path2d.arc_about_centre ?rev ?dir ?fn ~centre:centre' p1' p2' in
+  let arc = lift @@ Path2.arc_about_centre ?rev ?dir ?fn ~centre:centre' p1' p2' in
   match init with
   | Some init -> List.concat [ arc; init ]
   | None      -> arc
@@ -48,7 +48,7 @@ let arc_through ?init ?rev ?fn p1 p2 p3 =
   let p1' = project p1
   and p2' = project p2
   and p3' = project p3 in
-  let arc = lift @@ Path2d.arc_through ?rev ?fn p1' p2' p3' in
+  let arc = lift @@ Path2.arc_through ?rev ?fn p1' p2' p3' in
   match init with
   | Some init -> List.concat [ arc; init ]
   | None      -> arc

@@ -2,7 +2,7 @@ open Util
 open Vec
 
 (* placeholder module, will likely have this stuff in poly3d as rounded_extrude *)
-module R2 = Rounding.Make (Vec2) (Path2d)
+module R2 = Rounding.Make (Vec2) (Path2)
 
 type offset =
   { d : float
@@ -94,8 +94,8 @@ let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape =
   { hole = shape; bot_spec = bot; top_spec = top }
 
 let polyhole_partition ?rev ~holes outer =
-  let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3d.normal outer in
-  let project = Path3d.project plane
+  let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3.normal outer in
+  let project = Path3.project plane
   and lift = Plane.lift plane in
   let holes = List.map project holes in
   let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
@@ -117,8 +117,8 @@ let sweep'
   let shape =
     let reverse =
       match winding with
-      | `CCW     -> Path2d.is_clockwise shape
-      | `CW      -> not @@ Path2d.is_clockwise shape
+      | `CCW     -> Path2.is_clockwise shape
+      | `CW      -> not @@ Path2.is_clockwise shape
       | `NoCheck -> false
     in
     if reverse then List.rev shape else shape
@@ -126,7 +126,7 @@ let sweep'
   let (Spec top) = Option.value ~default:(Spec []) top
   and (Spec bot) = Option.value ~default:(Spec []) bot
   and len = List.length shape
-  and offset = Offset2d.offset_with_faces ?check_valid ?fn ?fs ?fa
+  and offset = Offset.offset_with_faces ?check_valid ?fn ?fs ?fa
   and lift ?z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ?z p) in
   let cap ~top ~m offsets =
     let z_dir, flip_faces = if top then 1., false else -1., true in
@@ -227,15 +227,15 @@ let linear_extrude
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
-    |> Path3d.to_transforms ?scale ?twist
+    |> Path3.to_transforms ?scale ?twist
   in
   sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transforms shape
 
 type patch_edges =
-  { left : Path3d.t
-  ; right : Path3d.t
-  ; top : Path3d.t
-  ; bot : Path3d.t
+  { left : Path3.t
+  ; right : Path3.t
+  ; top : Path3.t
+  ; bot : Path3.t
   }
 
 let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
@@ -259,13 +259,13 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
       let f = if full_degen then Fun.id else fun i -> if i <= fn / 2 then 2 * i else fn in
       Array.init (fn + 1) f
     and bezpatch =
-      Array.map (fun row -> Bezier3d.(curve' @@ make' row)) bp |> Math.transpose
+      Array.map (fun row -> Bezier3.(curve' @@ make' row)) bp |> Math.transpose
     in
     let pts =
       [ bezpatch.(0).(0) ]
       :: List.init fn (fun i ->
              let fn = row_max.(i) + 2 in
-             Bezier3d.(curve ~fn @@ make' bezpatch.(i + 1)) )
+             Bezier3.(curve ~fn @@ make' bezpatch.(i + 1)) )
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
@@ -277,15 +277,15 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     let p = [ bezpatch.(0).(0) ] in
     Mesh.empty, { left = p; right = p; top = p; bot = p }
   | true, false, _, _, _, _ ->
-    let col = Bezier3d.(curve ~fn @@ make' trans_bezpatch.(0)) in
+    let col = Bezier3.(curve ~fn @@ make' trans_bezpatch.(0)) in
     let bot = [ last_element col ] in
     Mesh.empty, { left = col; right = col; top = [ List.hd col ]; bot }
   | false, true, _, _, _, _ ->
-    let row = Bezier3d.(curve ~fn @@ make' bezpatch.(0)) in
+    let row = Bezier3.(curve ~fn @@ make' bezpatch.(0)) in
     let right = [ last_element row ] in
     Mesh.empty, { left = [ List.hd row ]; right; top = row; bot = row }
   | false, false, false, false, false, false ->
-    let pts = Bezier3d.(patch_curve ~fn @@ patch' bezpatch) in
+    let pts = Bezier3.(patch_curve ~fn @@ patch' bezpatch) in
     let left = List.map List.hd pts
     and right = List.map last_element pts
     and mesh = Mesh.of_ragged ~rev:(not rev) pts in
@@ -304,7 +304,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
       a
     in
     let bezpatch =
-      Array.map (fun row -> Bezier3d.(curve' @@ make' row)) trans_bezpatch
+      Array.map (fun row -> Bezier3.(curve' @@ make' row)) trans_bezpatch
       |> Math.transpose
     in
     let pts =
@@ -313,7 +313,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
            (fn - 1)
            (fun j acc ->
              let i = fn - 2 - j in
-             Bezier3d.(curve ~fn:row_count.(i) @@ make' bezpatch.(i + 1)) :: acc )
+             Bezier3.(curve ~fn:row_count.(i) @@ make' bezpatch.(i + 1)) :: acc )
            [ [ bezpatch.(0).(Array.length bezpatch - 1) ] ]
     in
     let left = List.map List.hd pts
@@ -414,7 +414,7 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
 
 let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp =
   let check line =
-    if not (Path3d.is_collinear line) then failwith "Curvature continuity failure."
+    if not (Path3.is_collinear line) then failwith "Curvature continuity failure."
   and w = index_wrap ~len in
   let horiz p i j =
     [ p.(i).(j).(2)
@@ -481,8 +481,8 @@ let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
   check ~show ~msg:"Joint length too large on the bottom face at edges" (patch_in_bad bp)
 
 let roundover_interference label face =
-  let proj = Path3d.(project (to_plane face) face) in
-  if not (Path2d.is_simple proj)
+  let proj = Path3.(project (to_plane face) face) in
+  if not (Path2.is_simple proj)
   then (
     let msg =
       Printf.sprintf
@@ -530,7 +530,7 @@ let prism
     let plane = Plane.make bottom.(0) bottom.(1) bottom.(2) in
     Array.map (Plane.project plane) bottom
   in
-  let bottom_sign = Path2d.clockwise_sign' bot_proj in
+  let bottom_sign = Path2.clockwise_sign' bot_proj in
   let concave =
     let f i =
       let line = Vec2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in
