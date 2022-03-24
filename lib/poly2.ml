@@ -11,6 +11,20 @@ let make ?(holes = []) outer = { outer; holes }
 let circle ?fn r = make @@ Path2.circle ?fn r
 let square ?center dims = make (Path2.square ?center dims)
 
+let ring ?fn ~thickness r =
+  if thickness < r
+  then make ~holes:[ List.rev @@ Path2.circle ?fn (r -. thickness) ] (Path2.circle ?fn r)
+  else invalid_arg "Ring thickness must be less than the outer radius."
+
+let box ?center ~thickness dims =
+  if thickness.x < dims.x && thickness.y < dims.y
+  then (
+    let holes = [ List.rev @@ Path2.square ?center (Vec2.sub dims thickness) ] in
+    make ~holes (Path2.square ?center dims) )
+  else invalid_arg "Box thicknesses must be less than the outer dimensions."
+
+(* TODO: centroid and area can be in Path2 I guess, with adjusted counterparts
+    in here. *)
 let centroid ?(eps = Util.epsilon) { outer; _ } =
   match outer with
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
