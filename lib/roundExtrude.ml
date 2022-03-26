@@ -93,14 +93,6 @@ let flip_d (Spec l) = Spec (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape =
   { hole = shape; bot_spec = bot; top_spec = top }
 
-let polyhole_partition ?rev ~holes outer =
-  let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3.normal outer in
-  let project = Path3.project plane
-  and lift = Plane.lift plane in
-  let holes = List.map project holes in
-  let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
-  Mesh.make ~points ~faces
-
 let sweep'
     ?check_valid
     ?(winding = `CCW)
@@ -195,8 +187,8 @@ let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transf
       List.fold_left f ([], [], []) holes
     in
     let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
-    let bot_lid = polyhole_partition ~rev:true ~holes:tunnel_bots outer_bot
-    and top_lid = polyhole_partition ~holes:tunnel_tops outer_top in
+    let bot_lid = Mesh.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot)
+    and top_lid = Mesh.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in
     Mesh.join (bot_lid :: top_lid :: outer :: tunnels)
 
 let linear_extrude

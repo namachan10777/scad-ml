@@ -7,8 +7,8 @@ type bbox =
   }
 
 let of_tups = List.map Vec3.of_tup
-let of_path2 ?z = List.map (Vec3.of_vec2 ?z)
-let to_path2 = List.map Vec3.to_vec2
+let of_path2 ?(plane = Plane.xy) = Path2.lift plane
+let to_path2 ?(plane = Plane.xy) = List.map (Plane.project plane)
 
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
@@ -20,38 +20,32 @@ let bbox = function
     in
     List.fold_left f { min = hd; max = hd } tl
 
-let arc ?init ?rev ?fn ~centre ~radius ~start angle =
-  let arc =
-    Path2.arc ?rev ?fn ~centre:(Vec3.to_vec2 centre) ~radius ~start angle
-    |> List.map (Vec3.of_vec2 ~z:(Vec3.get_z centre))
-  in
-  match init with
-  | Some init -> List.concat [ arc; init ]
-  | None      -> arc
+let circle ?fn ?(plane = Plane.xy) r = Path2.lift plane (Path2.circle ?fn r)
 
-let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
+let square ?center ?(plane = Plane.xy) dims =
+  List.map (Plane.lift plane) (Path2.square ?center dims)
+
+let arc ?rev ?fn ?(plane = Plane.xy) ?wedge ~centre ~radius ~start angle =
+  Path2.arc ?rev ?fn ?wedge ~centre:(Plane.project plane centre) ~radius ~start angle
+  |> Path2.lift plane
+
+let arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2 =
   let plane = Plane.make centre p1 p2 in
   let project = Plane.project plane
   and lift = List.map (Plane.lift plane) in
   let p1' = project p1
   and p2' = project p2
   and centre' = project centre in
-  let arc = lift @@ Path2.arc_about_centre ?rev ?dir ?fn ~centre:centre' p1' p2' in
-  match init with
-  | Some init -> List.concat [ arc; init ]
-  | None      -> arc
+  lift @@ Path2.arc_about_centre ?rev ?dir ?fn ?wedge ~centre:centre' p1' p2'
 
-let arc_through ?init ?rev ?fn p1 p2 p3 =
+let arc_through ?rev ?fn ?wedge p1 p2 p3 =
   let plane = Plane.make p3 p1 p2 in
   let project = Plane.project plane
   and lift = List.map (Plane.lift plane) in
   let p1' = project p1
   and p2' = project p2
   and p3' = project p3 in
-  let arc = lift @@ Path2.arc_through ?rev ?fn p1' p2' p3' in
-  match init with
-  | Some init -> List.concat [ arc; init ]
-  | None      -> arc
+  lift @@ Path2.arc_through ?rev ?fn ?wedge p1' p2' p3'
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in
@@ -181,7 +175,7 @@ let to_plane = function
   | []         -> invalid_arg "Empty path cannot be converted to plane."
   | point :: t -> Plane.of_normal ~point (normal t)
 
-let project plane = List.map (Plane.project plane)
+let project plane = to_path2 ~plane
 
 let centroid ?(eps = Util.epsilon) = function
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."

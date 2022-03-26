@@ -83,3 +83,9 @@ val is_point_above : t -> Vec3.t -> bool
 val line_angle : t -> Vec3.t * Vec3.t -> float
 
 val to_string : t -> string
+
+(** {1 Basic Workplanes }*)
+
+val xy : t
+val xz : t
+val yz : t

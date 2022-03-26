@@ -5,32 +5,35 @@ type bbox =
   ; max : Vec3.t
   }
 
-val of_tups : (float * float * float) list -> Vec3.t list
-val of_path2 : ?z:float -> Vec2.t list -> Vec3.t list
-val to_path2 : Vec3.t list -> Vec2.t list
-val bbox : Vec3.t list -> bbox
+val of_tups : (float * float * float) list -> t
+val of_path2 : ?plane:Plane.t -> Path2.t -> t
+val to_path2 : ?plane:Plane.t -> t -> Path2.t
+val bbox : t -> bbox
+val circle : ?fn:int -> ?plane:Plane.t -> float -> t
+val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
 val arc
-  :  ?init:Vec3.t list
-  -> ?rev:bool
+  :  ?rev:bool
   -> ?fn:int
+  -> ?plane:Plane.t
+  -> ?wedge:bool
   -> centre:Vec3.t
   -> radius:float
   -> start:float
   -> float
-  -> Vec3.t list
+  -> t
 
 val arc_about_centre
-  :  ?init:Vec3.t list
-  -> ?rev:bool
+  :  ?rev:bool
   -> ?fn:int
   -> ?dir:[ `CW | `CCW ]
+  -> ?wedge:bool
   -> centre:Vec3.t
   -> Vec3.t
   -> Vec3.t
-  -> Vec3.t list
+  -> t
 
-val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec3.t -> Vec3.t -> Vec3.t -> t
+val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec3.t -> Vec3.t -> Vec3.t -> t
 
 val helix
   :  ?fn:int
@@ -74,7 +77,7 @@ val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMat
   Calculate the normal vector of the path [t]. *)
 val normal : t -> Vec3.t
 
-val centroid : ?eps:float -> Vec3.t list -> Vec3.t
+val centroid : ?eps:float -> t -> Vec3.t
 
 (** [area ?signed t]
 

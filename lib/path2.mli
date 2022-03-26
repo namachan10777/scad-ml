@@ -6,8 +6,8 @@ type bbox =
   }
 
 val of_tups : (float * float) list -> t
-val of_path3 : Vec3.t list -> t
-val to_path3 : ?z:float -> t -> Vec3.t list
+val of_path3 : ?plane:Plane.t -> Vec3.t list -> t
+val to_path3 : ?plane:Plane.t -> t -> Vec3.t list
 val clockwise_sign' : Vec2.t array -> float
 val is_clockwise' : Vec2.t array -> bool
 val clockwise_sign : t -> float
@@ -17,11 +17,13 @@ val self_intersections : ?eps:float -> t -> t
 val is_simple' : ?eps:float -> ?closed:bool -> Vec2.t array -> bool
 val is_simple : ?eps:float -> ?closed:bool -> t -> bool
 val bbox : t -> bbox
+val centroid : ?eps:float -> t -> Vec2.t
+val area : ?signed:bool -> t -> float
 
 val arc
-  :  ?init:t
-  -> ?rev:bool
+  :  ?rev:bool
   -> ?fn:int
+  -> ?wedge:bool
   -> centre:Vec2.t
   -> radius:float
   -> start:float
@@ -29,16 +31,16 @@ val arc
   -> t
 
 val arc_about_centre
-  :  ?init:t
-  -> ?rev:bool
+  :  ?rev:bool
   -> ?fn:int
   -> ?dir:[ `CW | `CCW ]
+  -> ?wedge:bool
   -> centre:Vec2.t
   -> Vec2.t
   -> Vec2.t
   -> t
 
-val arc_through : ?init:t -> ?rev:bool -> ?fn:int -> Vec2.t -> Vec2.t -> Vec2.t -> t
+val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec2.t -> t
 
 (** {1 3d conversion} *)
 

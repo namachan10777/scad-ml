@@ -155,11 +155,36 @@ let of_ragged ?(looped = false) ?(rev = false) rows =
     in
     { n_points = Array.length verts; points; faces }
 
-let of_poly3 ?(rev = false) layer =
+let of_path2 ?(rev = false) layer =
+  let n_points, points, face =
+    List.fold_left
+      (fun (n, ps, fs) p -> n + 1, Vec3.of_vec2 p :: ps, n :: fs)
+      (0, [], [])
+      layer
+  in
+  { n_points; points; faces = [ (if rev then List.rev face else face) ] }
+
+let of_path3 ?(rev = false) layer =
   let n_points, points, face =
     List.fold_left (fun (n, ps, fs) p -> n + 1, p :: ps, n :: fs) (0, [], []) layer
   in
   { n_points; points; faces = [ (if rev then List.rev face else face) ] }
+
+let of_poly2 ?rev = function
+  | Poly2.{ outer; holes = [] } -> of_path2 ?rev outer
+  | Poly2.{ outer; holes }      ->
+    let points, faces = PolyHoles.partition ?rev ~holes outer in
+    make ~points ~faces
+
+let of_poly3 ?rev = function
+  | Poly3.{ outer; holes = [] } -> of_path3 ?rev outer
+  | Poly3.{ outer; holes }      ->
+    let plane = Plane.of_normal ~point:(List.hd outer) @@ Path3.normal outer in
+    let project = Path3.project plane
+    and lift = Plane.lift plane in
+    let holes = List.map project holes in
+    let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
+    make ~points ~faces
 
 let of_polygons polys =
   let lengths = Util.array_of_list_map List.length polys in
@@ -173,14 +198,6 @@ let of_polygons polys =
   in
   let faces = List.init n (fun i -> List.init lengths.(i) (fun j -> j + offsets.(i))) in
   { n_points = offsets.(n); points = List.concat polys; faces }
-
-let polyhole_partition ?rev ~holes outer =
-  let plane = Plane.of_normal @@ Path3.normal outer in
-  let project = List.map @@ Plane.project plane
-  and lift = Plane.lift plane in
-  let holes = List.map project holes in
-  let points, faces = PolyHoles.partition ?rev ~lift ~holes (project outer) in
-  make ~points ~faces
 
 let enforce_winding w shape =
   let reverse =

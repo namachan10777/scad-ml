@@ -20,6 +20,10 @@ let of_normal ?(point = Vec3.zero) ({ x; y; z } as normal) =
   if Math.approx 0. n then invalid_arg "Normal cannot be zero.";
   { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot normal point /. n }
 
+let xy = of_normal { x = 0.; y = 0.; z = 1. }
+let xz = of_normal { x = 0.; y = 1.; z = 0. }
+let yz = of_normal { x = 1.; y = 0.; z = 0. }
+
 let project { a; b; c; d } =
   let n = v3 a b c in
   let cp = Vec3.(sdiv (smul n d) (dot n n)) in

@@ -36,10 +36,10 @@ module type Arc = sig
   type vec
 
   val arc_about_centre
-    :  ?init:vec list
-    -> ?rev:bool
+    :  ?rev:bool
     -> ?fn:int
     -> ?dir:[ `CW | `CCW ]
+    -> ?wedge:bool
     -> centre:vec
     -> vec
     -> vec

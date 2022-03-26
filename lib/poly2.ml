@@ -5,10 +5,19 @@ type t =
   ; holes : Vec2.t list list
   }
 
-(* TODO: validate non-intersecting / enough points polygon at creation, and
-    protect the type? *)
+(* TODO: validate non-self-intersecting, enough points in each path, and
+    that none of them interset with eachother, then protect the type.
+    Make optional, but on by default: ?(validate = true)
+   See is_region_simple (and _region_region_intersections) for example:
+     https://github.com/revarbat/BOSL2/blob/master/regions.scad#L230
+     https://github.com/revarbat/BOSL2/blob/master/regions.scad#L419
+*)
 let make ?(holes = []) outer = { outer; holes }
 let circle ?fn r = make @@ Path2.circle ?fn r
+
+let wedge ?fn ~centre ~radius ~start angle =
+  { outer = Path2.arc ?fn ~wedge:true ~centre ~radius ~start angle; holes = [] }
+
 let square ?center dims = make (Path2.square ?center dims)
 
 let ring ?fn ~thickness r =
@@ -23,37 +32,17 @@ let box ?center ~thickness dims =
     make ~holes (Path2.square ?center dims) )
   else invalid_arg "Box thicknesses must be less than the outer dimensions."
 
-(* TODO: centroid and area can be in Path2 I guess, with adjusted counterparts
-    in here. *)
-let centroid ?(eps = Util.epsilon) { outer; _ } =
-  match outer with
-  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
-  | p0 :: p1 :: tl        ->
-    let f (area_sum, p_sum, p1) p2 =
-      let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
-      area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
-    in
-    let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
-    if Math.approx ~eps area_sum 0.
-    then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec2.(sdiv p_sum (area_sum *. 3.))
+let bbox { outer; _ } = Path2.bbox outer
+let centroid ?eps { outer; _ } = Path2.centroid ?eps outer
 
-let area ?(signed = false) { outer; holes } =
-  let aux = function
-    | [] | [ _ ] | [ _; _ ] -> 0.
-    | p0 :: p1 :: tl        ->
-      let f (area, p1) p2 =
-        (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
-      in
-      let area, _ = List.fold_left f (0., p1) tl in
-      (if signed then area else Float.abs area) /. 2.
-  in
-  aux outer -. List.fold_left (fun sum h -> aux h +. sum) 0. holes
+let area ?signed { outer; holes } =
+  Path2.area ?signed outer
+  -. List.fold_left (fun sum h -> Path2.area ?signed h +. sum) 0. holes
 
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
-let offset ?fn ?fs ?fa ?closed ?check_valid mode t =
-  map (Offset.offset ?fn ?fs ?fa ?closed ?check_valid mode) t
+let offset ?fn ?fs ?fa ?closed ?check_valid mode =
+  map (Offset.offset ?fn ?fs ?fa ?closed ?check_valid mode)
 
 let translate p = map (Path2.translate p)
 let rotate r = map (Path2.rotate r)

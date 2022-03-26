@@ -7,8 +7,8 @@ type bbox =
   }
 
 let of_tups = List.map Vec2.of_tup
-let of_path3 = List.map Vec2.of_vec3
-let to_path3 ?z = List.map (Vec2.to_vec3 ?z)
+let of_path3 ?(plane = Plane.xy) = List.map (Plane.project plane)
+let to_path3 ?(plane = Plane.xy) = List.map (Plane.lift plane)
 
 let clockwise_sign' (ps : Vec2.t array) =
   let len = Array.length ps
@@ -87,15 +87,44 @@ let bbox = function
     in
     List.fold_left f { min = hd; max = hd } tl
 
-let arc ?(init = []) ?(rev = false) ?(fn = 10) ~centre:(c : Vec2.t) ~radius ~start angle =
+let centroid ?(eps = Util.epsilon) = function
+  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
+  | p0 :: p1 :: tl        ->
+    let f (area_sum, p_sum, p1) p2 =
+      let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
+      area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
+    in
+    let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
+    if Math.approx ~eps area_sum 0.
+    then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
+    Vec2.(sdiv p_sum (area_sum *. 3.))
+
+let area ?(signed = false) = function
+  | [] | [ _ ] | [ _; _ ] -> 0.
+  | p0 :: p1 :: tl        ->
+    let f (area, p1) p2 =
+      (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
+    in
+    let area, _ = List.fold_left f (0., p1) tl in
+    (if signed then area else Float.abs area) /. 2.
+
+let arc
+    ?(rev = false)
+    ?(fn = 16)
+    ?(wedge = false)
+    ~centre:(c : Vec2.t)
+    ~radius
+    ~start
+    angle
+  =
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =
     let p = v2 ((Float.cos a *. radius) +. c.x) ((Float.sin a *. radius) +. c.y) in
     p :: acc, a +. a_step
-  in
+  and init = if wedge then [ c ] else [] in
   fst @@ Util.fold_init (fn + 1) f (init, if rev then start else start +. angle)
 
-let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
+let arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2 =
   let radius = Vec2.distance centre p1
   and start =
     let { x; y } = Vec2.sub p1 centre in
@@ -111,9 +140,9 @@ let arc_about_centre ?init ?rev ?fn ?dir ~centre p1 p2 =
     | -1., Some `CW | 1., Some `CCW -> ((2. *. Float.pi) -. a) *. Float.neg d
     | _                             -> d *. a
   in
-  arc ?init ?rev ?fn ~centre ~radius ~start angle
+  arc ?rev ?fn ?wedge ~centre ~radius ~start angle
 
-let arc_through ?init ?rev ?fn p1 p2 p3 =
+let arc_through ?rev ?fn ?wedge p1 p2 p3 =
   if Vec2.collinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
   let centre =
     let d =
@@ -124,9 +153,9 @@ let arc_through ?init ?rev ?fn p1 p2 p3 =
     and ny = (m1 *. (p2.x -. p3.x)) +. (m2 *. (p1.x -. p3.x)) in
     v2 (nx /. d) (ny /. d)
   and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CW else `CCW in
-  arc_about_centre ?init ?rev ?fn ~dir ~centre p1 p3
+  arc_about_centre ?rev ?fn ?wedge ~dir ~centre p1 p3
 
-let lift plane = List.map (Plane.lift plane)
+let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)
 let rotate r = List.map (Vec2.rotate r)
 let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)

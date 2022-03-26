@@ -41,20 +41,33 @@ val of_layers : ?caps:caps -> Vec3.t list list -> t
     greater than 2 is encountered. *)
 val of_ragged : ?looped:bool -> ?rev:bool -> Vec3.t list list -> t
 
-(** [of_poly3 ?reverse layer]
+(** [of_path2 ?rev layer]
+
+    *)
+val of_path2 : ?rev:bool -> Path2.t -> t
+
+(** [of_path3 ?rev layer]
 
     Create a mesh from a single layer (a closed loop of {!Vec3.t}), returning a
     {!type:t} with a single face including all of the points. Face winding order
     is reversed if [rev] is [true]. This can be useful for producing a flat
     patch mesh to be combined with other meshes to produce a complete shape. *)
-val of_poly3 : ?rev:bool -> Vec3.t list -> t
+val of_path3 : ?rev:bool -> Path3.t -> t
+
+(** [of_poly2 ?rev poly]
+
+    *)
+val of_poly2 : ?rev:bool -> Poly2.t -> t
+
+(** [of_poly3 ?rev poly]
+
+    *)
+val of_poly3 : ?rev:bool -> Poly3.t -> t
 
 (** [of_polygons polys]
 
     Create a polyhedron mesh from a list of polygonal faces. *)
-val of_polygons : Vec3.t list list -> t
-
-val polyhole_partition : ?rev:bool -> holes:Vec3.t list list -> Vec3.t list -> t
+val of_polygons : Path3.t list -> t
 
 (** [sweep ?caps ?convexity ~transforms shape]
 
