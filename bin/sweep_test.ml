@@ -557,7 +557,7 @@ let rounded_polyhole_sweep () =
         ~transforms
         ~spec:
           (capped
-             ~bot:(round @@ circ (`Radius (-0.8)))
+             ~bot:(round ~holes:`Same @@ circ (`Radius (-0.8)))
              ~top:(round @@ circ (`Radius 0.5)) )
         (Poly2.make ~holes outer))
     |> Mesh.merge_points
