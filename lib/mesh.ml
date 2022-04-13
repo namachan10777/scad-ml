@@ -1,6 +1,15 @@
 open Vec
 open Util
 
+(* TODO:
+  - Think about the best way to integrate in roundExtrude. Since that module is
+    quite long, including private implementation functions, but depends on on
+    the Mesh.t type, it may be best to borrow from the JaneStreet Module0 style.
+  - e.g. Mesh0 has the type, of_layers, of_ragged, as needed by roundExtrude,
+    then Mesh includes Mesh0 and RoundExtrude, and fills in the rest.
+  - if this works out well, then adopting this pattern elsewhere in the library
+    would help to remove some of the messiness from the top level Scad_ml module.
+*)
 module IntTbl = Hashtbl.Make (struct
   type t = int
 
@@ -14,12 +23,12 @@ type t =
   ; faces : int list list
   }
 
-type caps =
-  [ `Capped
-  | `Looped
-  | `Open
-  | `OpenBot
-  | `OpenTop
+type row_wrap =
+  [ `Loop
+  | `Both
+  | `None
+  | `Top
+  | `Bot
   ]
 
 let empty = { n_points = 0; points = []; faces = [] }
@@ -28,11 +37,11 @@ let points t = t.points
 let faces t = t.faces
 let make ~points ~faces = { n_points = List.length points; points; faces }
 
-let of_layers ?(caps = `Capped) layers =
+let of_rows ?(row_wrap = `Both) ?(col_wrap = true) layers =
   let looped =
-    match caps with
-    | `Looped -> true
-    | _       -> false
+    match row_wrap with
+    | `Loop -> true
+    | _     -> false
   in
   match layers with
   | []       -> empty
@@ -44,8 +53,8 @@ let of_layers ?(caps = `Capped) layers =
     if not (List.for_all (fun l -> List.length l = n_facets) tl)
     then invalid_arg "Inconsistent layer length.";
     let faces =
-      let last_seg = n_layers - (if looped then 0 else 1) - 1
-      and last_face = n_facets - 1 in
+      let last_seg = n_layers - if looped then 1 else 2
+      and last_face = n_facets - if col_wrap then 1 else 2 in
       let rec loop acc seg face =
         let acc =
           let s0 = seg mod n_layers
@@ -66,11 +75,11 @@ let of_layers ?(caps = `Capped) layers =
       and top_offset = n_facets * (n_layers - 1) in
       let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
       and top_cap = List.init n_facets (fun i -> i + top_offset) in
-      match caps with
-      | `Capped         -> top_cap :: bottom_cap :: faces
-      | `Open | `Looped -> faces
-      | `OpenBot        -> top_cap :: faces
-      | `OpenTop        -> bottom_cap :: faces
+      match row_wrap with
+      | `Both         -> top_cap :: bottom_cap :: faces
+      | `None | `Loop -> faces
+      | `Top          -> top_cap :: faces
+      | `Bot          -> bottom_cap :: faces
     in
     { n_points = n_layers * n_facets; points; faces = List.rev faces }
 
@@ -208,12 +217,12 @@ let enforce_winding w shape =
   in
   if reverse then List.rev shape else shape
 
-let sweep ?(winding = `CCW) ?caps ~transforms shape =
+let sweep ?(winding = `CCW) ?(loop = false) ~transforms shape =
   let shape = enforce_winding winding shape in
   List.map
     (fun m -> List.map (fun { x; y } -> MultMatrix.transform m (Vec3.v x y 0.)) shape)
     transforms
-  |> of_layers ?caps
+  |> of_rows ~row_wrap:(if loop then `Loop else `Both)
 
 let linear_extrude ?winding ?slices ?fa ?scale ?twist ?(center = false) ~height shape =
   let slices = helical_slices ?fa ?fn:slices (Option.value ~default:0. twist) in
@@ -276,7 +285,7 @@ let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =
     in
     Util.fold_init (y_steps + 1) outer [ edge (min_y -. (0.001 *. y_step)) ]
   in
-  of_layers @@ (edge (max_y +. (0.001 *. y_step)) :: layers)
+  of_rows @@ (edge (max_y +. (0.001 *. y_step)) :: layers)
 
 let polar_plot ?r_step ~max_r plot =
   let r_step, a_steps =
@@ -303,7 +312,7 @@ let polar_plot ?r_step ~max_r plot =
     in
     List.fold_left layer [] angles_rev :: layers
   in
-  of_layers @@ Util.fold_init (r_steps + 1) f [ bot ]
+  of_rows @@ Util.fold_init (r_steps + 1) f [ bot ]
 
 let axial_plot ?(fn = 60) ~min_z ~z_steps ~max_z plot =
   let z_step = (max_z -. min_z) /. Float.of_int z_steps in
@@ -320,7 +329,7 @@ let axial_plot ?(fn = 60) ~min_z ~z_steps ~max_z plot =
     in
     List.fold_left layer [] angles_rev :: layers
   in
-  of_layers @@ Util.fold_init (z_steps + 1) f []
+  of_rows @@ Util.fold_init (z_steps + 1) f []
 
 let join = function
   | [] -> empty

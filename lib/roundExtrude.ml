@@ -9,7 +9,6 @@ type offset =
   ; z : float
   }
 
-(* type spec = Spec : offset list -> spec *)
 type offsets = Offsets : offset list -> offsets
 
 type hole_spec =
@@ -40,12 +39,6 @@ let cap_to_path_spec = function
   | `Flat               -> `Flat
   | `Empty              -> `Empty
   | `Round { outer; _ } -> `Round outer
-
-(* type hole = *)
-(*   { hole : Vec2.t list *)
-(*   ; top_spec : hole_spec option *)
-(*   ; bot_spec : hole_spec option *)
-(*   } *)
 
 type caps =
   { top : cap_spec
@@ -127,15 +120,7 @@ let custom l =
   Offsets
     (List.map (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z }) l)
 
-(* let flip_d = function *)
-(*   | `Flat              -> `Flat *)
-(*   | `Empty             -> `Empty *)
-(*   | `Round (Offsets l) -> *)
-(*     `Round (Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)) *)
 let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
-
-(* let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape = *)
-(*   { hole = shape; bot_spec = bot; top_spec = top } *)
 
 let enforce_winding w shape =
   let reverse =
@@ -165,8 +150,6 @@ let sweep'
     | `Empty                   -> false, []
     | `Round (Offsets offsets) -> sealed, offsets
   in
-  (* let (Spec top) = Option.value ~default:(Spec []) top *)
-  (* and (Spec bot) = Option.value ~default:(Spec []) bot *)
   let close_top, top_offsets = unpack_cap top
   and close_bot, bot_offsets = unpack_cap bot
   and len = List.length shape
@@ -208,13 +191,11 @@ let sweep'
       let f (acc, _last) m = lift m shape :: acc, m in
       List.fold_left f (f ([], hd) hd) tl
     in
-    let mid = Mesh.of_layers ~caps:`Open (List.rev mid)
+    let mid = Mesh.of_rows ~row_wrap:`None (List.rev mid)
     and bot_lid, bot = cap ~top:false ~close:close_bot ~m:hd bot_offsets
     and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
     bot_lid, top_lid, Mesh.join [ bot; mid; top ]
 
-(* TODO: think about the API here. Should it be separate functions since there
-    are so many optionals, including ones that are only relevant for holes? Or no? *)
 let sweep
     ?check_valid
     ?winding
@@ -222,44 +203,24 @@ let sweep
     ?fs
     ?fa
     ?mode
-    ?(spec = `Caps { top = `Flat; bot = `Flat })
+    ?(spec = flat_caps)
     ~transforms
     Poly2.{ outer; holes }
   =
   let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
   match spec, holes with
-  | `Caps { top; bot }, [] ->
+  | `Caps { top; bot }, []    ->
     let top = cap_to_path_spec top
     and bot = cap_to_path_spec bot in
     let _, _, poly = sweep ?winding ~top ~bot outer in
     poly
-  | `Looped, holes ->
+  | `Looped, holes            ->
     let f ~winding path =
       let path = enforce_winding winding path in
       List.map (fun m -> Path2.multmatrix m path) transforms
-      |> Mesh.of_layers ~caps:`Looped
+      |> Mesh.of_rows ~row_wrap:`Loop
     in
     Mesh.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
-  (* | `Caps { top; bot }, holes -> *)
-  (*   let tunnel_bots, tunnel_tops, tunnels = *)
-  (*     let hole_spec outer_spec = function *)
-  (*       | Some `Same          -> outer_spec *)
-  (*       | Some `Flip          -> Option.map flip_d outer_spec *)
-  (*       | Some (`Custom spec) -> Some spec *)
-  (*       | None                -> None *)
-  (*     in *)
-  (*     let f (bots, tops, tuns) { hole; bot_spec; top_spec } = *)
-  (*       let bot = hole_spec bot bot_spec *)
-  (*       and top = hole_spec top top_spec in *)
-  (*       let bot, top, tunnel = sweep ~winding:`CW ~caps:`Open ?top ?bot hole in *)
-  (*       bot :: bots, top :: tops, tunnel :: tuns *)
-  (*     in *)
-  (*     List.fold_left f ([], [], []) holes *)
-  (*   in *)
-  (*   let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in *)
-  (*   let bot_lid = Mesh.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot) *)
-  (*   and top_lid = Mesh.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in *)
-  (*   Mesh.join (bot_lid :: top_lid :: outer :: tunnels) *)
   | `Caps { top; bot }, holes ->
     let n_holes = List.length holes in
     let hole_spec outer_offsets = function
@@ -287,13 +248,6 @@ let sweep
     let top, top_holes = unpack_spec top
     and bot, bot_holes = unpack_spec bot in
     let _, tunnel_bots, tunnel_tops, tunnels =
-      (* let hole_spec outer_spec = function *)
-      (*   | Some `Same          -> outer_spec *)
-      (*   | Some `Flip          -> Option.map flip_d outer_spec *)
-      (*   | Some (`Custom spec) -> Some spec *)
-      (*   | None                -> None *)
-      (* in *)
-      (* let f (i, bots, tops, tuns) { hole; bot_spec; top_spec } = *)
       let f (i, bots, tops, tuns) hole =
         let bot, top, tunnel =
           sweep ~winding:`CW ~sealed:false ~top:(top_holes i) ~bot:(bot_holes i) hole
@@ -322,11 +276,7 @@ let linear_extrude
     ~height
     shape
   =
-  let slices =
-    helical_slices ?fa ?fn:slices twist
-    (* and (Spec top_spec) = Option.value ~default:(Spec []) top *)
-    (* and (Spec bot_spec) = Option.value ~default:(Spec []) bot in *)
-  in
+  let slices = helical_slices ?fa ?fn:slices twist in
   let cap_height = function
     | `Flat | `Empty -> 0.
     | `Round { outer = Offsets l; _ } -> List.fold_left (fun _ { z; _ } -> z) 0. l

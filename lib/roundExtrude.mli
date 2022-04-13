@@ -63,22 +63,6 @@ val looped : spec
 val capped : top:cap_spec -> bot:cap_spec -> spec
 val flat_caps : spec
 val open_caps : spec
-(* val hole : ?bot:hole_spec option -> ?top:hole_spec option -> Vec2.t list -> hole *)
-
-(* val sweep *)
-(*   :  ?check_valid:int option *)
-(*   -> ?winding:[ `CCW | `CW | `NoCheck ] *)
-(*   -> ?fn:int *)
-(*   -> ?fs:float *)
-(*   -> ?fa:float *)
-(*   -> ?mode:[ `Chamfer | `Delta | `Radius ] *)
-(*   -> ?caps:[ `Capped | `Open ] *)
-(*   -> ?top:spec *)
-(*   -> ?bot:spec *)
-(*   -> ?holes:hole list *)
-(*   -> transforms:MultMatrix.t list *)
-(*   -> Vec2.t list *)
-(*   -> Mesh.t *)
 
 val sweep
   :  ?check_valid:int option
@@ -91,25 +75,6 @@ val sweep
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Mesh.t
-
-(* val linear_extrude *)
-(*   :  ?check_valid:int option *)
-(*   -> ?winding:[ `CCW | `CW | `NoCheck ] *)
-(*   -> ?fn:int *)
-(*   -> ?fs:float *)
-(*   -> ?fa:float *)
-(*   -> ?slices:int *)
-(*   -> ?scale:Vec2.t *)
-(*   -> ?twist:float *)
-(*   -> ?center:bool *)
-(*   -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ] *)
-(*   -> ?caps:[ `Capped | `Open ] *)
-(*   -> ?top:spec *)
-(*   -> ?bot:spec *)
-(*   -> ?holes:hole list *)
-(*   -> height:float *)
-(*   -> Vec2.t list *)
-(*   -> Mesh.t *)
 
 val linear_extrude
   :  ?check_valid:int option

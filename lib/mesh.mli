@@ -1,11 +1,11 @@
 type t
 
-type caps =
-  [ `Capped
-  | `Looped
-  | `Open
-  | `OpenBot
-  | `OpenTop
+type row_wrap =
+  [ `Loop
+  | `Both
+  | `None
+  | `Top
+  | `Bot
   ]
 
 val empty : t
@@ -14,18 +14,19 @@ val points : t -> Vec3.t list
 val faces : t -> int list list
 val make : points:Vec3.t list -> faces:int list list -> t
 
-(** [of_layers ?caps layers]
+(** [of_rows ?row_wrap ?col_wrap rows]
 
     Create a {!type:t} representing a polyhedron from a list of layers
-    (counter_clockwise loops of 3d points). [caps] defaults to [`Capped], which
+    (counter_clockwise loops of 3d points). [row_wrap] defaults to [`Both], which
     specifies that faces should be generated to close off the bottom and top
-   layers of the generated shape. If it is instead set to [`Looped], the open
+   layers of the generated shape. If it is instead set to [`Loop], the open
    faces of the first and last layers will be closed with one another. For more
    advanced usages, one or both of the caps can be left open, so the resulting
-   meshes can be closed off by some other means. If [layers] is empty, a
-   {!empty} is returned.  Throws [Invalid_argument] if [layers] contains only
-   one layer, or if it is not rectangular (any layer differs in length). *)
-val of_layers : ?caps:caps -> Vec3.t list list -> t
+   meshes can be closed off by some other means. [col_wrap] sets whether faces
+    should be generated to loop between the ends of each row. If [rows] is empty, a
+   {!empty} is returned.  Throws [Invalid_argument] if [rows] contains only
+   one row, or if it is not rectangular (any row differs in length). *)
+val of_rows : ?row_wrap:row_wrap -> ?col_wrap:bool -> Vec3.t list list -> t
 
 (** [of_ragged ?looped ?reverse rows]
 
@@ -69,14 +70,13 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal faces. *)
 val of_polygons : Path3.t list -> t
 
-(** [sweep ?caps ?convexity ~transforms shape]
+(** [sweep ?winding ?loop ?convexity ~transforms shape]
 
     Create a polyhedron by sweeping the given [shape], described as a 2d
-    polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn.
-    See {!of_layers} for an breakdown of the options made available by [caps]. *)
+    polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn. *)
 val sweep
   :  ?winding:[ `CCW | `CW | `NoCheck ]
-  -> ?caps:caps
+  -> ?loop:bool
   -> transforms:MultMatrix.t list
   -> Vec2.t list
   -> t
@@ -106,6 +106,8 @@ val helix_extrude
   -> Vec2.t list
   -> t
 
+(** {1 Function Plotting} *)
+
 val cartesian_plot
   :  min_x:float
   -> x_steps:int
@@ -125,6 +127,8 @@ val axial_plot
   -> max_z:float
   -> (z:float -> a:float -> float)
   -> t
+
+(** {1 Mesh Utilities} *)
 
 val join : t list -> t
 val merge_points : ?eps:float -> t -> t

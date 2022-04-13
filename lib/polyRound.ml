@@ -210,7 +210,7 @@ let polyround_sweep ?(min_r = 0.01) ?(fn = 4) ?cap_fn ~transforms ~r1 ~r2 rps =
       in
       cap_points ~init true last_transform
   in
-  Mesh.of_layers (List.rev layers)
+  Mesh.of_rows (List.rev layers)
 
 let polyround_extrude
     ?min_r
