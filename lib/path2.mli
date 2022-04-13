@@ -58,6 +58,7 @@ val rotate : float -> t -> t
 val rotate_about_pt : float -> Vec2.t -> t -> t
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
+val multmatrix : MultMatrix.t -> t -> Vec3.t list
 
 (** {1 Output} *)
 

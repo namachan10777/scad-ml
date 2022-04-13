@@ -161,6 +161,7 @@ let rotate r = List.map (Vec2.rotate r)
 let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)
 let scale s = List.map (Vec2.scale s)
 let mirror ax = List.map (Vec2.mirror ax)
+let multmatrix m = List.map (fun { x; y } -> MultMatrix.transform m (v3 x y 0.))
 
 let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in

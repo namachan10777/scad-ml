@@ -202,8 +202,8 @@ let of_polygons polys =
 let enforce_winding w shape =
   let reverse =
     match w with
-    | `CCW     -> Float.equal (Path2.clockwise_sign shape) 1.
-    | `CW      -> Float.equal (Path2.clockwise_sign shape) (-1.)
+    | `CCW     -> Path2.is_clockwise shape
+    | `CW      -> not @@ Path2.is_clockwise shape
     | `NoCheck -> false
   in
   if reverse then List.rev shape else shape

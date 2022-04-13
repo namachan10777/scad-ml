@@ -9,20 +9,59 @@ type offset =
   ; z : float
   }
 
-type spec = Spec : offset list -> spec
+(* type spec = Spec : offset list -> spec *)
+type offsets = Offsets : offset list -> offsets
 
 type hole_spec =
   [ `Same
   | `Flip
-  | `Custom of spec
+  | `Custom of offsets
+  | `Mix of [ `Same | `Flip | `Custom of offsets ] list
   ]
 
-type hole =
-  { hole : Vec2.t list
-  ; top_spec : hole_spec option
-  ; bot_spec : hole_spec option
+type poly_spec =
+  { outer : offsets
+  ; holes : hole_spec
   }
 
+type cap_spec =
+  [ `Empty
+  | `Flat
+  | `Round of poly_spec
+  ]
+
+type path_spec =
+  [ `Empty
+  | `Flat
+  | `Round of offsets
+  ]
+
+let cap_to_path_spec = function
+  | `Flat               -> `Flat
+  | `Empty              -> `Empty
+  | `Round { outer; _ } -> `Round outer
+
+(* type hole = *)
+(*   { hole : Vec2.t list *)
+(*   ; top_spec : hole_spec option *)
+(*   ; bot_spec : hole_spec option *)
+(*   } *)
+
+type caps =
+  { top : cap_spec
+  ; bot : cap_spec
+  }
+
+type spec =
+  [ `Looped
+  | `Caps of caps
+  ]
+
+let round ?(holes = `Flip) outer = `Round { outer; holes }
+let looped = `Looped
+let capped ~top ~bot = `Caps { top; bot }
+let flat_caps = `Caps { top = `Flat; bot = `Flat }
+let open_caps = `Caps { top = `Empty; bot = `Empty }
 let quantize = Math.quant ~q:(1. /. 1024.)
 
 let radius_of_spec = function
@@ -40,7 +79,7 @@ let chamf ?(angle = Float.pi /. 4.) ?cut ?width ?height () =
     | None, None, None     ->
       invalid_arg "At least one of cut, width, or height must be specified for chamfer."
   in
-  Spec [ { d = -.width; z = Float.abs height } ]
+  Offsets [ { d = -.width; z = Float.abs height } ]
 
 let circ ?(fn = 16) spec =
   let radius = radius_of_spec spec in
@@ -51,7 +90,7 @@ let circ ?(fn = 16) spec =
     ; z = quantize (Float.abs radius *. Float.sin (i *. step))
     }
   in
-  Spec (List.init fn f)
+  Offsets (List.init fn f)
 
 let tear ?(fn = 16) spec =
   let radius = radius_of_spec spec in
@@ -65,7 +104,7 @@ let tear ?(fn = 16) spec =
       } )
     else { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = Float.abs radius }
   in
-  Spec (List.init (fn + 1) f)
+  Offsets (List.init (fn + 1) f)
 
 let bez ?(curv = 0.5) ?(fn = 16) spec =
   let joint =
@@ -73,7 +112,7 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
     | `Joint j -> j
     | `Cut c   -> 16. *. c /. Float.sqrt 2. /. (1. +. (4. *. curv))
   in
-  Spec
+  Offsets
     ( R2.bez_corner
         ~fn:(Int.max 1 fn + 2)
         ~curv
@@ -85,13 +124,27 @@ let bez ?(curv = 0.5) ?(fn = 16) spec =
     |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
 
 let custom l =
-  Spec
+  Offsets
     (List.map (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z }) l)
 
-let flip_d (Spec l) = Spec (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
+(* let flip_d = function *)
+(*   | `Flat              -> `Flat *)
+(*   | `Empty             -> `Empty *)
+(*   | `Round (Offsets l) -> *)
+(*     `Round (Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)) *)
+let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 
-let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape =
-  { hole = shape; bot_spec = bot; top_spec = top }
+(* let hole ?(bot = Some `Flip) ?(top = Some `Flip) shape = *)
+(*   { hole = shape; bot_spec = bot; top_spec = top } *)
+
+let enforce_winding w shape =
+  let reverse =
+    match w with
+    | `CCW     -> Path2.is_clockwise shape
+    | `CW      -> not @@ Path2.is_clockwise shape
+    | `NoCheck -> false
+  in
+  if reverse then List.rev shape else shape
 
 let sweep'
     ?check_valid
@@ -100,27 +153,26 @@ let sweep'
     ?fs
     ?fa
     ?(mode = `Radius)
-    ?(caps = `Capped)
-    ?top
-    ?bot
+    ?(sealed = true)
+    ~top
+    ~bot
     ~transforms
     shape
   =
-  let shape =
-    let reverse =
-      match winding with
-      | `CCW     -> Path2.is_clockwise shape
-      | `CW      -> not @@ Path2.is_clockwise shape
-      | `NoCheck -> false
-    in
-    if reverse then List.rev shape else shape
+  let shape = enforce_winding winding shape in
+  let unpack_cap = function
+    | `Flat                    -> sealed, []
+    | `Empty                   -> false, []
+    | `Round (Offsets offsets) -> sealed, offsets
   in
-  let (Spec top) = Option.value ~default:(Spec []) top
-  and (Spec bot) = Option.value ~default:(Spec []) bot
+  (* let (Spec top) = Option.value ~default:(Spec []) top *)
+  (* and (Spec bot) = Option.value ~default:(Spec []) bot *)
+  let close_top, top_offsets = unpack_cap top
+  and close_bot, bot_offsets = unpack_cap bot
   and len = List.length shape
   and offset = Offset.offset_with_faces ?check_valid ?fn ?fs ?fa
   and lift ?z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ?z p) in
-  let cap ~top ~m offsets =
+  let cap ~top ~close ~m offsets =
     let z_dir, flip_faces = if top then 1., false else -1., true in
     let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
       let spec =
@@ -136,20 +188,20 @@ let sweep'
       List.fold_left f ([ lift m shape ], [], 0, shape, len, 0.) offsets
     in
     let faces =
-      match caps with
-      | `Capped ->
+      if close
+      then (
         let close =
           if flip_faces then fun i _ -> last_len + idx - i - 1 else fun i _ -> i + idx
         in
-        List.mapi close last_shape :: List.concat faces
-      | `Open   -> List.concat faces
+        List.mapi close last_shape :: List.concat faces )
+      else List.concat faces
     in
     List.hd points, Mesh.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
   | []       ->
-    let bot_lid, bot = cap ~top:false ~m:MultMatrix.id bot
-    and top_lid, top = cap ~top:true ~m:MultMatrix.id top in
+    let bot_lid, bot = cap ~top:false ~close:close_top ~m:MultMatrix.id bot_offsets
+    and top_lid, top = cap ~top:true ~close:close_bot ~m:MultMatrix.id top_offsets in
     bot_lid, top_lid, Mesh.join [ bot; top ]
   | hd :: tl ->
     let mid, last_transform =
@@ -157,36 +209,100 @@ let sweep'
       List.fold_left f (f ([], hd) hd) tl
     in
     let mid = Mesh.of_layers ~caps:`Open (List.rev mid)
-    and bot_lid, bot = cap ~top:false ~m:hd bot
-    and top_lid, top = cap ~top:true ~m:last_transform top in
+    and bot_lid, bot = cap ~top:false ~close:close_bot ~m:hd bot_offsets
+    and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
     bot_lid, top_lid, Mesh.join [ bot; mid; top ]
 
 (* TODO: think about the API here. Should it be separate functions since there
     are so many optionals, including ones that are only relevant for holes? Or no? *)
-let sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transforms shape
+let sweep
+    ?check_valid
+    ?winding
+    ?fn
+    ?fs
+    ?fa
+    ?mode
+    ?(spec = `Caps { top = `Flat; bot = `Flat })
+    ~transforms
+    Poly2.{ outer; holes }
   =
   let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
-  match holes with
-  | None       ->
-    let _, _, poly = sweep ?winding ?caps ?top ?bot shape in
+  match spec, holes with
+  | `Caps { top; bot }, [] ->
+    let top = cap_to_path_spec top
+    and bot = cap_to_path_spec bot in
+    let _, _, poly = sweep ?winding ~top ~bot outer in
     poly
-  | Some holes ->
-    let tunnel_bots, tunnel_tops, tunnels =
-      let hole_spec outer_spec = function
-        | Some `Same          -> outer_spec
-        | Some `Flip          -> Option.map flip_d outer_spec
-        | Some (`Custom spec) -> Some spec
-        | None                -> None
-      in
-      let f (bots, tops, tuns) { hole; bot_spec; top_spec } =
-        let bot = hole_spec bot bot_spec
-        and top = hole_spec top top_spec in
-        let bot, top, tunnel = sweep ~winding:`CW ~caps:`Open ?top ?bot hole in
-        bot :: bots, top :: tops, tunnel :: tuns
-      in
-      List.fold_left f ([], [], []) holes
+  | `Looped, holes ->
+    let f ~winding path =
+      let path = enforce_winding winding path in
+      List.map (fun m -> Path2.multmatrix m path) transforms
+      |> Mesh.of_layers ~caps:`Looped
     in
-    let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in
+    Mesh.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
+  (* | `Caps { top; bot }, holes -> *)
+  (*   let tunnel_bots, tunnel_tops, tunnels = *)
+  (*     let hole_spec outer_spec = function *)
+  (*       | Some `Same          -> outer_spec *)
+  (*       | Some `Flip          -> Option.map flip_d outer_spec *)
+  (*       | Some (`Custom spec) -> Some spec *)
+  (*       | None                -> None *)
+  (*     in *)
+  (*     let f (bots, tops, tuns) { hole; bot_spec; top_spec } = *)
+  (*       let bot = hole_spec bot bot_spec *)
+  (*       and top = hole_spec top top_spec in *)
+  (*       let bot, top, tunnel = sweep ~winding:`CW ~caps:`Open ?top ?bot hole in *)
+  (*       bot :: bots, top :: tops, tunnel :: tuns *)
+  (*     in *)
+  (*     List.fold_left f ([], [], []) holes *)
+  (*   in *)
+  (*   let outer_bot, outer_top, outer = sweep ~winding:`CCW ~caps:`Open ?top ?bot shape in *)
+  (*   let bot_lid = Mesh.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot) *)
+  (*   and top_lid = Mesh.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in *)
+  (*   Mesh.join (bot_lid :: top_lid :: outer :: tunnels) *)
+  | `Caps { top; bot }, holes ->
+    let n_holes = List.length holes in
+    let hole_spec outer_offsets = function
+      | `Same        -> fun _ -> `Round outer_offsets
+      | `Flip        ->
+        let flipped = flip_d outer_offsets in
+        fun _ -> `Round flipped
+      | `Custom offs -> fun _ -> `Round offs
+      | `Mix specs   ->
+        let specs = Array.of_list specs in
+        if Array.length specs = n_holes
+        then
+          fun i ->
+          match Array.get specs i with
+          | `Same        -> `Round outer_offsets
+          | `Flip        -> `Round (flip_d outer_offsets)
+          | `Custom offs -> `Round offs
+        else invalid_arg "Mixed hole specs must match the number of holes."
+    in
+    let unpack_spec = function
+      | `Flat                   -> `Flat, fun _ -> `Flat
+      | `Empty                  -> `Empty, fun _ -> `Empty
+      | `Round { outer; holes } -> `Round outer, hole_spec outer holes
+    in
+    let top, top_holes = unpack_spec top
+    and bot, bot_holes = unpack_spec bot in
+    let _, tunnel_bots, tunnel_tops, tunnels =
+      (* let hole_spec outer_spec = function *)
+      (*   | Some `Same          -> outer_spec *)
+      (*   | Some `Flip          -> Option.map flip_d outer_spec *)
+      (*   | Some (`Custom spec) -> Some spec *)
+      (*   | None                -> None *)
+      (* in *)
+      (* let f (i, bots, tops, tuns) { hole; bot_spec; top_spec } = *)
+      let f (i, bots, tops, tuns) hole =
+        let bot, top, tunnel =
+          sweep ~winding:`CW ~sealed:false ~top:(top_holes i) ~bot:(bot_holes i) hole
+        in
+        i + 1, bot :: bots, top :: tops, tunnel :: tuns
+      in
+      List.fold_left f (0, [], [], []) holes
+    in
+    let outer_bot, outer_top, outer = sweep ~winding:`CCW ~sealed:false ~top ~bot outer in
     let bot_lid = Mesh.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot)
     and top_lid = Mesh.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in
     Mesh.join (bot_lid :: top_lid :: outer :: tunnels)
@@ -202,18 +318,21 @@ let linear_extrude
     ?(twist = 0.)
     ?(center = false)
     ?mode
-    ?caps
-    ?top
-    ?bot
-    ?holes
+    ?(caps = { top = `Flat; bot = `Flat })
     ~height
     shape
   =
-  let slices = helical_slices ?fa ?fn:slices twist
-  and (Spec top_spec) = Option.value ~default:(Spec []) top
-  and (Spec bot_spec) = Option.value ~default:(Spec []) bot in
-  let bot_height = List.fold_left (fun _ { z; _ } -> z) 0. bot_spec
-  and top_height = List.fold_left (fun _ { z; _ } -> z) 0. top_spec in
+  let slices =
+    helical_slices ?fa ?fn:slices twist
+    (* and (Spec top_spec) = Option.value ~default:(Spec []) top *)
+    (* and (Spec bot_spec) = Option.value ~default:(Spec []) bot in *)
+  in
+  let cap_height = function
+    | `Flat | `Empty -> 0.
+    | `Round { outer = Offsets l; _ } -> List.fold_left (fun _ { z; _ } -> z) 0. l
+  in
+  let bot_height = cap_height caps.bot
+  and top_height = cap_height caps.top in
   let z = if center then height /. -2. else bot_height
   and s = Float.max 0. (height -. bot_height -. top_height) /. Float.of_int slices
   and twist = if Float.abs twist > 0. then Some twist else None in
@@ -221,7 +340,7 @@ let linear_extrude
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3.to_transforms ?scale ?twist
   in
-  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?caps ?top ?bot ?holes ~transforms shape
+  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ~spec:(`Caps caps) ~transforms shape
 
 type patch_edges =
   { left : Path3.t
