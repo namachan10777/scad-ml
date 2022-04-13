@@ -406,17 +406,14 @@ let offset_sweep () =
   in
   let scad =
     Rounding2.corners ~fn:30 shape_spec
+    |> Poly2.make
     |> RoundExtrude.(
-         sweep (* ~mode:`Chamfer *)
+         sweep
            ~transforms
-             (* ~bot:(circ (`Radius (-1.))) *)
-             (* ~top:(circ (`Radius 0.1))) *)
-           ~bot:(tear (`Radius (-1.)))
-           ~top:(tear (`Radius 0.5)))
-    (* ~bot:(chamf (`Cut 0.2) (`Angle (Float.pi /. 4.))) *)
-    (* ~top:(chamf (`Cut 0.2) (`Angle (Float.pi /. 4.)))) *)
-    (* ~bot:(bez (`Joint 0.2)) *)
-    (* ~top:(bez (`Joint 0.2))) *)
+           ~spec:
+             (capped
+                ~bot:(round @@ tear (`Radius (-1.)))
+                ~top:(round @@ tear (`Radius 0.5)) ))
     |> Mesh.to_scad
   and oc = open_out "offset_sweep.scad" in
   Scad.write oc scad;
@@ -427,15 +424,16 @@ let offset_linear_extrude () =
     let shape = Path2.square ~center:true (v2 3. 3.) in
     Rounding2.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
     |> List.map (Vec2.translate (v2 1.5 1.5))
-    |> RoundExtrude.linear_extrude
-         ~slices:100
-         ~fn:16
-         ~scale:(v2 4. 4.)
-         ~twist:(2. *. Float.pi)
-         ~center:false
-         ~bot:(RoundExtrude.circ (`Radius (-0.2)))
-         ~top:(RoundExtrude.bez (`Cut 0.1)) (* ~top:(RoundExtrude.chamf ~cut:(-0.1) ()) *)
-         ~height:10.
+    |> Poly2.make
+    |> RoundExtrude.(
+         linear_extrude
+           ~slices:100
+           ~fn:16
+           ~scale:(v2 4. 4.)
+           ~twist:(2. *. Float.pi)
+           ~center:false
+           ~caps:{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
+           ~height:10.)
     |> Mesh.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
   Scad.write oc scad;
@@ -548,11 +546,7 @@ let rounded_polyhole_sweep () =
     let holes =
       let s = Path2.circle ~fn:90 2.
       and d = 2. in
-      Path2.(
-        RoundExtrude.
-          [ hole ~bot:(Some `Same) @@ translate (v2 (-.d) (-.d)) s
-          ; hole ~bot:(Some `Same) @@ translate (v2 d d) s
-          ])
+      Path2.[ translate (v2 (-.d) (-.d)) s; translate (v2 d d) s ]
     and outer =
       Path2.square ~center:true (v2 10. 10.)
       |> Rounding2.(flat ~spec:(chamf (`Width 1.)))
@@ -561,10 +555,11 @@ let rounded_polyhole_sweep () =
     RoundExtrude.(
       sweep
         ~transforms
-        ~bot:(circ (`Radius (-0.8)))
-        ~top:(circ (`Radius 0.5))
-        ~holes
-        outer)
+        ~spec:
+          (capped
+             ~bot:(round @@ circ (`Radius (-0.8)))
+             ~top:(round @@ circ (`Radius 0.5)) )
+        (Poly2.make ~holes outer))
     |> Mesh.merge_points
     |> Mesh.to_scad
   and oc = open_out "rounded_polyhole_sweep.scad" in
