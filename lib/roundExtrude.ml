@@ -1,135 +1,130 @@
 open Util
 open Vec
-
-(* placeholder module, will likely have this stuff in poly3d as rounded_extrude *)
 module R2 = Rounding.Make (Vec2) (Path2)
 
-type offset =
-  { d : float
-  ; z : float
-  }
-
-type offsets = Offsets : offset list -> offsets
-
-type hole_spec =
-  [ `Same
-  | `Flip
-  | `Custom of offsets
-  | `Mix of [ `Same | `Flip | `Custom of offsets ] list
-  ]
-
-type poly_spec =
-  { outer : offsets
-  ; holes : hole_spec
-  }
-
-type cap_spec =
-  [ `Empty
-  | `Flat
-  | `Round of poly_spec
-  ]
-
-type path_spec =
-  [ `Empty
-  | `Flat
-  | `Round of offsets
-  ]
-
-let cap_to_path_spec = function
-  | `Flat               -> `Flat
-  | `Empty              -> `Empty
-  | `Round { outer; _ } -> `Round outer
-
-type caps =
-  { top : cap_spec
-  ; bot : cap_spec
-  }
-
-type spec =
-  [ `Looped
-  | `Caps of caps
-  ]
-
-let round ?(holes = `Flip) outer = `Round { outer; holes }
-let looped = `Looped
-let capped ~top ~bot = `Caps { top; bot }
-let flat_caps = `Caps { top = `Flat; bot = `Flat }
-let open_caps = `Caps { top = `Empty; bot = `Empty }
-let quantize = Math.quant ~q:(1. /. 1024.)
-
-let radius_of_spec = function
-  | `Radius r -> r
-  | `Cut c    -> c /. (Float.sqrt 2. -. 1.)
-
-let chamf ?(angle = Float.pi /. 4.) ?cut ?width ?height () =
-  let a = Float.(min (pi /. 2.) (abs angle)) in
-  let width, height =
-    match width, height, cut with
-    | _, _, Some c         -> c /. Float.cos a, c /. Float.sin a
-    | Some w, Some h, None -> w, h
-    | Some w, None, None   -> w, w /. Float.tan a
-    | None, Some h, None   -> h *. Float.tan a, h
-    | None, None, None     ->
-      invalid_arg "At least one of cut, width, or height must be specified for chamfer."
-  in
-  Offsets [ { d = -.width; z = Float.abs height } ]
-
-let circ ?(fn = 16) spec =
-  let radius = radius_of_spec spec in
-  let step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
-  let f i =
-    let i = Float.of_int (i + 1) in
-    { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
-    ; z = quantize (Float.abs radius *. Float.sin (i *. step))
+module Spec = struct
+  type offset =
+    { d : float
+    ; z : float
     }
-  in
-  Offsets (List.init fn f)
 
-let tear ?(fn = 16) spec =
-  let radius = radius_of_spec spec in
-  let step = Float.pi /. 4. /. Float.of_int (Int.max 3 fn) in
-  let f i =
-    if i < fn
-    then (
+  type offsets = Offsets : offset list -> offsets
+
+  type holes =
+    [ `Same
+    | `Flip
+    | `Custom of offsets
+    | `Mix of [ `Same | `Flip | `Custom of offsets ] list
+    ]
+
+  type poly =
+    { outer : offsets
+    ; holes : holes
+    }
+
+  type cap =
+    [ `Empty
+    | `Flat
+    | `Round of poly
+    ]
+
+  type path =
+    [ `Empty
+    | `Flat
+    | `Round of offsets
+    ]
+
+  let cap_to_path = function
+    | `Flat               -> `Flat
+    | `Empty              -> `Empty
+    | `Round { outer; _ } -> `Round outer
+
+  type caps =
+    { top : cap
+    ; bot : cap
+    }
+
+  type t =
+    [ `Looped
+    | `Caps of caps
+    ]
+
+  let round ?(holes = `Flip) outer = `Round { outer; holes }
+  let looped = `Looped
+  let capped ~top ~bot = `Caps { top; bot }
+  let flat_caps = `Caps { top = `Flat; bot = `Flat }
+  let open_caps = `Caps { top = `Empty; bot = `Empty }
+  let quantize = Math.quant ~q:(1. /. 1024.)
+
+  let radius_of_roundover = function
+    | `Radius r -> r
+    | `Cut c    -> c /. (Float.sqrt 2. -. 1.)
+
+  let chamf ?(angle = Float.pi /. 4.) ?cut ?width ?height () =
+    let a = Float.(min (pi /. 2.) (abs angle)) in
+    let width, height =
+      match width, height, cut with
+      | _, _, Some c         -> c /. Float.cos a, c /. Float.sin a
+      | Some w, Some h, None -> w, h
+      | Some w, None, None   -> w, w /. Float.tan a
+      | None, Some h, None   -> h *. Float.tan a, h
+      | None, None, None     ->
+        invalid_arg "At least one of cut, width, or height must be specified for chamfer."
+    in
+    Offsets [ { d = -.width; z = Float.abs height } ]
+
+  let circ ?(fn = 16) roundover =
+    let radius = radius_of_roundover roundover in
+    let step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
+    let f i =
       let i = Float.of_int (i + 1) in
       { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
       ; z = quantize (Float.abs radius *. Float.sin (i *. step))
-      } )
-    else { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = Float.abs radius }
-  in
-  Offsets (List.init (fn + 1) f)
+      }
+    in
+    Offsets (List.init fn f)
 
-let bez ?(curv = 0.5) ?(fn = 16) spec =
-  let joint =
-    match spec with
-    | `Joint j -> j
-    | `Cut c   -> 16. *. c /. Float.sqrt 2. /. (1. +. (4. *. curv))
-  in
-  Offsets
-    ( R2.bez_corner
-        ~fn:(Int.max 1 fn + 2)
-        ~curv
-        ~spec:(`Joint joint)
-        Vec2.zero
-        (v2 0. (Float.abs joint))
-        (v2 (-.joint) (Float.abs joint))
-    |> List.tl
-    |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
+  let tear ?(fn = 16) roundover =
+    let radius = radius_of_roundover roundover in
+    let step = Float.pi /. 4. /. Float.of_int (Int.max 3 fn) in
+    let f i =
+      if i < fn
+      then (
+        let i = Float.of_int (i + 1) in
+        { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
+        ; z = quantize (Float.abs radius *. Float.sin (i *. step))
+        } )
+      else { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = Float.abs radius }
+    in
+    Offsets (List.init (fn + 1) f)
 
-let custom l =
-  Offsets
-    (List.map (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z }) l)
+  let bez ?(curv = 0.5) ?(fn = 16) spec =
+    let joint =
+      match spec with
+      | `Joint j -> j
+      | `Cut c   -> 16. *. c /. Float.sqrt 2. /. (1. +. (4. *. curv))
+    in
+    Offsets
+      ( R2.bez_corner
+          ~fn:(Int.max 1 fn + 2)
+          ~curv
+          ~spec:(`Joint joint)
+          Vec2.zero
+          (v2 0. (Float.abs joint))
+          (v2 (-.joint) (Float.abs joint))
+      |> List.tl
+      |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
 
-let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
+  let custom l =
+    Offsets
+      (List.map
+         (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z })
+         l )
 
-let enforce_winding w shape =
-  let reverse =
-    match w with
-    | `CCW     -> Path2.is_clockwise shape
-    | `CW      -> not @@ Path2.is_clockwise shape
-    | `NoCheck -> false
-  in
-  if reverse then List.rev shape else shape
+  let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
+end
+
+open Spec
 
 let sweep'
     ?check_valid
@@ -144,7 +139,7 @@ let sweep'
     ~transforms
     shape
   =
-  let shape = enforce_winding winding shape in
+  let shape = Mesh0.enforce_winding winding shape in
   let unpack_cap = function
     | `Flat                    -> sealed, []
     | `Empty                   -> false, []
@@ -179,22 +174,22 @@ let sweep'
         List.mapi close last_shape :: List.concat faces )
       else List.concat faces
     in
-    List.hd points, Mesh.make ~points:List.(concat (rev points)) ~faces
+    List.hd points, Mesh0.make ~points:List.(concat (rev points)) ~faces
   in
   match transforms with
   | []       ->
     let bot_lid, bot = cap ~top:false ~close:close_top ~m:MultMatrix.id bot_offsets
     and top_lid, top = cap ~top:true ~close:close_bot ~m:MultMatrix.id top_offsets in
-    bot_lid, top_lid, Mesh.join [ bot; top ]
+    bot_lid, top_lid, Mesh0.join [ bot; top ]
   | hd :: tl ->
     let mid, last_transform =
       let f (acc, _last) m = lift m shape :: acc, m in
       List.fold_left f (f ([], hd) hd) tl
     in
-    let mid = Mesh.of_rows ~row_wrap:`None (List.rev mid)
+    let mid = Mesh0.of_rows ~row_wrap:`None (List.rev mid)
     and bot_lid, bot = cap ~top:false ~close:close_bot ~m:hd bot_offsets
     and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
-    bot_lid, top_lid, Mesh.join [ bot; mid; top ]
+    bot_lid, top_lid, Mesh0.join [ bot; mid; top ]
 
 let sweep
     ?check_valid
@@ -210,17 +205,17 @@ let sweep
   let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
   match spec, holes with
   | `Caps { top; bot }, []    ->
-    let top = cap_to_path_spec top
-    and bot = cap_to_path_spec bot in
+    let top = cap_to_path top
+    and bot = cap_to_path bot in
     let _, _, poly = sweep ?winding ~top ~bot outer in
     poly
   | `Looped, holes            ->
     let f ~winding path =
-      let path = enforce_winding winding path in
+      let path = Mesh0.enforce_winding winding path in
       List.map (fun m -> Path2.multmatrix m path) transforms
-      |> Mesh.of_rows ~row_wrap:`Loop
+      |> Mesh0.of_rows ~row_wrap:`Loop
     in
-    Mesh.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
+    Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
   | `Caps { top; bot }, holes ->
     let n_holes = List.length holes in
     let hole_spec outer_offsets = function
@@ -257,9 +252,9 @@ let sweep
       List.fold_left f (0, [], [], []) holes
     in
     let outer_bot, outer_top, outer = sweep ~winding:`CCW ~sealed:false ~top ~bot outer in
-    let bot_lid = Mesh.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot)
-    and top_lid = Mesh.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in
-    Mesh.join (bot_lid :: top_lid :: outer :: tunnels)
+    let bot_lid = Mesh0.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot)
+    and top_lid = Mesh0.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in
+    Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
 
 let linear_extrude
     ?check_valid
@@ -291,6 +286,45 @@ let linear_extrude
     |> Path3.to_transforms ?scale ?twist
   in
   sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ~spec:(`Caps caps) ~transforms shape
+
+let helix_extrude
+    ?fn
+    ?fa
+    ?fs
+    ?scale
+    ?twist
+    ?mode
+    ?(caps = { top = `Flat; bot = `Flat })
+    ?(left = true)
+    ~n_turns
+    ~pitch
+    ?r2
+    r1
+    shape
+  =
+  let r2 = Option.value ~default:r1 r2 in
+  let n_frags = helical_fragments ?fn ?fa ?fs (Float.max r1 r2) in
+  let rot_sign, winding = if left then -1., `CCW else 1., `CW in
+  let a_step = 2. *. Float.pi /. Float.of_int n_frags *. rot_sign
+  and ax =
+    let a = Float.(atan2 (pitch /. of_int n_frags) (pi *. 2. *. r1 /. of_int n_frags)) in
+    (a *. rot_sign) +. (Float.pi /. 2.)
+  in
+  let transforms =
+    let path = Path3.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
+    let len = List.length path
+    and id _ = MultMatrix.id in
+    let scale = Util.value_map_opt ~default:id (Path3.scaler ~len) scale
+    and twist = Util.value_map_opt ~default:id (Path3.twister ~len) twist in
+    let f i trans =
+      let eul = v3 ax 0. (a_step *. Float.of_int i) in
+      scale i
+      |> MultMatrix.mul (twist i)
+      |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
+    in
+    List.mapi f path
+  in
+  sweep ~winding ?fn ?fs ?fa ?mode ~spec:(`Caps caps) ~transforms shape
 
 type patch_edges =
   { left : Path3.t
@@ -330,26 +364,26 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
+    and mesh = Mesh0.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   in
   match all_rows_degen, all_cols_degen, top_degen, bot_degen, left_degen, right_degen with
   | true, true, _, _, _, _ ->
     let p = [ bezpatch.(0).(0) ] in
-    Mesh.empty, { left = p; right = p; top = p; bot = p }
+    Mesh0.empty, { left = p; right = p; top = p; bot = p }
   | true, false, _, _, _, _ ->
     let col = Bezier3.(curve ~fn @@ make' trans_bezpatch.(0)) in
     let bot = [ last_element col ] in
-    Mesh.empty, { left = col; right = col; top = [ List.hd col ]; bot }
+    Mesh0.empty, { left = col; right = col; top = [ List.hd col ]; bot }
   | false, true, _, _, _, _ ->
     let row = Bezier3.(curve ~fn @@ make' bezpatch.(0)) in
     let right = [ last_element row ] in
-    Mesh.empty, { left = [ List.hd row ]; right; top = row; bot = row }
+    Mesh0.empty, { left = [ List.hd row ]; right; top = row; bot = row }
   | false, false, false, false, false, false ->
     let pts = Bezier3.(patch_curve ~fn @@ patch' bezpatch) in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
+    and mesh = Mesh0.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, true, _, _ ->
     let row_count =
@@ -379,7 +413,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
-    and mesh = Mesh.of_ragged ~rev:(not rev) pts in
+    and mesh = Mesh0.of_ragged ~rev:(not rev) pts in
     mesh, { left; right; top = List.hd pts; bot = last_element pts }
   | false, false, true, false, false, false -> top_degen_case ~rev trans_bezpatch
   | false, false, false, true, false, false ->
@@ -635,9 +669,9 @@ let prism
   if not debug then roundover_interference "top" top_faces;
   if not debug then roundover_interference "bottom" bot_faces;
   List.fold_left
-    (fun acc pts -> Mesh.of_ragged pts :: acc)
-    [ Mesh.of_polygons faces ]
+    (fun acc pts -> Mesh0.of_ragged pts :: acc)
+    [ Mesh0.of_polygons faces ]
     edge_points
   |> fold_init len (fun i acc -> bot_samples.(i) :: acc)
   |> fold_init len (fun i acc -> top_samples.(i) :: acc)
-  |> Mesh.join
+  |> Mesh0.join

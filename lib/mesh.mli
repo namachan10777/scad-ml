@@ -1,4 +1,4 @@
-type t
+type t = Mesh0.t
 
 type row_wrap =
   [ `Loop
@@ -70,26 +70,129 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal faces. *)
 val of_polygons : Path3.t list -> t
 
-(** [sweep ?winding ?loop ?convexity ~transforms shape]
+(* (\** [sweep ?winding ?loop ?convexity ~transforms shape] *)
 
-    Create a polyhedron by sweeping the given [shape], described as a 2d
-    polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn. *)
+(*     Create a polyhedron by sweeping the given [shape], described as a 2d *)
+(*     polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn. *\) *)
+(* val sweep *)
+(*   :  ?winding:[ `CCW | `CW | `NoCheck ] *)
+(*   -> ?loop:bool *)
+(*   -> transforms:MultMatrix.t list *)
+(*   -> Vec2.t list *)
+(*   -> t *)
+
+(* val linear_extrude *)
+(*   :  ?winding:[ `CCW | `CW | `NoCheck ] *)
+(*   -> ?slices:int *)
+(*   -> ?fa:float *)
+(*   -> ?scale:Vec2.t *)
+(*   -> ?twist:float *)
+(*   -> ?center:bool *)
+(*   -> height:float *)
+(*   -> Vec2.t list *)
+(*   -> t *)
+
+module Spec : sig
+  type offset =
+    { d : float
+    ; z : float
+    }
+
+  type offsets
+
+  type holes =
+    [ `Same
+    | `Flip
+    | `Custom of offsets
+    | `Mix of [ `Same | `Flip | `Custom of offsets ] list
+    ]
+
+  type poly =
+    { outer : offsets
+    ; holes : holes
+    }
+
+  type cap =
+    [ `Empty
+    | `Flat
+    | `Round of poly
+    ]
+
+  type path =
+    [ `Empty
+    | `Flat
+    | `Round of offsets
+    ]
+
+  type caps =
+    { top : cap
+    ; bot : cap
+    }
+
+  type t =
+    [ `Looped
+    | `Caps of caps
+    ]
+
+  val chamf
+    :  ?angle:float
+    -> ?cut:float
+    -> ?width:float
+    -> ?height:float
+    -> unit
+    -> offsets
+
+  val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+  val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+  val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
+  val custom : offset list -> offsets
+  val round : ?holes:holes -> offsets -> [> `Round of poly ]
+  val looped : t
+  val capped : top:cap -> bot:cap -> t
+  val flat_caps : t
+  val open_caps : t
+end
+
 val sweep
-  :  ?winding:[ `CCW | `CW | `NoCheck ]
-  -> ?loop:bool
+  :  ?check_valid:int option
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?fn:int
+  -> ?fs:float
+  -> ?fa:float
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?spec:Spec.t
   -> transforms:MultMatrix.t list
-  -> Vec2.t list
+  -> Poly2.t
   -> t
 
 val linear_extrude
-  :  ?winding:[ `CCW | `CW | `NoCheck ]
-  -> ?slices:int
+  :  ?check_valid:int option
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?fn:int
+  -> ?fs:float
   -> ?fa:float
+  -> ?slices:int
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:Spec.caps
   -> height:float
-  -> Vec2.t list
+  -> Poly2.t
+  -> t
+
+val prism
+  :  ?debug:bool
+  -> ?fn:int
+  -> ?k:float
+  -> ?k_bot:float
+  -> ?k_top:float
+  -> ?k_sides:[< `Flat of float | `Mix of float list > `Flat ]
+  -> ?joint_bot:float * float
+  -> ?joint_top:float * float
+  -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
+  -> Path3.t
+  -> Path3.t
   -> t
 
 val helix_extrude
@@ -98,12 +201,14 @@ val helix_extrude
   -> ?fs:float
   -> ?scale:Vec2.t
   -> ?twist:float
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:Spec.caps
   -> ?left:bool
   -> n_turns:int
   -> pitch:float
   -> ?r2:float
   -> float
-  -> Vec2.t list
+  -> Poly2.t
   -> t
 
 (** {1 Function Plotting} *)

@@ -1,15 +1,16 @@
 open Scad_ml
 
 let elbow_shape =
-  [ v2 (-10.) (-1.)
-  ; v2 (-10.) 6.
-  ; v2 (-7.) 6.
-  ; v2 (-7.) 1.
-  ; v2 7. 1.
-  ; v2 7. 6.
-  ; v2 10. 6.
-  ; v2 10. (-1.)
-  ]
+  Poly2.make
+    [ v2 (-10.) (-1.)
+    ; v2 (-10.) 6.
+    ; v2 (-7.) 6.
+    ; v2 (-7.) 1.
+    ; v2 7. 1.
+    ; v2 7. 6.
+    ; v2 10. 6.
+    ; v2 10. (-1.)
+    ]
 
 let path () =
   let step = 0.005 in
@@ -29,7 +30,7 @@ let path () =
   close_out oc
 
 let spiral_2d () =
-  let square = Path2.square ~center:true (v2 10. 10.)
+  let square = Poly2.square ~center:true (v2 10. 10.)
   and step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
@@ -52,7 +53,7 @@ let wave_cylinder () =
   and s = 2.
   and step = 4.
   and rad d = d *. Float.pi /. 180. in
-  let shape = [ v2 0. 0.; v2 w 0.; v2 w 1.; v2 0. 1. ] in
+  let shape = Poly2.make [ v2 0. 0.; v2 w 0.; v2 w 1.; v2 0. 1. ] in
   let f i =
     let t = Float.of_int i *. step in
     MultMatrix.(
@@ -67,7 +68,7 @@ let wave_cylinder () =
 
 let spline_path () =
   let control_pts = [ v2 0. 10.; v2 10. 40.; v2 20. 40.; v2 30. (-20.); v2 40. (-40.) ]
-  and square = Path2.square ~center:true (v2 2. 5.) in
+  and square = Poly2.square ~center:true (v2 2. 5.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
@@ -236,7 +237,7 @@ let resample_path () =
 
 let poly_linear_extrude () =
   let scad =
-    Path2.square ~center:true (v2 3. 3.)
+    Poly2.square ~center:true (v2 3. 3.)
     |> Mesh.linear_extrude
          ~slices:100
          ~scale:(v2 4. 4.)
@@ -315,7 +316,7 @@ let sweep_starburst ~euler =
       in
       p (v3 0. 0. d) :: p (v3 0. 0. (-.d)) :: List.concat_map f (List.init 8 Float.of_int)
     in
-    let flat = Scad.polygon elbow_shape |> Scad.linear_extrude ~height:1.
+    let flat = Scad.polygon elbow_shape.outer |> Scad.linear_extrude ~height:1.
     and f path =
       let transforms = Path3.to_transforms ~euler path in
       Mesh.sweep ~transforms elbow_shape |> Mesh.to_scad
@@ -411,9 +412,10 @@ let offset_sweep () =
          sweep
            ~transforms
            ~spec:
-             (capped
-                ~bot:(round @@ tear (`Radius (-1.)))
-                ~top:(round @@ tear (`Radius 0.5)) ))
+             Spec.(
+               capped
+                 ~bot:(round @@ tear (`Radius (-1.)))
+                 ~top:(round @@ tear (`Radius 0.5))))
     |> Mesh.to_scad
   and oc = open_out "offset_sweep.scad" in
   Scad.write oc scad;
@@ -432,7 +434,8 @@ let offset_linear_extrude () =
            ~scale:(v2 4. 4.)
            ~twist:(2. *. Float.pi)
            ~center:false
-           ~caps:{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
+           ~caps:
+             Spec.{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
            ~height:10.)
     |> Mesh.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
@@ -441,7 +444,7 @@ let offset_linear_extrude () =
 
 let bezier_path () =
   let control_pts = Vec2.[ v 0. 10.; v 10. 40.; v 20. 40.; v 30. (-20.); v 40. (-40.) ]
-  and square = Path2.square ~center:true (v2 2. 2.) in
+  and square = Poly2.square ~center:true (v2 2. 2.) in
   let marks =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
@@ -556,9 +559,10 @@ let rounded_polyhole_sweep () =
       sweep
         ~transforms
         ~spec:
-          (capped
-             ~bot:(round ~holes:`Same @@ circ (`Radius (-0.8)))
-             ~top:(round @@ circ (`Radius 0.5)) )
+          Spec.(
+            capped
+              ~bot:(round ~holes:`Same @@ circ (`Radius (-0.8)))
+              ~top:(round @@ circ (`Radius 0.5)))
         (Poly2.make ~holes outer))
     |> Mesh.merge_points
     |> Mesh.to_scad

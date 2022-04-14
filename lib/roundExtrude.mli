@@ -1,68 +1,67 @@
-type offset =
-  { d : float
-  ; z : float
-  }
+(* TODO: Decide
+   - delete this interface, anything exposed will be in Mesh as re-export
+   - OR keep the interface, and just include into Mesh *)
 
-(* type spec *)
+module Spec : sig
+  type offset =
+    { d : float
+    ; z : float
+    }
 
-(* type hole_spec = *)
-(*   [ `Same *)
-(*   | `Flip *)
-(*   | `Custom of spec *)
-(*   ] *)
+  type offsets
 
-(* type hole = *)
-(*   { hole : Vec2.t list *)
-(*   ; top_spec : hole_spec option *)
-(*   ; bot_spec : hole_spec option *)
-(*   } *)
+  type holes =
+    [ `Same
+    | `Flip
+    | `Custom of offsets
+    | `Mix of [ `Same | `Flip | `Custom of offsets ] list
+    ]
 
-type offsets
+  type poly =
+    { outer : offsets
+    ; holes : holes
+    }
 
-type hole_spec =
-  [ `Same
-  | `Flip
-  | `Custom of offsets
-  | `Mix of [ `Same | `Flip | `Custom of offsets ] list
-  ]
+  type cap =
+    [ `Empty
+    | `Flat
+    | `Round of poly
+    ]
 
-type poly_spec =
-  { outer : offsets
-  ; holes : hole_spec
-  }
+  type path =
+    [ `Empty
+    | `Flat
+    | `Round of offsets
+    ]
 
-type cap_spec =
-  [ `Empty
-  | `Flat
-  | `Round of poly_spec
-  ]
+  type caps =
+    { top : cap
+    ; bot : cap
+    }
 
-type path_spec =
-  [ `Empty
-  | `Flat
-  | `Round of offsets
-  ]
+  type t =
+    [ `Looped
+    | `Caps of caps
+    ]
 
-type caps =
-  { top : cap_spec
-  ; bot : cap_spec
-  }
+  val chamf
+    :  ?angle:float
+    -> ?cut:float
+    -> ?width:float
+    -> ?height:float
+    -> unit
+    -> offsets
 
-type spec =
-  [ `Looped
-  | `Caps of caps
-  ]
-
-val chamf : ?angle:float -> ?cut:float -> ?width:float -> ?height:float -> unit -> offsets
-val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
-val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
-val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
-val custom : offset list -> offsets
-val round : ?holes:hole_spec -> offsets -> [> `Round of poly_spec ]
-val looped : spec
-val capped : top:cap_spec -> bot:cap_spec -> spec
-val flat_caps : spec
-val open_caps : spec
+  val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+  val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+  val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
+  val custom : offset list -> offsets
+  val round : ?holes:holes -> offsets -> [> `Round of poly ]
+  val looped : t
+  val capped : top:cap -> bot:cap -> t
+  val flat_caps : t
+  val open_caps : t
+end
 
 val sweep
   :  ?check_valid:int option
@@ -71,10 +70,10 @@ val sweep
   -> ?fs:float
   -> ?fa:float
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?spec:[< `Caps of caps | `Looped > `Caps ]
+  -> ?spec:Spec.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
-  -> Mesh.t
+  -> Mesh0.t
 
 val linear_extrude
   :  ?check_valid:int option
@@ -87,10 +86,26 @@ val linear_extrude
   -> ?twist:float
   -> ?center:bool
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?caps:caps
+  -> ?caps:Spec.caps
   -> height:float
   -> Poly2.t
-  -> Mesh.t
+  -> Mesh0.t
+
+val helix_extrude
+  :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:Spec.caps
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> Poly2.t
+  -> Mesh0.t
 
 val prism
   :  ?debug:bool
@@ -104,4 +119,4 @@ val prism
   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
   -> Vec3.t list
   -> Vec3.t list
-  -> Mesh.t
+  -> Mesh0.t
