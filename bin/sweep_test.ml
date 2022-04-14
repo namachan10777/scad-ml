@@ -408,7 +408,7 @@ let offset_sweep () =
   let scad =
     Rounding2.corners ~fn:30 shape_spec
     |> Poly2.make
-    |> RoundExtrude.(
+    |> Mesh.(
          sweep
            ~transforms
            ~spec:
@@ -427,7 +427,7 @@ let offset_linear_extrude () =
     Rounding2.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
     |> List.map (Vec2.translate (v2 1.5 1.5))
     |> Poly2.make
-    |> RoundExtrude.(
+    |> Mesh.(
          linear_extrude
            ~slices:100
            ~fn:16
@@ -555,7 +555,7 @@ let rounded_polyhole_sweep () =
       |> Rounding2.(flat ~spec:(chamf (`Width 1.)))
       |> Rounding2.corners
     in
-    RoundExtrude.(
+    Mesh.(
       sweep
         ~transforms
         ~spec:
@@ -590,7 +590,7 @@ let rounded_prism_cube () =
     Path3.translate (v3 0. 0. 5.) (Path3.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
   in
   let scad =
-    RoundExtrude.prism
+    Mesh.prism
       ~joint_top:(1., 1.)
       ~joint_bot:(1., 1.)
       ~joint_sides:(`Flat (1.5, 1.5))
@@ -607,7 +607,7 @@ let rounded_prism_pointy () =
   in
   let top = Path3.translate (v3 0. 0. 5.) bot in
   let scad =
-    RoundExtrude.prism
+    Mesh.prism
       ~joint_top:(0.25, 0.25)
       ~joint_bot:(0.25, 0.25)
       ~joint_sides:(`Flat (2.5, 2.5))

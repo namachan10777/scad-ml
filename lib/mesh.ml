@@ -1,5 +1,6 @@
 include Mesh0
 include RoundExtrude
+include Prism
 open Vec
 
 (* TODO: now that there is nothing else in here, it feels a bit silly to have
@@ -9,7 +10,9 @@ open Vec
 
     As a side note, would a PlotFunction module be appropriate for these (that
     is then included in Mesh as well), for the sake of organization, and a
-    blurb attributing the author of the original library? *)
+    blurb attributing the author of the original library?
+   Or would it be better to declutter the Mesh module and remove these more
+    niche functions into a PlotFunction module and leave them there? *)
 
 let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =
   let x_step = (max_x -. min_x) /. Float.of_int x_steps

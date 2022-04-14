@@ -70,28 +70,6 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal faces. *)
 val of_polygons : Path3.t list -> t
 
-(* (\** [sweep ?winding ?loop ?convexity ~transforms shape] *)
-
-(*     Create a polyhedron by sweeping the given [shape], described as a 2d *)
-(*     polygon of {!Vec2.t}s on the XY plane, by applying the [transforms] in turn. *\) *)
-(* val sweep *)
-(*   :  ?winding:[ `CCW | `CW | `NoCheck ] *)
-(*   -> ?loop:bool *)
-(*   -> transforms:MultMatrix.t list *)
-(*   -> Vec2.t list *)
-(*   -> t *)
-
-(* val linear_extrude *)
-(*   :  ?winding:[ `CCW | `CW | `NoCheck ] *)
-(*   -> ?slices:int *)
-(*   -> ?fa:float *)
-(*   -> ?scale:Vec2.t *)
-(*   -> ?twist:float *)
-(*   -> ?center:bool *)
-(*   -> height:float *)
-(*   -> Vec2.t list *)
-(*   -> t *)
-
 module Spec : sig
   type offset =
     { d : float
@@ -208,6 +186,21 @@ val helix_extrude
   -> pitch:float
   -> ?r2:float
   -> float
+  -> Poly2.t
+  -> t
+
+val path_extrude
+  :  ?check_valid:int option
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?fn:int
+  -> ?fs:float
+  -> ?fa:float
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?spec:Spec.t
+  -> ?euler:bool
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> path:Path3.t
   -> Poly2.t
   -> t
 
