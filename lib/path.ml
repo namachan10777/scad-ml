@@ -2,9 +2,9 @@ module type S = sig
   type vec
   type t = vec list
 
-  val total_travel' : vec array -> float
-  val total_travel : vec list -> float
-  val cummulative_travel : vec list -> float list
+  val length' : vec array -> float
+  val length : vec list -> float
+  val cummulative_length : vec list -> float list
   val to_continuous : vec list -> float -> vec
   val resample : freq:[< `N of int | `Spacing of float ] -> vec list -> vec list
   val noncollinear_triple : ?eps:float -> vec list -> (vec * vec * vec) option
@@ -27,7 +27,7 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
   type vec = V.t
   type t = vec list
 
-  let total_travel' path =
+  let length' path =
     let len = Array.length path
     and p = Array.unsafe_get path in
     if len < 2
@@ -39,13 +39,13 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
       done;
       !sum )
 
-  let total_travel = function
+  let length = function
     | [] | [ _ ] -> 0.
     | hd :: tl   ->
       let f (sum, last) p = sum +. V.distance p last, p in
       fst @@ List.fold_left f (0., hd) tl
 
-  let cummulative_travel = function
+  let cummulative_length = function
     | []       -> []
     | hd :: tl ->
       let f (acc, sum, last) p =
@@ -63,7 +63,7 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
       List.rev (if closed then V.distance last hd :: lengths else lengths)
 
   let to_continuous path =
-    let travels = Array.of_list (cummulative_travel path)
+    let travels = Array.of_list (cummulative_length path)
     and path = Array.of_list path in
     let len = Array.length travels in
     let total = travels.(len - 1) in
@@ -91,7 +91,7 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
     let n =
       match freq with
       | `N n       -> n
-      | `Spacing s -> Int.of_float @@ (total_travel path /. s)
+      | `Spacing s -> Int.of_float @@ (length path /. s)
     in
     let step = 1. /. Float.of_int (n - 1)
     and f = to_continuous path in

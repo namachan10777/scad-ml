@@ -131,7 +131,7 @@ module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
       | None   -> smooth_bez_fill ~curv p1 p2 p3
     in
     let fn =
-      Int.max 3 (Option.value ~default:Float.(to_int @@ ceil (Bz.travel ps /. fs)) fn)
+      Int.max 3 (Option.value ~default:Float.(to_int @@ ceil (Bz.length ps /. fs)) fn)
     in
     Bz.curve ~fn (Bz.make ps)
 

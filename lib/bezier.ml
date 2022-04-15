@@ -63,7 +63,7 @@ module type S = sig
     -> vec list
 
   val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> (float -> vec) -> vec array
-  val travel : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
+  val length : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
   val patch : vec list list -> float -> float -> vec
   val patch' : vec array array -> float -> float -> vec
   val patch_curve' : ?fn:int -> (float -> float -> vec) -> vec array array
@@ -152,7 +152,7 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
     done;
     a
 
-  let travel ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
+  let length ?(start_u = 0.) ?(end_u = 1.) ?(max_deflect = 0.01) ps =
     let n_segs = List.length ps * 2
     and bz = make ps in
     let d = Float.of_int n_segs in
@@ -172,7 +172,7 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
         !mx
       in
       if deflection <= max_deflect
-      then P.total_travel' path
+      then P.length' path
       else (
         let sum = ref 0. in
         for i = 0 to n_segs - 1 do
@@ -229,9 +229,9 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
       Array.init n_segs (fun i -> List.init (n + 1) (fun j -> bezpath.((i * n) + j)))
     in
     let bezs = Array.map (fun ps -> make ps) segs in
-    let travels, total =
+    let lengths, total =
       let f (acc, total) seg =
-        let total = total +. travel seg in
+        let total = total +. length seg in
         total :: acc, total
       in
       let acc, total = Array.fold_left f ([ 0. ], 0.) segs in
@@ -246,8 +246,8 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
         and p = ref None in
         while Option.is_none !p && !i < n_segs do
           let idx = !i in
-          let d0 = Array.unsafe_get travels idx
-          and d1 = Array.unsafe_get travels (idx + 1) in
+          let d0 = Array.unsafe_get lengths idx
+          and d1 = Array.unsafe_get lengths (idx + 1) in
           if d >= d0 && d <= d1
           then (
             let frac = (d -. d0) /. (d1 -. d0) in
