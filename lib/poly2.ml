@@ -11,8 +11,85 @@ type t =
    See is_region_simple (and _region_region_intersections) for example:
      https://github.com/revarbat/BOSL2/blob/master/regions.scad#L230
      https://github.com/revarbat/BOSL2/blob/master/regions.scad#L419
-*)
-let make ?(holes = []) outer = { outer; holes }
+   TODO: make test cases for simple polygons to ensure this is working. *)
+let is_simple ?(eps = Util.epsilon) = function
+  | { outer = [] | [ _ ] | [ _; _ ]; _ } -> invalid_arg "Outer path has too few points."
+  | { outer; holes } ->
+    let paths = Array.map Array.of_list (Array.of_list (outer :: holes)) in
+    if Array.for_all (Path2.is_simple' ~eps ~closed:true) paths
+    then
+      let exception NotSimple in
+      try
+        let n = Array.length paths
+        and p1_idx = ref 0 in
+        while !p1_idx < n - 1 do
+          let p1 = paths.(!p1_idx) in
+          let len_p1 = Array.length p1
+          and i = ref 0 in
+          while !i < len_p1 - 1 do
+            let a = p1.(!i)
+            and b = p1.(Util.index_wrap ~len:len_p1 (!i + 1)) in
+            let diff = Vec2.sub b a in
+            let dist = Vec2.norm diff in
+            if dist > eps
+            then (
+              let s1 = Vec2.{ a; b } in
+              let s1_normal = { x = -.diff.y /. dist; y = diff.x /. dist } in
+              let ref_v = Vec2.dot s1.a s1_normal
+              and p2_idx = ref (!p1_idx + 1) in
+              while !p2_idx < n do
+                let last_signal = ref 0
+                and p2 = paths.(!p2_idx) in
+                let len_p2 = Array.length p2 in
+                for j = 0 to len_p2 - 1 do
+                  let v = Vec2.dot p2.(j) s1_normal -. ref_v in
+                  if Float.abs v >= eps
+                  then (
+                    let signal = Int.of_float @@ Math.sign v in
+                    if signal * !last_signal < 0
+                       && Vec2.line_intersection
+                            ~eps
+                            ~bounds1:(true, true)
+                            ~bounds2:(true, true)
+                            s1
+                            Vec2.
+                              { a = p2.(j); b = p2.(Util.index_wrap ~len:len_p2 (j + 1)) }
+                          |> Option.is_some
+                    then raise NotSimple;
+                    last_signal := signal )
+                done;
+                incr p2_idx
+              done;
+              incr i )
+          done;
+          incr p1_idx
+        done;
+        let pts = Util.flatten_array paths in
+        let len = Array.length pts in
+        if len < 400
+        then
+          for i = 0 to len - 2 do
+            for j = i + 1 to len - 1 do
+              if Vec2.approx ~eps pts.(i) pts.(j) then raise NotSimple
+            done
+          done
+        else
+          for i = 1 to len - 1 do
+            match BallTree2.search_idxs ~radius:eps (BallTree2.make' pts) pts.(i) with
+            | [] | [ _ ] -> () (* single result will be self *)
+            | _          -> raise NotSimple
+          done;
+        true
+      with
+      | NotSimple -> false
+    else false
+
+let make ?(validate = true) ?(holes = []) outer =
+  let t = { outer; holes } in
+  if (not validate) || is_simple t
+  then t
+  else invalid_arg "Polygon is not simple (has self-intersections / duplicate points)."
+
 let circle ?fn r = make @@ Path2.circle ?fn r
 
 let wedge ?fn ~centre ~radius ~start angle =

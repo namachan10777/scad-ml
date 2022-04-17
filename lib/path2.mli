@@ -12,8 +12,8 @@ val clockwise_sign' : Vec2.t array -> float
 val is_clockwise' : Vec2.t array -> bool
 val clockwise_sign : t -> float
 val is_clockwise : t -> bool
-val self_intersections' : ?eps:float -> Vec2.t array -> t
-val self_intersections : ?eps:float -> t -> t
+val self_intersections' : ?eps:float -> ?closed:bool -> Vec2.t array -> t
+val self_intersections : ?eps:float -> ?closed:bool -> t -> t
 val is_simple' : ?eps:float -> ?closed:bool -> Vec2.t array -> bool
 val is_simple : ?eps:float -> ?closed:bool -> t -> bool
 val bbox : t -> bbox

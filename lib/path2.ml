@@ -24,32 +24,37 @@ let is_clockwise' ps = Float.equal 1. (clockwise_sign' ps)
 let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
-let self_intersections' ?(eps = Util.epsilon) path =
+let self_intersections' ?(eps = Util.epsilon) ?(closed = false) path =
   let len = Array.length path in
   if len < 3
   then []
   else (
-    let intersects = ref [] in
-    for i = 0 to len - 3 do
+    let intersects = ref []
+    and w = Util.index_wrap ~len in
+    for i = 0 to len - if closed then 3 else 4 do
       let l1 = Vec2.{ a = path.(i); b = path.(i + 1) } in
       let seg_normal =
         let d = Vec2.sub l1.b l1.a in
         Vec2.(normalize (v2 (-.d.y) d.x))
       in
-      let vals = Array.map (fun p -> Vec2.dot p seg_normal) path
-      and ref_v = Vec2.dot path.(i) seg_normal
+      let ref_v = Vec2.dot path.(i) seg_normal
       and last_signal = ref 0
       and start = i + 2 in
-      for j = 0 to len - start - 1 do
-        let v = vals.(j + start) -. ref_v in
+      for j = 0 to len - start - if closed then 1 else 2 do
+        let v = Vec2.dot path.(j + start) seg_normal -. ref_v in
         if Float.abs v >= eps
         then (
           let signal = Int.of_float @@ Math.sign v in
           if signal * !last_signal < 0
           then (
-            let l2 = Vec2.{ a = path.(j + start); b = path.(j + start + 1) } in
+            let l2 = Vec2.{ a = path.(j + start); b = path.(w (j + start + 1)) } in
             let intersect =
-              Vec2.line_intersection ~bounds1:(true, true) ~bounds2:(true, true) l1 l2
+              Vec2.line_intersection
+                ~eps
+                ~bounds1:(true, true)
+                ~bounds2:(true, true)
+                l1
+                l2
             in
             Option.iter (fun p -> intersects := p :: !intersects) intersect );
           last_signal := signal )
@@ -57,7 +62,8 @@ let self_intersections' ?(eps = Util.epsilon) path =
     done;
     !intersects )
 
-let self_intersections ?eps path = self_intersections' ?eps (Array.of_list path)
+let self_intersections ?eps ?closed path =
+  self_intersections' ?eps ?closed (Array.of_list path)
 
 let is_simple' ?eps ?(closed = false) path =
   let len = Array.length path in

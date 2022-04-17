@@ -573,11 +573,11 @@ let rounded_polyhole_sweep () =
 let polytext () =
   let scad =
     let font = "Fira Code" in
-    let PolyText.{ outer; inner } = PolyText.glyph_outline ~font 'g' in
+    let PolyText.{ outer; inner } = PolyText.glyph_outline ~fn:16 ~font 'g' in
     let Path2.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2.bbox outer in
     Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
     Scad.union
-      [ Poly2.(to_scad @@ make ~holes:inner outer)
+      [ Poly2.(to_scad @@ make ~validate:true ~holes:inner outer)
       ; Scad.text ~font ~size:8. "g" |> Scad.color ~alpha:0.5 Color.BlueViolet
       ]
   and oc = open_out "polytext.scad" in
