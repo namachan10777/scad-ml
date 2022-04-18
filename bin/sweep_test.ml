@@ -548,7 +548,7 @@ let rounded_polyhole_sweep () =
   let scad =
     let holes =
       let s = Path2.circle ~fn:90 2.
-      and d = 2. in
+      and d = 1.9 in
       Path2.[ translate (v2 (-.d) (-.d)) s; translate (v2 d d) s ]
     and outer =
       Path2.square ~center:true (v2 10. 10.)
@@ -561,7 +561,7 @@ let rounded_polyhole_sweep () =
         ~spec:
           Spec.(
             capped
-              ~bot:(round ~holes:`Same @@ circ (`Radius (-0.8)))
+              ~bot:(round ~holes:`Same @@ circ (`Radius (-0.6)))
               ~top:(round @@ circ (`Radius 0.5)))
         (Poly2.make ~holes outer))
     |> Mesh.merge_points

@@ -5,11 +5,24 @@ type t =
   ; holes : Vec3.t list list
   }
 
-(* TODO: First validate that each of the paths are coplanar, than like for
-    Poly2, validate non-self-intersecting, enough points in each path, and
-    that none of them interset with eachother, then protect the type.
-    Make optional, but on by default: ?(validate = true) *)
-let make ?(holes = []) outer = { outer; holes }
+let of_poly2 ?(plane = Plane.xy) Poly2.{ outer; holes } =
+  let f = Path2.lift plane in
+  { outer = f outer; holes = List.map f holes }
+
+let to_poly2 ?(validate = false) ?(plane = Plane.xy) { outer; holes } =
+  let f = Path3.project plane in
+  Poly2.make ~validate ~holes:(List.map f holes) (f outer)
+
+let make ?(validate = true) ?(holes = []) outer =
+  let plane = Path3.to_plane outer in
+  if not validate
+  then { outer; holes }
+  else (
+    let coplanar = Plane.are_points_on plane in
+    if coplanar outer && List.for_all coplanar holes
+    then of_poly2 ~plane @@ to_poly2 ~validate:true ~plane { outer; holes }
+    else invalid_arg "Polygon contains non-coplanar points." )
+
 let circle ?fn ?plane r = { outer = Path3.circle ?fn ?plane r; holes = [] }
 
 let wedge ?fn ?plane ~centre ~radius ~start angle =

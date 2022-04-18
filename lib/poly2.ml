@@ -20,6 +20,7 @@ let is_simple ?(eps = Util.epsilon) = function
     then
       let exception NotSimple in
       try
+        (* check for intersections *)
         let n = Array.length paths
         and p1_idx = ref 0 in
         while !p1_idx < n - 1 do
@@ -64,6 +65,7 @@ let is_simple ?(eps = Util.epsilon) = function
           done;
           incr p1_idx
         done;
+        (* check for duplicate points *)
         let pts = Util.flatten_array paths in
         let len = Array.length pts in
         if len < 400
@@ -73,12 +75,13 @@ let is_simple ?(eps = Util.epsilon) = function
               if Vec2.approx ~eps pts.(i) pts.(j) then raise NotSimple
             done
           done
-        else
+        else (
+          let tree = BallTree2.make' pts in
           for i = 1 to len - 1 do
-            match BallTree2.search_idxs ~radius:eps (BallTree2.make' pts) pts.(i) with
+            match BallTree2.search_idxs ~radius:eps tree pts.(i) with
             | [] | [ _ ] -> () (* single result will be self *)
             | _          -> raise NotSimple
-          done;
+          done );
         true
       with
       | NotSimple -> false
