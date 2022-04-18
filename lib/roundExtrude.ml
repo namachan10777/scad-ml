@@ -1,6 +1,6 @@
 open Util
 open Vec
-module R2 = Rounding.Make (Vec2) (Path2)
+module R2 = Rounding.Make (Vec2) (Arc2)
 
 module Spec = struct
   type offset =
@@ -115,11 +115,15 @@ module Spec = struct
       |> List.tl
       |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
 
-  let custom l =
-    Offsets
-      (List.map
-         (fun { d; z } -> { d = quantize d *. -1.; z = quantize @@ Float.abs z })
-         l )
+  let custom offsets =
+    let f (last_z, acc) { d; z } =
+      let z = quantize @@ Float.abs z in
+      if Float.compare z last_z <> 1
+      then invalid_arg "Z offsets must increase monotonically."
+      else z, { d = quantize d *. -1.; z } :: acc
+    in
+    let _, offsets = List.fold_left f (Float.min_float, []) offsets in
+    Offsets (List.rev offsets)
 
   let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 end

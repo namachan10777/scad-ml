@@ -1,5 +1,7 @@
 open Vec
 include Path.Make (Vec3)
+include Arc3
+include Rounding.Make (Vec3) (Arc3)
 
 type bbox =
   { min : Vec3.t
@@ -24,28 +26,6 @@ let circle ?fn ?(plane = Plane.xy) r = Path2.lift plane (Path2.circle ?fn r)
 
 let square ?center ?(plane = Plane.xy) dims =
   List.map (Plane.lift plane) (Path2.square ?center dims)
-
-let arc ?rev ?fn ?(plane = Plane.xy) ?wedge ~centre ~radius ~start angle =
-  Path2.arc ?rev ?fn ?wedge ~centre:(Plane.project plane centre) ~radius ~start angle
-  |> Path2.lift plane
-
-let arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2 =
-  let plane = Plane.make centre p1 p2 in
-  let project = Plane.project plane
-  and lift = List.map (Plane.lift plane) in
-  let p1' = project p1
-  and p2' = project p2
-  and centre' = project centre in
-  lift @@ Path2.arc_about_centre ?rev ?dir ?fn ?wedge ~centre:centre' p1' p2'
-
-let arc_through ?rev ?fn ?wedge p1 p2 p3 =
-  let plane = Plane.make p3 p1 p2 in
-  let project = Plane.project plane
-  and lift = List.map (Plane.lift plane) in
-  let p1' = project p1
-  and p2' = project p2
-  and p3' = project p3 in
-  lift @@ Path2.arc_through ?rev ?fn ?wedge p1' p2' p3'
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in

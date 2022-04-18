@@ -344,7 +344,7 @@ let rounding_basic () =
   let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
   let shape_spec =
     let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
-    Rounding2.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
+    Path2.Round.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
     (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
     (* Rounding2.(flat ~spec:(circ (`Cut 0.5))) shape *)
     (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
@@ -352,7 +352,7 @@ let rounding_basic () =
   in
   let scad =
     let rounded =
-      Scad.polygon (Rounding2.corners ~fn:30 shape_spec) |> Scad.linear_extrude ~height:1.
+      Scad.polygon (Path2.roundover ~fn:30 shape_spec) |> Scad.linear_extrude ~height:1.
     and pointy =
       Scad.polygon shape
       |> Scad.linear_extrude ~height:1.
@@ -387,7 +387,7 @@ let offset_sweep () =
   let shape = Path2.square ~center:true (v2 3. 3.) in
   let shape_spec =
     (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
-    Rounding2.(flat ~spec:(circ (`Cut 0.5))) shape
+    Path2.Round.(flat ~corner:(circ (`Cut 0.5))) shape
     (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
     (* Rounding2.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
   in
@@ -406,7 +406,7 @@ let offset_sweep () =
     Path3.to_transforms ~euler:false path
   in
   let scad =
-    Rounding2.corners ~fn:30 shape_spec
+    Path2.roundover ~fn:30 shape_spec
     |> Poly2.make
     |> Mesh.(
          sweep
@@ -424,7 +424,7 @@ let offset_sweep () =
 let offset_linear_extrude () =
   let scad =
     let shape = Path2.square ~center:true (v2 3. 3.) in
-    Rounding2.(corners ~fn:30 (flat ~spec:(chamf (`Cut 0.5)) shape))
+    Path2.(roundover ~fn:30 Round.(flat ~corner:(chamf (`Cut 0.5)) shape))
     |> List.map (Vec2.translate (v2 1.5 1.5))
     |> Poly2.make
     |> Mesh.(
@@ -552,8 +552,8 @@ let rounded_polyhole_sweep () =
       Path2.[ translate (v2 (-.d) (-.d)) s; translate (v2 d d) s ]
     and outer =
       Path2.square ~center:true (v2 10. 10.)
-      |> Rounding2.(flat ~spec:(chamf (`Width 1.)))
-      |> Rounding2.corners
+      |> Path2.Round.(flat ~corner:(chamf (`Width 1.)))
+      |> Path2.roundover
     in
     Mesh.(
       sweep

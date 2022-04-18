@@ -12,6 +12,8 @@ val bbox : t -> bbox
 val circle : ?fn:int -> ?plane:Plane.t -> float -> t
 val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
+(** {1 Drawing arcs (along a plane)} *)
+
 val arc
   :  ?rev:bool
   -> ?fn:int
@@ -93,6 +95,10 @@ val coplanar : ?eps:float -> t -> bool
 
 val to_plane : t -> Plane.t
 val project : Plane.t -> t -> Vec2.t list
+
+(** {1 Roundovers}*)
+
+include Rounding.S with type vec := Vec.v3
 
 (** {1 Basic Transfomations} *)
 

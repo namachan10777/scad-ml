@@ -42,6 +42,10 @@ val arc_about_centre
 
 val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec2.t -> t
 
+(** {1 Roundovers}*)
+
+include Rounding.S with type vec := Vec.v2
+
 (** {1 3d conversion} *)
 
 val lift : Plane.t -> t -> Vec3.t list
