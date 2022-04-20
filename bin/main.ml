@@ -36,4 +36,5 @@ let () =
   Sweep_test.rounded_polyhole_sweep ();
   Sweep_test.polytext ();
   Sweep_test.rounded_prism_cube ();
-  Sweep_test.rounded_prism_pointy ()
+  Sweep_test.rounded_prism_pointy ();
+  Sweep_test.rounded_text ()

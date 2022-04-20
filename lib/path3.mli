@@ -65,7 +65,7 @@ val twister : len:int -> float -> int -> MultMatrix.t
    rotation of the shape before sweeping may be necessary to get the desired
    result. Setting [euler = true] will use euler rotations instead, which can
    have results more in line with expectations in some scenarios (helical-like
-   paths for example, though {!Poly3d.helix_extrude} may be a better fit in that
+   paths for example, though {!Mesh.helix_extrude} may be a better fit in that
    case), but fail in others. For instance, [euler] can generate an abrupt when
     the path tangent is exactly vertical.
 

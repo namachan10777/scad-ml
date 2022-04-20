@@ -25,7 +25,7 @@ type coef =
     Abstracted to protect array access *)
 type t
 
-(** {1 Immutable access to contents of {!type:t} } *)
+(** {1 Immutable access to fit results} *)
 
 (** [len t]
 

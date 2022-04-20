@@ -33,7 +33,7 @@ val of_rows : ?row_wrap:row_wrap -> ?col_wrap:bool -> Vec3.t list list -> t
     Create a triangular mesh from a list of rows, where each row can differ in
     length relative to its neighbours by up to 2. Since the rows can be ragged,
     no (columnar) wrapping is done, thus they are best described as rows, rather
-    than layers as with {!of_layers} which produces an enclosed polyhedron.
+    than layers as with {!of_rows} which produces an enclosed polyhedron.
     Instead, this function is useful for the generation of triangular patches
     that can be joined with one another to create a complete polyhedron. Setting
     [looped] to true will generate faces between the last and first rows, so long

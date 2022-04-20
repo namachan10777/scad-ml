@@ -573,11 +573,11 @@ let rounded_polyhole_sweep () =
 let polytext () =
   let scad =
     let font = "Fira Code" in
-    let PolyText.{ outer; inner } = PolyText.glyph_outline ~fn:16 ~font 'g' in
+    let Poly2.{ outer; holes } = PolyText.glyph_outline ~fn:16 ~font 'g' in
     let Path2.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2.bbox outer in
     Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
     Scad.union
-      [ Poly2.(to_scad @@ make ~validate:true ~holes:inner outer)
+      [ Poly2.(to_scad @@ make ~validate:true ~holes outer)
       ; Scad.text ~font ~size:8. "g" |> Scad.color ~alpha:0.5 Color.BlueViolet
       ]
   and oc = open_out "polytext.scad" in
@@ -615,5 +615,39 @@ let rounded_prism_pointy () =
       top
     |> Mesh.to_scad
   and oc = open_out "rounded_prism_pointy.scad" in
+  Scad.write oc scad;
+  close_out oc
+
+let rounded_text () =
+  let scad =
+    let hello = PolyText.text ~fn:2 ~font:"Fira Code" "Hello"
+    and f poly =
+      Mesh.(
+        linear_extrude
+          ~mode:`Radius
+            (* ~caps:Spec.{ top = round @@ circ (`Cut 0.05); bot = round @@ circ (`Cut 0.05) } *)
+          ~caps:
+            Spec.
+              { top = round @@ chamf ~height:0.1 (); bot = round @@ chamf ~height:0.1 () }
+          ~height:1.
+          poly)
+      |> Mesh.to_scad
+    in
+    let marks =
+      let f c pts =
+        let s = Scad.color c @@ Scad.sphere 0.1 in
+        Scad.union @@ List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) pts
+      in
+      List.fold_left
+        (fun acc Poly2.{ outer; holes } ->
+          List.fold_left
+            (fun hs ps -> f Color.Blue ps :: hs)
+            (f Color.Red outer :: acc)
+            holes )
+        []
+        hello
+    in
+    Scad.union @@ List.concat [ List.map f hello; marks ]
+  and oc = open_out "rounded_text.scad" in
   Scad.write oc scad;
   close_out oc

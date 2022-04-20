@@ -1,11 +1,6 @@
 open Cairo
 open Vec
 
-type glyph_outline =
-  { outer : Vec2.t list
-  ; inner : Vec2.t list list
-  }
-
 let path_to_outlines path =
   (* NOTE: Path.fold returns empty for me, while conversion to array first then
     folding works as expected. Perhaps open up an issue? *)
@@ -21,21 +16,30 @@ let path_to_outlines path =
   let ps, _, _ = Path.fold path f ([], [], v2 0. 0.) in
   List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) ps
 
-(* NOTE: The paths drawn by cairo are closed with the final point being a
+(* NOTE: The paths drawn by cairo are sometimes closed with the final point being a
     duplicate of the first. Thus, I should not prepend the last point when
-    CLOSE_PATH is hit. *)
-let pathdata_to_outlines ?(fn = 16) data =
+    CLOSE_PATH is hit if the first point is the same.
+
+   TODO: more efficient than grabbing the last element? Is checking whether a
+    first_p state param is empty (and setting it when adding a point) on each
+    element worth it instead? *)
+let pathdata_to_outlines ?(fn = 5) data =
   let f (paths, ps, last_p) = function
     | MOVE_TO (x, y) -> paths, ps, v2 x y
     | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
       let bez = Bezier2.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
       paths, Bezier2.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
-    (* | CLOSE_PATH -> (last_p :: ps) :: paths, [], last_p *)
-    | CLOSE_PATH -> ps :: paths, [], last_p
+    | CLOSE_PATH ->
+      let path =
+        match ps with
+        | [] -> [ last_p ]
+        | _  -> if Vec2.approx (Util.last_element ps) last_p then ps else last_p :: ps
+      in
+      path :: paths, [], last_p
   in
-  let ps, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in
-  List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) ps
+  let paths, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in
+  List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) paths
 
 let glyph_outline ?fn ?(center = false) ?weight ~font char =
   let s = String.of_seq (Seq.return char)
@@ -54,23 +58,38 @@ let glyph_outline ?fn ?(center = false) ?weight ~font char =
   (* Path.glyph cr [| { index = 30; x = 0.; y = 0. } |]; *)
   match pathdata_to_outlines ?fn Path.(to_array @@ copy cr) with
   (* match path_to_outlines (Path.copy cr) with *)
-  | [] -> { outer = []; inner = [] }
-  | outer :: inner -> { outer; inner }
+  | [] -> Poly2.{ outer = []; holes = [] }
+  | outer :: holes -> { outer; holes }
 
-(* Should there be a global context that is just cleared out at every usage? Or
-    a new one each time toplevel function that takes a whole string is used?
-    Seem like it can be pretty cheap, so maybe just for each string (not just
-    char level like this, since usually you'll want word/phrase)
-
-   For multiple characters:
-   - clear path and move redo the move operation that was at the end of the last
-    character
-   - thus the relative positions are preserved, while the clearing allows
-    unambiguous segregation of the outer/inner paths for each character
-   - initial move_to using text extents based on the alignment/anchoring
-    (centre) option given to the top-level function? (will likely require use of
-   text extent on the whole string to get the sizing)
-
-   Note that from the one check I did so far, the letter is upside down, so the
-    coordinate system is flipped at the least.
-*)
+(* TODO: need to check whether paths that follow the first are actually
+    contained within it. If they are not, they should be split into their own
+    shape. For example '!' is not actually an outer shape with holes. There are
+    also going to be cases where there are multiple shapes with holes, and I'm
+    not sure whether the paths coming out from Cairo will not jump back and
+    forth between "polygons", mixing inner and outer paths. *)
+let text ?fn ?(center = false) ?weight ~font txt =
+  let ctxt = create (Image.create Image.A1 ~w:1 ~h:1) in
+  select_font_face ?weight ctxt font;
+  scale ctxt 1. 1.;
+  set_font_size ctxt 10.;
+  let te = text_extents ctxt txt in
+  if center
+  then (
+    let x = 0.5 -. (te.width /. 2.) -. te.x_bearing
+    and y = 0.5 -. (te.height /. 2.) -. te.y_bearing in
+    move_to ctxt x y )
+  else move_to ctxt 0. 0.5;
+  let f acc c =
+    let s = String.make 1 c in
+    Path.text ctxt s;
+    let acc =
+      match pathdata_to_outlines ?fn Path.(to_array @@ copy ctxt) with
+      | []             -> acc
+      | outer :: holes -> Poly2.{ outer; holes } :: acc
+    in
+    let x, y = Path.get_current_point ctxt in
+    Path.clear ctxt;
+    move_to ctxt x y;
+    acc
+  in
+  String.fold_left f [] txt
