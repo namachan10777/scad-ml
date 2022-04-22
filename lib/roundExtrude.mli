@@ -64,19 +64,19 @@ module Spec : sig
 end
 
 val sweep
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Spec.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Mesh0.t
 
 val linear_extrude
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
@@ -85,19 +85,20 @@ val linear_extrude
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Spec.caps
   -> height:float
   -> Poly2.t
   -> Mesh0.t
 
 val helix_extrude
-  :  ?fn:int
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?fn:int
   -> ?fa:float
   -> ?fs:float
   -> ?scale:Vec2.t
   -> ?twist:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Spec.caps
   -> ?left:bool
   -> n_turns:int
@@ -108,12 +109,12 @@ val helix_extrude
   -> Mesh0.t
 
 val path_extrude
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Spec.t
   -> ?euler:bool
   -> ?scale:Vec2.t

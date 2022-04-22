@@ -84,8 +84,17 @@ let text ?fn ?(center = false) ?weight ~font txt =
     Path.text ctxt s;
     let acc =
       match pathdata_to_outlines ?fn Path.(to_array @@ copy ctxt) with
-      | []             -> acc
-      | outer :: holes -> Poly2.{ outer; holes } :: acc
+      | []          -> acc
+      | outer :: tl ->
+        let rec aux polys outer holes = function
+          | []                    -> Poly2.{ outer; holes } :: polys
+          | (pt :: _ as hd) :: tl ->
+            ( match Path2.point_inside outer pt with
+            | `Inside -> aux polys outer (hd :: holes) tl
+            | _       -> aux (Poly2.{ outer; holes } :: polys) hd [] tl )
+          | _                     -> aux polys outer holes tl
+        in
+        aux acc outer [] tl
     in
     let x, y = Path.get_current_point ctxt in
     Path.clear ctxt;

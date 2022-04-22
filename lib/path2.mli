@@ -20,6 +20,13 @@ val bbox : t -> bbox
 val centroid : ?eps:float -> t -> Vec2.t
 val area : ?signed:bool -> t -> float
 
+val point_inside
+  :  ?eps:float
+  -> ?nonzero:bool
+  -> t
+  -> Vec2.t
+  -> [> `Inside | `OnBorder | `Outside ]
+
 val arc
   :  ?rev:bool
   -> ?fn:int

@@ -132,19 +132,19 @@ module Spec : sig
 end
 
 val sweep
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Spec.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> t
 
 val linear_extrude
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
@@ -153,7 +153,7 @@ val linear_extrude
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Spec.caps
   -> height:float
   -> Poly2.t
@@ -174,12 +174,13 @@ val prism
   -> t
 
 val helix_extrude
-  :  ?fn:int
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?fn:int
   -> ?fa:float
   -> ?fs:float
   -> ?scale:Vec2.t
   -> ?twist:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Spec.caps
   -> ?left:bool
   -> n_turns:int
@@ -190,12 +191,12 @@ val helix_extrude
   -> t
 
 val path_extrude
-  :  ?check_valid:int option
+  :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Spec.t
   -> ?euler:bool
   -> ?scale:Vec2.t
@@ -249,4 +250,5 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
 val multmatrix : MultMatrix.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
+val show_points : (int -> 'a Scad.t) -> t -> 'a Scad.t
 val to_scad : ?convexity:int -> t -> Scad.d3

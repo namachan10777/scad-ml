@@ -362,4 +362,5 @@ let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 let multmatrix m t = { t with points = Path3.multmatrix m t.points }
 let scale s t = { t with points = Path3.scale s t.points }
 let mirror ax t = rev_faces { t with points = Path3.mirror ax t.points }
+let show_points f t = Scad.union (List.mapi (fun i p -> Scad.translate p (f i)) t.points)
 let to_scad ?convexity { points; faces; _ } = Scad.polyhedron ?convexity points faces

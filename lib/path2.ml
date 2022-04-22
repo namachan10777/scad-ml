@@ -116,6 +116,57 @@ let area ?(signed = false) = function
     let area, _ = List.fold_left f (0., p1) tl in
     (if signed then area else Float.abs area) /. 2.
 
+let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
+  let bb = bbox t in
+  if p.x < bb.min.x -. eps
+     || p.x > bb.max.x +. eps
+     || p.y < bb.min.y -. eps
+     || p.y > bb.max.y +. eps
+  then `Outside
+  else (
+    let segs = segment ~closed:true t in
+    let exception OnBorder in
+    if try
+         let f (s : Vec2.line) =
+           if Vec2.distance s.a s.b > eps
+              && Vec2.point_on_line ~eps ~bounds:(true, true) ~line:s p
+           then raise OnBorder
+         in
+         List.iter f segs;
+         false
+       with
+       | OnBorder -> true
+    then `OnBorder
+    else if nonzero
+    then (
+      let f sum (s : Vec2.line) =
+        let p0 = Vec2.sub s.a p
+        and p1 = Vec2.sub s.b p in
+        let w =
+          if Vec2.distance p0 p1 > eps
+          then (
+            let c = (Vec2.cross p0 (Vec2.sub p1 p0)).z in
+            if p0.y <= 0.
+            then if p1.y > 0. && c > 0. then 1 else 0
+            else if p1.y <= 0. && c < 0.
+            then -1
+            else 0 )
+          else 0
+        in
+        w + sum
+      in
+      if List.fold_left f 0 segs <> 0 then `Inside else `Outside )
+    else (
+      let f crossings (s : Vec2.line) =
+        let p0 = Vec2.sub s.a p
+        and p1 = Vec2.sub s.b p in
+        if ((p1.y > eps && p0.y <= eps) || (p1.y <= eps && p0.y > eps))
+           && -.eps < p0.x -. (p0.y *. (p1.x -. p0.x) /. (p1.y -. p0.y))
+        then crossings + 1
+        else crossings
+      in
+      if (2 * (List.fold_left f 0 segs mod 2)) - 1 > 0 then `Inside else `Outside ) )
+
 let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)
 let rotate r = List.map (Vec2.rotate r)

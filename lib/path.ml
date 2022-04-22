@@ -1,5 +1,6 @@
 module type S = sig
   type vec
+  type line
   type t = vec list
 
   val length' : vec array -> float
@@ -21,10 +22,13 @@ module type S = sig
     -> (float -> vec)
     -> vec
     -> float
+
+  val segment : ?closed:bool -> vec list -> line list
 end
 
-module Make (V : Vec.S) : S with type vec := V.t = struct
+module Make (V : Vec.S) : S with type vec := V.t and type line = V.line = struct
   type vec = V.t
+  type line = V.line
   type t = vec list
 
   let length' path =
@@ -227,4 +231,12 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
       | [] -> failwith "Failure to find minima."
     in
     aux 0. 1.
+
+  let segment ?(closed = false) = function
+    | [] | [ _ ] -> invalid_arg "Cannot segment path with fewer than 2 points."
+    | [ _; _ ] when closed -> invalid_arg "Path of length 2 cannot be closed."
+    | hd :: tl ->
+      let f (a, segs) b = b, V.{ a; b } :: segs in
+      let last, segs = List.fold_left f (hd, []) tl in
+      List.rev @@ if closed then V.{ a = last; b = hd } :: segs else segs
 end

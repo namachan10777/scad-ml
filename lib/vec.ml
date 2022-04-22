@@ -166,6 +166,7 @@ module type S = sig
   val distance_to_vector : t -> t -> float
 
   val distance_to_line : ?bounds:bool * bool -> line:line -> t -> float
+  val point_on_line : ?eps:float -> ?bounds:bool * bool -> line:line -> t -> bool
   val line_closest_point : ?bounds:bool * bool -> line:line -> t -> t
 
   (** {1 Utilities} *)

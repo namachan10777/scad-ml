@@ -102,6 +102,9 @@ let distance_to_line ?(bounds = false, false) ~line t =
   | false, false -> distance_to_vector (sub t line.a) (normalize (sub line.b line.a))
   | bounds       -> norm (sub t (line_closest_point ~bounds ~line t))
 
+let point_on_line ?(eps = Util.epsilon) ?bounds ~line t =
+  distance_to_line ?bounds ~line t < eps
+
 let line_intersection
     ?(eps = Util.epsilon)
     ?(bounds1 = false, false)

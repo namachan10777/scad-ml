@@ -136,7 +136,7 @@ let sweep'
     ?fn
     ?fs
     ?fa
-    ?(mode = `Radius)
+    ?(offset_mode = `Radius)
     ?(sealed = true)
     ~top
     ~bot
@@ -158,7 +158,7 @@ let sweep'
     let z_dir, flip_faces = if top then 1., false else -1., true in
     let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
       let spec =
-        match mode with
+        match offset_mode with
         | `Radius  -> `Radius (d -. last_d)
         | `Delta   -> `Delta (d -. last_d)
         | `Chamfer -> `Chamfer (d -. last_d)
@@ -201,12 +201,12 @@ let sweep
     ?fn
     ?fs
     ?fa
-    ?mode
+    ?offset_mode
     ?(spec = flat_caps)
     ~transforms
     Poly2.{ outer; holes }
   =
-  let sweep = sweep' ?check_valid ?fn ?fs ?fa ?mode ~transforms in
+  let sweep = sweep' ?check_valid ?fn ?fs ?fa ?offset_mode ~transforms in
   match spec, holes with
   | `Caps { top; bot }, []    ->
     let top = cap_to_path top
@@ -255,9 +255,14 @@ let sweep
       in
       List.fold_left f (0, [], [], []) holes
     in
-    let outer_bot, outer_top, outer = sweep ~winding:`CCW ~sealed:false ~top ~bot outer in
-    let bot_lid = Mesh0.of_poly3 ~rev:true (Poly3.make ~holes:tunnel_bots outer_bot)
-    and top_lid = Mesh0.of_poly3 (Poly3.make ~holes:tunnel_tops outer_top) in
+    let validate =
+      match check_valid with
+      | Some `No -> false
+      | _        -> true
+    and outer_bot, outer_top, outer = sweep ~winding:`CCW ~sealed:false ~top ~bot outer in
+    let bot_lid =
+      Mesh0.of_poly3 ~rev:true (Poly3.make ~validate ~holes:tunnel_bots outer_bot)
+    and top_lid = Mesh0.of_poly3 (Poly3.make ~validate ~holes:tunnel_tops outer_top) in
     Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
 
 let linear_extrude
@@ -270,7 +275,7 @@ let linear_extrude
     ?scale
     ?(twist = 0.)
     ?(center = false)
-    ?mode
+    ?offset_mode
     ?(caps = { top = `Flat; bot = `Flat })
     ~height
     shape
@@ -289,15 +294,25 @@ let linear_extrude
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3.to_transforms ?scale ?twist
   in
-  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ~spec:(`Caps caps) ~transforms shape
+  sweep
+    ?check_valid
+    ?winding
+    ?fn
+    ?fs
+    ?fa
+    ?offset_mode
+    ~spec:(`Caps caps)
+    ~transforms
+    shape
 
 let helix_extrude
+    ?check_valid
     ?fn
     ?fa
     ?fs
     ?scale
     ?twist
-    ?mode
+    ?offset_mode
     ?(caps = { top = `Flat; bot = `Flat })
     ?(left = true)
     ~n_turns
@@ -328,8 +343,29 @@ let helix_extrude
     in
     List.mapi f path
   in
-  sweep ~winding ?fn ?fs ?fa ?mode ~spec:(`Caps caps) ~transforms shape
+  sweep
+    ?check_valid
+    ~winding
+    ?fn
+    ?fs
+    ?fa
+    ?offset_mode
+    ~spec:(`Caps caps)
+    ~transforms
+    shape
 
-let path_extrude ?check_valid ?winding ?fn ?fs ?fa ?mode ?spec ?euler ?scale ?twist ~path =
+let path_extrude
+    ?check_valid
+    ?winding
+    ?fn
+    ?fs
+    ?fa
+    ?offset_mode
+    ?spec
+    ?euler
+    ?scale
+    ?twist
+    ~path
+  =
   let transforms = Path3.to_transforms ?euler ?scale ?twist path in
-  sweep ?check_valid ?winding ?fn ?fs ?fa ?mode ?spec ~transforms
+  sweep ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ~transforms

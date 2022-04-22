@@ -620,34 +620,49 @@ let rounded_prism_pointy () =
 
 let rounded_text () =
   let scad =
-    let hello = PolyText.text ~fn:2 ~font:"Fira Code" "Hello"
+    let hello = PolyText.text ~fn:5 ~font:"Roboto" "Hello!"
     and f poly =
-      Mesh.(
-        linear_extrude
-          ~mode:`Radius
-            (* ~caps:Spec.{ top = round @@ circ (`Cut 0.05); bot = round @@ circ (`Cut 0.05) } *)
-          ~caps:
-            Spec.
-              { top = round @@ chamf ~height:0.1 (); bot = round @@ chamf ~height:0.1 () }
-          ~height:1.
-          poly)
-      |> Mesh.to_scad
-    in
-    let marks =
-      let f c pts =
-        let s = Scad.color c @@ Scad.sphere 0.1 in
-        Scad.union @@ List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) pts
+      let mesh =
+        Mesh.(
+          linear_extrude
+            ~check_valid:(`Quality 10)
+            ~offset_mode:`Radius
+            ~caps:
+              Spec.
+                { top = round @@ circ ~fn:5 (`Cut 0.1)
+                ; bot = round @@ circ ~fn:5 (`Cut 0.1)
+                }
+              (* ~caps: *)
+              (*   Spec. *)
+              (*     { top = round @@ chamf ~height:0.3 () *)
+              (*     ; bot = round @@ chamf ~height:0.3 () *)
+              (*     } *)
+            ~height:1.
+            poly)
       in
-      List.fold_left
-        (fun acc Poly2.{ outer; holes } ->
-          List.fold_left
-            (fun hs ps -> f Color.Blue ps :: hs)
-            (f Color.Red outer :: acc)
-            holes )
-        []
-        hello
+      (* Scad.union [ Mesh.to_scad mesh; Mesh.show_points (fun _ -> Scad.sphere 0.05) mesh ] *)
+      Mesh.to_scad mesh
     in
-    Scad.union @@ List.concat [ List.map f hello; marks ]
+    (* let marks = *)
+    (*   let f c pts = *)
+    (*     let m i = *)
+    (*       Scad.text ~size:0.05 (Int.to_string i) *)
+    (*       |> Scad.linear_extrude ~height:0.1 *)
+    (*       |> Scad.color c *)
+    (*     in *)
+    (*     Scad.union @@ List.mapi (fun i { x; y } -> Scad.translate (v3 x y 0.) (m i)) pts *)
+    (*   in *)
+    (*   List.fold_left *)
+    (*     (fun acc Poly2.{ outer; holes } -> *)
+    (*       List.fold_left *)
+    (*         (fun hs ps -> f Color.Blue ps :: hs) *)
+    (*         (f Color.Red outer :: acc) *)
+    (*         holes ) *)
+    (*     [] *)
+    (*     hello *)
+    (* in *)
+    (* Scad.union @@ List.concat [ List.map f hello; marks ] *)
+    Scad.union @@ List.map f hello
   and oc = open_out "rounded_text.scad" in
   Scad.write oc scad;
   close_out oc

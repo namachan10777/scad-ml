@@ -4,9 +4,9 @@ let shift_segment ~d Vec2.{ a; b } =
 
 (* Get the intersection point between two segments, or their common point if
    they already share one. *)
-let segment_extension (Vec2.{ b = b1; _ } as s1) (Vec2.{ a = a2; _ } as s2) =
-  if Vec2.(norm (sub b1 a2) < 1e-6)
-  then a2
+let segment_extension s1 s2 =
+  if Vec2.(norm (sub s1.b s2.a) < 1e-6)
+  then s1.b
   else (
     match Vec2.line_intersection s1 s2 with
     | Some inter -> inter
@@ -38,10 +38,13 @@ let chamfer ~centre ~delta p1 p2 p3 =
     path/outline before offseting). The number of points sampled along the
     segments for this approximation is set by quality. *)
 let good_segments ~quality ~closed ~d path shifted_segs =
-  let len = Array.length path - if closed then 0 else 1
+  let len = Array.length path in
+  let max_idx = len - if closed then 1 else 2 in
+  let n_segs = max_idx + 1
   and d = d -. 1e-7 in
   let path_segs =
-    Array.init len (fun i -> Vec2.sub path.(Util.index_wrap ~len (i + 1)) path.(i))
+    Array.init n_segs (fun i ->
+        Vec2.sub path.(Util.index_wrap ~len:n_segs (i + 1)) path.(i) )
   in
   let path_segs_norm = Array.map Vec2.norm path_segs in
   let path_segs_unit =
@@ -55,9 +58,10 @@ let good_segments ~quality ~closed ~d path shifted_segs =
       | i -> (Float.of_int i +. 1.) /. q
     in
     Array.init (quality + 2) f
-  and point_dist pt =
+  in
+  let point_dist pt =
     let min = ref Float.max_float in
-    for i = 0 to len - 1 do
+    for i = 0 to max_idx do
       let vec = Vec2.sub pt path.(i) in
       let proj = Vec2.dot vec path_segs_unit.(i) in
       let seg_dist =
@@ -72,7 +76,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
     !min
   in
   let f i =
-    if i > len - 1
+    if i > max_idx
     then true
     else (
       let j = ref 0
@@ -80,7 +84,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
       and Vec2.{ a = ssa; b = ssb } = shifted_segs.(i) in
       while (not !good) && !j < quality + 2 do
         let a = alphas.(!j) in
-        let pt = Vec2.(add (smul ssa a) (smul ssb (1. -. a))) in
+        let pt = Vec2.lerp ssa ssb a in
         good := point_dist pt > d;
         incr j
       done;
@@ -88,7 +92,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   in
   Array.init (Array.length shifted_segs) f
 
-let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
+let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = `Quality 1) offset path =
   let path = Array.of_list path in
   let mode, d =
     let flip = if closed then Path2.clockwise_sign' path *. -1. else 1. in
@@ -106,8 +110,8 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
   in
   let good =
     match check_valid with
-    | Some quality -> good_segments ~quality ~closed ~d path shifted_segs
-    | None         -> Array.make len true
+    | `Quality quality -> good_segments ~quality ~closed ~d path shifted_segs
+    | `No              -> Array.make len true
   in
   let n_good = Array.fold_left (fun sum b -> Bool.to_int b + sum) 0 good in
   if n_good = 0 then failwith "Offset of path is degenerate";
@@ -135,7 +139,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
     else (
       let f i =
         (* if path is open, ignore ends *)
-        if (i = 0 || i = n_good - 1) && not closed
+        if (not closed) && (i = 0 || i = n_good - 1)
         then false
         else (
           let Vec2.{ a = prev_a; b = prev_b } =
@@ -148,7 +152,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
       Array.init n_good f )
   in
   let new_corners, point_counts =
-    let round i = inside_corner.(i) || ((not closed) && (i = 0 || i = n_good - 1)) in
+    let round i = inside_corner.(i) && (closed || (i <> 0 && i <> n_good - 1)) in
     match mode with
     | `Delta   -> Array.to_list sharp_corners, List.init n_good (fun _ -> 1)
     | `Chamfer ->
@@ -184,6 +188,18 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = Some 1) offset path =
       in
       let l = List.init n_good f in
       List.concat l, List.map List.length l
+  in
+  let new_corners =
+    (* If open path, maintain start and end points. *)
+    if closed
+    then new_corners
+    else (
+      let rec aux acc = function
+        | []       -> acc
+        | [ _ ]    -> good_segs.(n_good - 1).b :: acc
+        | hd :: tl -> aux (hd :: acc) tl
+      in
+      good_segs.(0).a :: (List.rev @@ aux [] (List.tl new_corners)) )
   in
   good, new_corners, point_counts
 
@@ -223,35 +239,40 @@ let offset_with_faces
   and n_second = Array.fold_left ( + ) 0 counts
   and start_i = start_idx
   and start_j = start_idx + len
+  and stop_offset = if closed then 0 else 1
   and j = ref 0
+  and i = ref 0
   and faces = ref [] in
   let add_face =
     if flip_faces
     then fun a -> faces := List.rev a :: !faces
     else fun a -> faces := a :: !faces
   in
-  for i = 0 to n_first - Bool.to_int (not closed) - 1 do
-    let c = counts.(i)
-    and j' = !j in
+  while !i < n_first - stop_offset || !j < n_second - stop_offset do
+    let c = counts.(!i) in
     if c = 0
     then
       (* Point in original path no longer exists in the offset path. Thus a
            triangular face is made from the adjacent points on th original, to the
            current point in the new path. *)
       add_face
-        [ (j' mod n_second) + start_j; i + start_i; ((i + 1) mod n_first) + start_i ]
-    else
+        [ (!j mod n_second) + start_j
+        ; (!i mod n_first) + start_i
+        ; ((!i + 1) mod n_first) + start_i
+        ]
+    else (
       (* Triangular faces for the extra points in the offset path, if there are any. *)
       for k = 0 to c - 2 do
-        add_face [ i + start_i; j' + k + 1 + start_j; j' + k + start_j ]
+        add_face [ (!i mod n_first) + start_i; !j + k + 1 + start_j; !j + k + start_j ]
       done;
-    (* Quadrilateral face *)
-    add_face
-      [ i + start_i
-      ; ((i + 1) mod n_first) + start_i
-      ; ((j' + c) mod n_second) + start_j
-      ; ((j' + c - 1) mod n_second) + start_j
-      ];
-    j := j' + c
+      (* Quadrilateral face *)
+      add_face
+        [ (!i mod n_first) + start_i
+        ; ((!i + 1) mod n_first) + start_i
+        ; ((!j + c) mod n_second) + start_j
+        ; ((!j + c - 1) mod n_second) + start_j
+        ] );
+    incr i;
+    j := !j + c
   done;
   n_second, points, !faces
