@@ -9,13 +9,6 @@ type t =
   ; holes : Vec2.t list list
   }
 
-(* TODO: validate non-self-intersecting, enough points in each path, and
-    that none of them interset with eachother, then protect the type.
-    Make optional, but on by default: ?(validate = true)
-   See is_region_simple (and _region_region_intersections) for example:
-     https://github.com/revarbat/BOSL2/blob/master/regions.scad#L230
-     https://github.com/revarbat/BOSL2/blob/master/regions.scad#L419
-   TODO: make test cases for simple polygons to ensure this is working. *)
 let validation ?(eps = Util.epsilon) = function
   | { outer = [] | [ _ ] | [ _; _ ]; _ } -> invalid_arg "Outer path has too few points."
   | { outer; holes } ->

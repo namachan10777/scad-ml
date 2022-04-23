@@ -70,7 +70,9 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal faces. *)
 val of_polygons : Path3.t list -> t
 
-module Spec : sig
+(** {1 Sweeps and Extrusions with roundovers} *)
+
+module Cap : sig
   type offset =
     { d : float
     ; z : float
@@ -90,21 +92,21 @@ module Spec : sig
     ; holes : holes
     }
 
-  type cap =
+  type poly_spec =
     [ `Empty
     | `Flat
     | `Round of poly
     ]
 
-  type path =
+  type path_spec =
     [ `Empty
     | `Flat
     | `Round of offsets
     ]
 
   type caps =
-    { top : cap
-    ; bot : cap
+    { top : poly_spec
+    ; bot : poly_spec
     }
 
   type t =
@@ -126,7 +128,7 @@ module Spec : sig
   val custom : offset list -> offsets
   val round : ?holes:holes -> offsets -> [> `Round of poly ]
   val looped : t
-  val capped : top:cap -> bot:cap -> t
+  val capped : top:poly_spec -> bot:poly_spec -> t
   val flat_caps : t
   val open_caps : t
 end
@@ -138,10 +140,10 @@ val sweep
   -> ?fs:float
   -> ?fa:float
   -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?spec:Spec.t
+  -> ?spec:Cap.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
-  -> t
+  -> Mesh0.t
 
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
@@ -154,10 +156,42 @@ val linear_extrude
   -> ?twist:float
   -> ?center:bool
   -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?caps:Spec.caps
+  -> ?caps:Cap.caps
   -> height:float
   -> Poly2.t
-  -> t
+  -> Mesh0.t
+
+val helix_extrude
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?caps:Cap.caps
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> Poly2.t
+  -> Mesh0.t
+
+val path_extrude
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?fn:int
+  -> ?fs:float
+  -> ?fa:float
+  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
+  -> ?spec:Cap.t
+  -> ?euler:bool
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> path:Path3.t
+  -> Poly2.t
+  -> Mesh0.t
 
 val prism
   :  ?debug:bool
@@ -169,41 +203,9 @@ val prism
   -> ?joint_bot:float * float
   -> ?joint_top:float * float
   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
-  -> Path3.t
-  -> Path3.t
-  -> t
-
-val helix_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?fn:int
-  -> ?fa:float
-  -> ?fs:float
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?caps:Spec.caps
-  -> ?left:bool
-  -> n_turns:int
-  -> pitch:float
-  -> ?r2:float
-  -> float
-  -> Poly2.t
-  -> t
-
-val path_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?fn:int
-  -> ?fs:float
-  -> ?fa:float
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
-  -> ?spec:Spec.t
-  -> ?euler:bool
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> path:Path3.t
-  -> Poly2.t
-  -> t
+  -> Vec3.t list
+  -> Vec3.t list
+  -> Mesh0.t
 
 (** {1 Function Plotting} *)
 

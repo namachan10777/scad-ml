@@ -2,7 +2,7 @@ open Util
 open Vec
 module R2 = Rounding.Make (Vec2) (Arc2)
 
-module Spec = struct
+module Cap = struct
   type offset =
     { d : float
     ; z : float
@@ -22,26 +22,26 @@ module Spec = struct
     ; holes : holes
     }
 
-  type cap =
+  type poly_spec =
     [ `Empty
     | `Flat
     | `Round of poly
     ]
 
-  type path =
+  type path_spec =
     [ `Empty
     | `Flat
     | `Round of offsets
     ]
 
-  let cap_to_path = function
+  let poly_to_path_spec = function
     | `Flat               -> `Flat
     | `Empty              -> `Empty
     | `Round { outer; _ } -> `Round outer
 
   type caps =
-    { top : cap
-    ; bot : cap
+    { top : poly_spec
+    ; bot : poly_spec
     }
 
   type t =
@@ -76,13 +76,14 @@ module Spec = struct
   let circ ?(fn = 16) roundover =
     let radius = radius_of_roundover roundover in
     let step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
-    let f i =
+    let f i (acc, last_z) =
       let i = Float.of_int (i + 1) in
-      { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
-      ; z = quantize (Float.abs radius *. Float.sin (i *. step))
-      }
+      let z = quantize (Float.abs radius *. Float.sin (i *. step)) in
+      if Math.approx last_z z
+      then acc, last_z
+      else { d = quantize (radius *. (Float.cos (i *. step) -. 1.)); z } :: acc, z
     in
-    Offsets (List.init fn f)
+    Offsets (List.rev @@ fst @@ Util.fold_init fn f ([], Float.min_float))
 
   let tear ?(fn = 16) roundover =
     let radius = radius_of_roundover roundover in
@@ -128,7 +129,7 @@ module Spec = struct
   let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 end
 
-open Spec
+open Cap
 
 let sweep'
     ?check_valid
@@ -209,8 +210,8 @@ let sweep
   let sweep = sweep' ?check_valid ?fn ?fs ?fa ?offset_mode ~transforms in
   match spec, holes with
   | `Caps { top; bot }, []    ->
-    let top = cap_to_path top
-    and bot = cap_to_path bot in
+    let top = poly_to_path_spec top
+    and bot = poly_to_path_spec bot in
     let _, _, poly = sweep ?winding ~top ~bot outer in
     poly
   | `Looped, holes            ->

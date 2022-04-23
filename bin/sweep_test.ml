@@ -412,7 +412,7 @@ let offset_sweep () =
          sweep
            ~transforms
            ~spec:
-             Spec.(
+             Cap.(
                capped
                  ~bot:(round @@ tear (`Radius (-1.)))
                  ~top:(round @@ tear (`Radius 0.5))))
@@ -435,7 +435,7 @@ let offset_linear_extrude () =
            ~twist:(2. *. Float.pi)
            ~center:false
            ~caps:
-             Spec.{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
+             Cap.{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
            ~height:10.)
     |> Mesh.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
@@ -559,7 +559,7 @@ let rounded_polyhole_sweep () =
       sweep
         ~transforms
         ~spec:
-          Spec.(
+          Cap.(
             capped
               ~bot:(round ~holes:`Same @@ circ (`Radius (-0.6)))
               ~top:(round @@ circ (`Radius 0.5)))
@@ -567,20 +567,6 @@ let rounded_polyhole_sweep () =
     |> Mesh.merge_points
     |> Mesh.to_scad
   and oc = open_out "rounded_polyhole_sweep.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polytext () =
-  let scad =
-    let font = "Fira Code" in
-    let Poly2.{ outer; holes } = PolyText.glyph_outline ~fn:16 ~font 'g' in
-    let Path2.{ min = { x = l; y = b }; max = { x = r; y = t } } = Path2.bbox outer in
-    Printf.printf "left = %.2f; right = %.2f; top = %.2f; bot = %.2f\n" l r t b;
-    Scad.union
-      [ Poly2.(to_scad @@ make ~validate:true ~holes outer)
-      ; Scad.text ~font ~size:8. "g" |> Scad.color ~alpha:0.5 Color.BlueViolet
-      ]
-  and oc = open_out "polytext.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -620,48 +606,29 @@ let rounded_prism_pointy () =
 
 let rounded_text () =
   let scad =
-    let hello = PolyText.text ~fn:5 ~font:"Roboto" "Hello!"
+    let hello = PolyText.text ~center:true ~fn:5 ~size:5. ~font:"Roboto" "Hello World!"
     and f poly =
       let mesh =
         Mesh.(
           linear_extrude
-            ~check_valid:(`Quality 10)
-            ~offset_mode:`Radius
+            ~check_valid:(`Quality 1)
+            ~offset_mode:`Delta
             ~caps:
-              Spec.
-                { top = round @@ circ ~fn:5 (`Cut 0.1)
-                ; bot = round @@ circ ~fn:5 (`Cut 0.1)
+              Cap.
+                { top = round @@ circ ~fn:5 (`Cut 0.01)
+                ; bot = round @@ circ ~fn:5 (`Cut 0.01)
                 }
               (* ~caps: *)
               (*   Spec. *)
-              (*     { top = round @@ chamf ~height:0.3 () *)
-              (*     ; bot = round @@ chamf ~height:0.3 () *)
+              (*     { top = round @@ chamf ~height:0.1 () *)
+              (*     ; bot = round @@ chamf ~height:0.1 () *)
               (*     } *)
-            ~height:1.
+            ~height:0.5
             poly)
       in
       (* Scad.union [ Mesh.to_scad mesh; Mesh.show_points (fun _ -> Scad.sphere 0.05) mesh ] *)
       Mesh.to_scad mesh
     in
-    (* let marks = *)
-    (*   let f c pts = *)
-    (*     let m i = *)
-    (*       Scad.text ~size:0.05 (Int.to_string i) *)
-    (*       |> Scad.linear_extrude ~height:0.1 *)
-    (*       |> Scad.color c *)
-    (*     in *)
-    (*     Scad.union @@ List.mapi (fun i { x; y } -> Scad.translate (v3 x y 0.) (m i)) pts *)
-    (*   in *)
-    (*   List.fold_left *)
-    (*     (fun acc Poly2.{ outer; holes } -> *)
-    (*       List.fold_left *)
-    (*         (fun hs ps -> f Color.Blue ps :: hs) *)
-    (*         (f Color.Red outer :: acc) *)
-    (*         holes ) *)
-    (*     [] *)
-    (*     hello *)
-    (* in *)
-    (* Scad.union @@ List.concat [ List.map f hello; marks ] *)
     Scad.union @@ List.map f hello
   and oc = open_out "rounded_text.scad" in
   Scad.write oc scad;
