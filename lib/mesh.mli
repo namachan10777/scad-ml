@@ -98,17 +98,31 @@ val of_polygons : Path3.t list -> t
 (** {1 Sweeps and Extrusions with roundovers} *)
 
 module Cap : sig
+  (** Configuration module for declaring how extrusions from 2d to 3d via
+    {!Mesh.sweep} should be capped off. *)
+
+  (** Offset diameter [d] (positive or negative), and corresponding vertical
+    step [z] (enforced positive only when consumed). *)
   type offset =
     { d : float
     ; z : float
     }
 
+  (** A list of {!offset} describing a 3d end-cap extrusion roundover. *)
   type offsets
 
+  (** Specifies how holes in the end-cap should be treated, either relative to
+    the outer shape, or independantly. When multiple holes are present, [`Mix]
+    allows each one to be specified separately, to treat all the same, use the
+    other variants directly. *)
   type holes =
-    [ `Same
+    [ `Same (** Offset [d] and [z] values from outer are copied. *)
     | `Flip
+      (** Offset [d] and [z] values from outer are copied, but [d] sign is flipped. *)
     | `Custom of offsets
+      (** Supplies a different set of offsets for the holes. Note that this
+    should have the same [z] values, or else the roundover mesh will not be well
+    formed. *)
     | `Mix of [ `Same | `Flip | `Custom of offsets ] list
     ]
 
@@ -117,16 +131,12 @@ module Cap : sig
     ; holes : holes
     }
 
+  (** Specifies whether an end of the extrusion should be left [`Empty], sealed
+    with a [`Flat] face, or [`Round]ed over with a given offset specification. *)
   type poly_spec =
     [ `Empty
     | `Flat
     | `Round of poly
-    ]
-
-  type path_spec =
-    [ `Empty
-    | `Flat
-    | `Round of offsets
     ]
 
   type caps =
@@ -134,6 +144,10 @@ module Cap : sig
     ; bot : poly_spec
     }
 
+  (** Top-level configuration type for {!Mesh.sweep}, allowing for the end-caps
+    to be specified using the types above, or to simply loop the first and last
+    layers of the mesh together (see: {!type:row_wrap} [`Loop] as used by
+    {!of_layers}). *)
   type t =
     [ `Looped
     | `Caps of caps
