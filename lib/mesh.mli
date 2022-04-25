@@ -1,4 +1,8 @@
-type t = Mesh0.t
+type t = Mesh0.t = private
+  { n_points : int
+  ; points : Vec3.t list
+  ; faces : int list list
+  }
 
 type row_wrap =
   [ `Loop
@@ -8,10 +12,15 @@ type row_wrap =
   | `Bot
   ]
 
+(** [empty]
+
+    An empty [t], with no points. *)
 val empty : t
-val n_points : t -> int
-val points : t -> Vec3.t list
-val faces : t -> int list list
+
+(** [make ~points ~faces]
+
+    Create a mesh [t] from a list of {!Vec3.t} [points], and a list of [faces]
+    described by indices into [points]. *)
 val make : points:Vec3.t list -> faces:int list list -> t
 
 (** [of_rows ?row_wrap ?col_wrap rows]
@@ -42,32 +51,48 @@ val of_rows : ?row_wrap:row_wrap -> ?col_wrap:bool -> Vec3.t list list -> t
     greater than 2 is encountered. *)
 val of_ragged : ?looped:bool -> ?rev:bool -> Vec3.t list list -> t
 
-(** [of_path2 ?rev layer]
+(** [of_path3 ?rev layer]
 
-    *)
+    Create a mesh from a single path (a closed loop of {!Vec2.t}), returning a
+    {!type:t} with a single face including all of the points. Face winding order
+    is reversed if [rev] is [true]. This can be useful for producing a flat
+    patch mesh to be combined with other meshes to produce a complete shape. *)
 val of_path2 : ?rev:bool -> Path2.t -> t
 
 (** [of_path3 ?rev layer]
 
-    Create a mesh from a single layer (a closed loop of {!Vec3.t}), returning a
-    {!type:t} with a single face including all of the points. Face winding order
-    is reversed if [rev] is [true]. This can be useful for producing a flat
-    patch mesh to be combined with other meshes to produce a complete shape. *)
+    Create a mesh from a single path (a closed loop of {!Vec3.t}, should be
+   coplanar though it is not confirmed), returning a {!type:t} with a single
+   face including all of the points. Face winding order is reversed if [rev] is
+   [true]. This can be useful for producing a flat patch mesh to be combined
+   with other meshes to produce a complete shape. *)
 val of_path3 : ?rev:bool -> Path3.t -> t
 
 (** [of_poly2 ?rev poly]
 
-    *)
+    Create a mesh from a 2d polygon. If [poly] does not have any holes, then
+    this is equivalent to {!Mesh.of_path2}. If there are holes, polyhole
+    partitioning is performed to determine a set of faces that can close the
+    points.
+
+    Adapted from:
+    https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 val of_poly2 : ?rev:bool -> Poly2.t -> t
 
 (** [of_poly3 ?rev poly]
 
-    *)
+    Create a mesh from a 3d polygon. If [poly] does not have any holes, then
+    this is equivalent to {!Mesh.of_path3}. If there are holes, polyhole
+    partitioning is performed to determine a set of faces that can close the
+    points.
+
+    Adapted from:
+    https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 val of_poly3 : ?rev:bool -> Poly3.t -> t
 
 (** [of_polygons polys]
 
-    Create a polyhedron mesh from a list of polygonal faces. *)
+    Create a polyhedron mesh from a list of polygonal point faces. *)
 val of_polygons : Path3.t list -> t
 
 (** {1 Sweeps and Extrusions with roundovers} *)

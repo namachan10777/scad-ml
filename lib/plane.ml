@@ -7,7 +7,7 @@ type t =
   ; d : float
   }
 
-let coefficients { a; b; c; d } = a, b, c, d
+let to_tup { a; b; c; d } = a, b, c, d
 
 let make p1 p2 p3 =
   let ({ x; y; z } as crx) = Vec3.(cross (sub p3 p1) (sub p2 p1)) in

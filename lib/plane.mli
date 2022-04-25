@@ -2,12 +2,17 @@
 
     The type {!t} contains the coefficients {b A}, {b B}, {b C}, and {b D},
     which describe the cartesian equation of a plane where [Ax + By + Cz = D]. *)
-type t
+type t = private
+  { a : float
+  ; b : float
+  ; c : float
+  ; d : float
+  }
 
-(** [coefficients t]
+(** [to_tup t]
 
  Return the plane [t] as a tuple of its coefficients. *)
-val coefficients : t -> float * float * float * float
+val to_tup : t -> float * float * float * float
 
 (** [make p1 p2 p3]
 
