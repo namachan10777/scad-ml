@@ -153,6 +153,13 @@ module Cap : sig
     | `Caps of caps
     ]
 
+  (** [chamf ?angle ?cut ?width ?height ()]
+
+       Create offsets that will produce a chamfer roundover. One of [cut]
+   (amount of corner "cut off"), [width] (horizontal distance of chamfer), or
+   [height] (vertical distance of chamfer) can be specified to be used in
+   conjunction with [angle] (default = pi / 4), or [width] and [height] can be
+   provided together, in which case [angle] is not used. *)
   val chamf
     :  ?angle:float
     -> ?cut:float
@@ -161,17 +168,64 @@ module Cap : sig
     -> unit
     -> offsets
 
+  (** [circ ?fn roundover]
+
+      Create offsets that will produce a circular roundover, according to
+    either a given [`Cut] distance, or a [`Radius], over [fn] steps (default 16). *)
   val circ : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+
+  (** [tear ?fn roundover]
+
+      Create offsets that will produce a teardrop rounover (circular, endind in
+    a chamfer). *)
   val tear : ?fn:int -> [< `Cut of float | `Radius of float ] -> offsets
+
+  (** [bez ?curv ?fn spec]
+
+      Create offsets that will produce a smooth bezier roundover. The amplitude
+    of the curve can be given by [`Cut] (amount of corner "cut off"), or
+    [`Joint] (distance vertically the bezier covers). [curv] is the curvature
+    smoothness parameter (default [0.5]). Values of [curv] deviating from [0.5]
+    will bias the curvature to be "earlier" or "later". *)
   val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
+
+  (** [custom offsets]
+
+      Sanitize (enforce positive and increasing [z] values) and pack a list of
+      {!type:offset}. *)
   val custom : offset list -> offsets
+
+  (** [round ?holes offsets]
+
+      Construct a roundover {!type:poly_spec}. *)
   val round : ?holes:holes -> offsets -> [> `Round of poly ]
+
+  (** [looped]
+
+      [`Looped], indicating that the top should loop around to the bottom of
+      a sweep. *)
   val looped : t
+
+  (** [capped ~top ~bot]
+
+      Construct a {!Cap.t} specifying how the [top] and [bot] caps of a sweep
+      extrusion should be sealed off (or not). *)
   val capped : top:poly_spec -> bot:poly_spec -> t
+
+  (** [flat_caps]
+
+      Default {!Cap.t} configuration for flat (no roundover) sealed caps. *)
   val flat_caps : t
+
+  (** [open_caps]
+
+      Default {!Cap.t} configuration for unsealed caps (open ends). *)
   val open_caps : t
 end
 
+(** [sweep ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ~transforms poly]
+
+    *)
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
@@ -184,6 +238,10 @@ val sweep
   -> Poly2.t
   -> Mesh0.t
 
+(** [linear_extrude ?check_valid ?winding ?fn ?fs ?fa ?slices ?scale ?twist
+    ?center ?offset_mode ?caps ~height poly]
+
+    *)
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
@@ -200,6 +258,10 @@ val linear_extrude
   -> Poly2.t
   -> Mesh0.t
 
+(** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
+    ?offset_mode ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
+
+    *)
 val helix_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?fn:int
@@ -217,6 +279,10 @@ val helix_extrude
   -> Poly2.t
   -> Mesh0.t
 
+(** [path_extrude ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ?euler
+    ?scale ?twist ~path poly]
+
+    *)
 val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
@@ -232,6 +298,10 @@ val path_extrude
   -> Poly2.t
   -> Mesh0.t
 
+(** [prism ?debug ?fn ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top
+  ?joint_sides bottom top]
+
+  *)
 val prism
   :  ?debug:bool
   -> ?fn:int
@@ -248,6 +318,9 @@ val prism
 
 (** {1 Function Plotting} *)
 
+(** [cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y f]
+
+    *)
 val cartesian_plot
   :  min_x:float
   -> x_steps:int
@@ -258,8 +331,14 @@ val cartesian_plot
   -> (x:float -> y:float -> float)
   -> t
 
+(** [polar_plot ?r_step ~max_r f]
+
+    *)
 val polar_plot : ?r_step:float -> max_r:float -> (r:float -> a:float -> float) -> t
 
+(** [axial_plot ?fn ~min_z ~z_step ~max_z f]
+
+    *)
 val axial_plot
   :  ?fn:int
   -> min_z:float
@@ -270,13 +349,46 @@ val axial_plot
 
 (** {1 Mesh Utilities} *)
 
+(** [join ts]
+
+    Join a list of meshes. This is not a boolean operation, it is simply
+    collecting the points from each and updating face indices accordingly.
+    Intended for use when building a closed mesh from a set of partial meshes. *)
 val join : t list -> t
+
+(** [merge_points ?eps t]
+
+    Eliminate duplicate points (less than [eps] distance apart) from [t]. *)
 val merge_points : ?eps:float -> t -> t
+
+(** [add_face face t]
+
+    Add a single face to the mesh [t]. *)
 val add_face : int list -> t -> t
+
+(** [add_faces faces t]
+
+    Add a list of faces to the mesh [t]. *)
 val add_faces : int list list -> t -> t
+
+(** [rev_faces t]
+
+    Flip all faces the mesh. *)
 val rev_faces : t -> t
+
+(** [volume t]
+
+    Calculate the volume of the mesh [t]. *)
 val volume : t -> float
+
+(** [area t]
+
+    Calculate the surface area of the mesh [t]. *)
 val area : t -> float
+
+(** [centroid ?eps t]
+
+    Calculate the centroid of the mesh [t]. *)
 val centroid : ?eps:float -> t -> Vec3.t
 
 (** {1 Basic Transfomations} *)
@@ -291,5 +403,11 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
 val multmatrix : MultMatrix.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
+
+(** {1 Debugging helpers} *)
+
 val show_points : (int -> 'a Scad.t) -> t -> 'a Scad.t
+
+(** {1 Output} *)
+
 val to_scad : ?convexity:int -> t -> Scad.d3
