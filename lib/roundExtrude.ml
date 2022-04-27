@@ -20,6 +20,7 @@ module Cap = struct
   type poly =
     { outer : offsets
     ; holes : holes
+    ; mode : [ `Chamfer | `Delta | `Radius ]
     }
 
   type poly_spec =
@@ -49,7 +50,7 @@ module Cap = struct
     | `Caps of caps
     ]
 
-  let round ?(holes = `Flip) outer = `Round { outer; holes }
+  let round ?(mode = `Radius) ?(holes = `Flip) outer = `Round { outer; holes; mode }
   let looped = `Looped
   let capped ~top ~bot = `Caps { top; bot }
   let flat_caps = `Caps { top = `Flat; bot = `Flat }
@@ -137,8 +138,9 @@ let sweep'
     ?fn
     ?fs
     ?fa
-    ?(offset_mode = `Radius)
     ?(sealed = true)
+    ?(top_mode = `Radius)
+    ?(bot_mode = `Radius)
     ~top
     ~bot
     ~transforms
@@ -156,7 +158,9 @@ let sweep'
   and offset = Offset.offset_with_faces ?check_valid ?fn ?fs ?fa
   and lift ?z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ?z p) in
   let cap ~top ~close ~m offsets =
-    let z_dir, flip_faces = if top then 1., false else -1., true in
+    let z_dir, flip_faces, offset_mode =
+      if top then 1., false, top_mode else -1., true, bot_mode
+    in
     let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
       let spec =
         match offset_mode with
@@ -202,12 +206,11 @@ let sweep
     ?fn
     ?fs
     ?fa
-    ?offset_mode
     ?(spec = flat_caps)
     ~transforms
     Poly2.{ outer; holes }
   =
-  let sweep = sweep' ?check_valid ?fn ?fs ?fa ?offset_mode ~transforms in
+  let sweep = sweep' ?check_valid ?fn ?fs ?fa ~transforms in
   match spec, holes with
   | `Caps { top; bot }, []    ->
     let top = poly_to_path_spec top
@@ -241,16 +244,23 @@ let sweep
         else invalid_arg "Mixed hole specs must match the number of holes."
     in
     let unpack_spec = function
-      | `Flat                   -> `Flat, fun _ -> `Flat
-      | `Empty                  -> `Empty, fun _ -> `Empty
-      | `Round { outer; holes } -> `Round outer, hole_spec outer holes
+      | `Flat                         -> `Flat, (fun _ -> `Flat), None
+      | `Empty                        -> `Empty, (fun _ -> `Empty), None
+      | `Round { outer; holes; mode } -> `Round outer, hole_spec outer holes, Some mode
     in
-    let top, top_holes = unpack_spec top
-    and bot, bot_holes = unpack_spec bot in
+    let top, top_holes, top_mode = unpack_spec top
+    and bot, bot_holes, bot_mode = unpack_spec bot in
     let _, tunnel_bots, tunnel_tops, tunnels =
       let f (i, bots, tops, tuns) hole =
         let bot, top, tunnel =
-          sweep ~winding:`CW ~sealed:false ~top:(top_holes i) ~bot:(bot_holes i) hole
+          sweep
+            ~winding:`CW
+            ~sealed:false
+            ?top_mode
+            ?bot_mode
+            ~top:(top_holes i)
+            ~bot:(bot_holes i)
+            hole
         in
         i + 1, bot :: bots, top :: tops, tunnel :: tuns
       in
@@ -260,7 +270,9 @@ let sweep
       match check_valid with
       | Some `No -> false
       | _        -> true
-    and outer_bot, outer_top, outer = sweep ~winding:`CCW ~sealed:false ~top ~bot outer in
+    and outer_bot, outer_top, outer =
+      sweep ~winding:`CCW ~sealed:false ?top_mode ?bot_mode ~top ~bot outer
+    in
     let bot_lid =
       Mesh0.of_poly3 ~rev:true (Poly3.make ~validate ~holes:tunnel_bots outer_bot)
     and top_lid = Mesh0.of_poly3 (Poly3.make ~validate ~holes:tunnel_tops outer_top) in
@@ -276,7 +288,6 @@ let linear_extrude
     ?scale
     ?(twist = 0.)
     ?(center = false)
-    ?offset_mode
     ?(caps = { top = `Flat; bot = `Flat })
     ~height
     shape
@@ -295,16 +306,7 @@ let linear_extrude
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3.to_transforms ?scale ?twist
   in
-  sweep
-    ?check_valid
-    ?winding
-    ?fn
-    ?fs
-    ?fa
-    ?offset_mode
-    ~spec:(`Caps caps)
-    ~transforms
-    shape
+  sweep ?check_valid ?winding ?fn ?fs ?fa ~spec:(`Caps caps) ~transforms shape
 
 let helix_extrude
     ?check_valid
@@ -313,7 +315,6 @@ let helix_extrude
     ?fs
     ?scale
     ?twist
-    ?offset_mode
     ?(caps = { top = `Flat; bot = `Flat })
     ?(left = true)
     ~n_turns
@@ -344,29 +345,8 @@ let helix_extrude
     in
     List.mapi f path
   in
-  sweep
-    ?check_valid
-    ~winding
-    ?fn
-    ?fs
-    ?fa
-    ?offset_mode
-    ~spec:(`Caps caps)
-    ~transforms
-    shape
+  sweep ?check_valid ~winding ?fn ?fs ?fa ~spec:(`Caps caps) ~transforms shape
 
-let path_extrude
-    ?check_valid
-    ?winding
-    ?fn
-    ?fs
-    ?fa
-    ?offset_mode
-    ?spec
-    ?euler
-    ?scale
-    ?twist
-    ~path
-  =
+let path_extrude ?check_valid ?winding ?fn ?fs ?fa ?spec ?euler ?scale ?twist ~path =
   let transforms = Path3.to_transforms ?euler ?scale ?twist path in
-  sweep ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ~transforms
+  sweep ?check_valid ?winding ?fn ?fs ?fa ?spec ~transforms

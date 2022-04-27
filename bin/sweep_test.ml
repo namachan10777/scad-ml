@@ -612,11 +612,10 @@ let rounded_text () =
         Mesh.(
           linear_extrude
             ~check_valid:(`Quality 1)
-            ~offset_mode:`Delta
             ~caps:
               Cap.
-                { top = round @@ circ ~fn:5 (`Cut 0.01)
-                ; bot = round @@ circ ~fn:5 (`Cut 0.01)
+                { top = round ~mode:`Delta @@ circ ~fn:5 (`Cut 0.01)
+                ; bot = round ~mode:`Delta @@ circ ~fn:5 (`Cut 0.01)
                 }
               (* ~caps: *)
               (*   Spec. *)

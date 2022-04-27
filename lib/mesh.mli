@@ -129,6 +129,7 @@ module Cap : sig
   type poly =
     { outer : offsets
     ; holes : holes
+    ; mode : [ `Chamfer | `Delta | `Radius ]
     }
 
   (** Specifies whether an end of the extrusion should be left [`Empty], sealed
@@ -185,8 +186,7 @@ module Cap : sig
       Create offsets that will produce a smooth bezier roundover. The amplitude
     of the curve can be given by [`Cut] (amount of corner "cut off"), or
     [`Joint] (distance vertically the bezier covers). [curv] is the curvature
-    smoothness parameter (default [0.5]). Values of [curv] deviating from [0.5]
-    will bias the curvature to be "earlier" or "later". *)
+    smoothness parameter, ranging from gradual [0.], to abrupt [1.] (default [0.5]). *)
   val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
 
   (** [custom offsets]
@@ -195,10 +195,14 @@ module Cap : sig
       {!type:offset}. *)
   val custom : offset list -> offsets
 
-  (** [round ?holes offsets]
+  (** [round ?mode ?holes offsets]
 
       Construct a roundover {!type:poly_spec}. *)
-  val round : ?holes:holes -> offsets -> [> `Round of poly ]
+  val round
+    :  ?mode:[ `Chamfer | `Delta | `Radius ]
+    -> ?holes:holes
+    -> offsets
+    -> [> `Round of poly ]
 
   (** [looped]
 
@@ -223,25 +227,40 @@ module Cap : sig
   val open_caps : t
 end
 
-(** [sweep ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ~transforms poly]
+(** [sweep ?check_valid ?winding ?fn ?fs ?fa ?spec ~transforms poly]
 
-    *)
+    Sweep a 2d polygon into a 3d mesh by applying a sequence of [transforms] to
+   the original shape. The [winding] parameter can be used to set automatic
+   enforcement of polygon winding direction, which will impact the winding of
+   the generated faces of the mesh. What is done with the endcaps can be
+   specified with [spec]. By default the ends of the extrusion are sealed with
+   flat faces, but they can instead be looped to eachother, left empty, or
+   rounded over.
+
+   Relevant when roundovers are on:
+    - [check_valid] determines whether validity checks are performed during
+    offset operations, see {!Offset.offset}, for cap roundovers (if specified).
+    - [fn], [fs], and [fa] determine number of points used when generating new
+    points in the {!Offset.offset} roundover, if [`Radius] mode is being used. *)
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Cap.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Mesh0.t
 
 (** [linear_extrude ?check_valid ?winding ?fn ?fs ?fa ?slices ?scale ?twist
-    ?center ?offset_mode ?caps ~height poly]
+    ?center ?caps ~height poly]
 
-    *)
+    Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
+    [center], and [height] parameters are analogous to those found on
+    {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters
+    (note: [caps] is a subset of [spec], since the ends of a linear extrusion
+    cannot be looped) *)
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
@@ -252,16 +271,17 @@ val linear_extrude
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Cap.caps
   -> height:float
   -> Poly2.t
   -> Mesh0.t
 
 (** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
-    ?offset_mode ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
+     ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
-    *)
+    Helical extrusion of a 2d polygon into a 3d mesh. Like
+   {!Mesh.linear_extrude}, but following a path generated with
+   {!Path3.helix}. *)
 val helix_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?fn:int
@@ -269,7 +289,6 @@ val helix_extrude
   -> ?fs:float
   -> ?scale:Vec2.t
   -> ?twist:float
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?caps:Cap.caps
   -> ?left:bool
   -> n_turns:int
@@ -279,17 +298,18 @@ val helix_extrude
   -> Poly2.t
   -> Mesh0.t
 
-(** [path_extrude ?check_valid ?winding ?fn ?fs ?fa ?offset_mode ?spec ?euler
+(** [path_extrude ?check_valid ?winding ?fn ?fs ?fa ?spec ?euler
     ?scale ?twist ~path poly]
 
-    *)
+    Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
+    convenience function that composes transform generation using
+    {!Path3.to_transforms} with {!Mesh.sweep}. *)
 val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?offset_mode:[< `Chamfer | `Delta | `Radius > `Radius ]
   -> ?spec:Cap.t
   -> ?euler:bool
   -> ?scale:Vec2.t
@@ -301,7 +321,15 @@ val path_extrude
 (** [prism ?debug ?fn ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top
   ?joint_sides bottom top]
 
-  *)
+    Create a prism with continuous curvature rounding from the given [bottom]
+    and [top] paths. The edges running between the bounding polygons must
+    produce a valid polyhedron with coplanar side faces. [joint_] parameters
+    determine the distance away from the corner that curvature begins, and [k]
+    parameters set the smoothness of the curvature.
+
+    - [debug] can be set to [true] to skip validity checks that would otherwise
+    raise exceptions on failure, so a mesh can still be obtained for
+    inspection. *)
 val prism
   :  ?debug:bool
   -> ?fn:int
