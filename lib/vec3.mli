@@ -6,8 +6,19 @@ type t = Vec.v3 =
 
 include Vec.S with type t := t
 
+(** [v x y z]
+
+    Construct a vector from [x], [y], and [z] coordinates. *)
 val v : float -> float -> float -> t
+
+(** [of_tup (x, y, z)]
+
+    Construct a vector from a tuple of xyz coordinates. *)
 val of_tup : float * float * float -> t
+
+(** [to_tup t]
+
+    Convert the vector [t] to a tuple of xyz coordinates. *)
 val to_tup : t -> float * float * float
 
 (** {1 Transformations}

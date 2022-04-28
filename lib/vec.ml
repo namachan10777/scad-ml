@@ -1,9 +1,11 @@
+(** Three-dimensional vector *)
 type v3 =
   { x : float
   ; y : float
   ; z : float
   }
 
+(** Two-dimensional vector *)
 type v2 =
   { x : float
   ; y : float
@@ -15,6 +17,7 @@ let v3 x y z = { x; y; z }
 module type S = sig
   type t
 
+  (** A line segment between two points. *)
   type line =
     { a : t
     ; b : t
@@ -23,6 +26,9 @@ module type S = sig
   (** Zero vector *)
   val zero : t
 
+  (** [equal a b]
+
+      Float equality between the vectors [a] and [b]. *)
   val equal : t -> t -> bool
 
   (** [approx ?eps a b]
@@ -165,8 +171,26 @@ module type S = sig
     direction [v]. *)
   val distance_to_vector : t -> t -> float
 
+  (** [distance_to_line ?bounds ~line t]
+
+      Distance between the vector [t], and any point on [line]. [bounds]
+    indicates whether each end [{a; b}] of [line] is bounded, or a ray (default
+    = [(false, false)], indicating an infinite line in both directions.). *)
   val distance_to_line : ?bounds:bool * bool -> line:line -> t -> float
+
+  (** [point_on_line ?eps ?bounds ~line t]
+
+      Return [true] if the point [t] falls within [eps] distance of the [line].
+   [bounds] indicates whether each end [{a; b}] of [line] is bounded, or a ray
+   (default = [(false, false)], indicating an infinite line in both
+   directions.) *)
   val point_on_line : ?eps:float -> ?bounds:bool * bool -> line:line -> t -> bool
+
+  (** [line_closest_point ?bounds ~line t]
+
+      Find the closest point to [t] lying on the provided [line]. [bounds]
+   indicates whether each end [{a; b}] of [line] is bounded, or a ray (default =
+   [(false, false)], indicating an infinite line in both directions.) *)
   val line_closest_point : ?bounds:bool * bool -> line:line -> t -> t
 
   (** {1 Utilities} *)

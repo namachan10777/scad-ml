@@ -75,8 +75,10 @@ val of_path3 : ?rev:bool -> Path3.t -> t
     partitioning is performed to determine a set of faces that can close the
     points.
 
-    Adapted from:
-    https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
+    The earcutting algorithm used to partition the polygon into faces is a port
+    of RonaldoCMP's work found
+    {{:https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad}
+    here}. *)
 val of_poly2 : ?rev:bool -> Poly2.t -> t
 
 (** [of_poly3 ?rev poly]
@@ -86,8 +88,10 @@ val of_poly2 : ?rev:bool -> Poly2.t -> t
     partitioning is performed to determine a set of faces that can close the
     points.
 
-    Adapted from:
-    https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
+    The earcutting algorithm used to partition the polygon into faces is a port
+    of RonaldoCMP's work found
+    {{:https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad}
+    here}. *)
 val of_poly3 : ?rev:bool -> Poly3.t -> t
 
 (** [of_polygons polys]
@@ -95,7 +99,11 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal point faces. *)
 val of_polygons : Path3.t list -> t
 
-(** {1 Sweeps and Extrusions with roundovers} *)
+(** {1 Sweeps and Extrusions with roundovers}
+
+Extrusions from 2d to 3d with optional roundovers based on the implementations found in
+the BOSL2 library's [offset_sweep] functions found in
+{{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding.scad}. *)
 
 module Cap : sig
   (** Configuration module for declaring how extrusions from 2d to 3d via
@@ -344,11 +352,15 @@ val prism
   -> Vec3.t list
   -> Mesh0.t
 
-(** {1 Function Plotting} *)
+(** {1 Function Plotting}
+
+    Ported from the {{:https://github.com/rcolyer/plot-function} PlotFunction}
+    library by Ryan Colyer. *)
 
 (** [cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y f]
 
-    *)
+    Create a mesh of the function [f] (from x and y to z) over the ranges of x
+   and y defined by the rest of the parameters. *)
 val cartesian_plot
   :  min_x:float
   -> x_steps:int
@@ -361,12 +373,14 @@ val cartesian_plot
 
 (** [polar_plot ?r_step ~max_r f]
 
-    *)
+    Create a mesh of the function [f] (from radius and angle to z) between the
+   z-axis and the radius [max_r], with the minimum radial step [r_step]. *)
 val polar_plot : ?r_step:float -> max_r:float -> (r:float -> a:float -> float) -> t
 
 (** [axial_plot ?fn ~min_z ~z_step ~max_z f]
 
-    *)
+    Create a mesh of the function [f] (from z-height and angle to radius). [fn]
+    sets the number of angular steps around the z-axis. *)
 val axial_plot
   :  ?fn:int
   -> min_z:float

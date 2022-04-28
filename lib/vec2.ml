@@ -71,7 +71,7 @@ let collinear p1 p2 p3 =
   a +. b < c || b +. c < a || c +. a < b
 
 let distance_to_vector p v = norm (sub p (smul v (dot p v)))
-let left_of_line ?eps ~line t = clockwise_sign ?eps t line.b line.a
+let side_of_line ?eps ~line t = clockwise_sign ?eps t line.b line.a
 
 let closest_simplex1 ?(eps = Util.epsilon) p1 p2 =
   if norm (sub p2 p1) <= eps *. (norm p1 +. norm p2) /. 2.

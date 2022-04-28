@@ -5,11 +5,33 @@ type t = Vec.v2 =
 
 include Vec.S with type t := t
 
+(** [v x y]
+
+    Construct a vector from [x] and [y] coordinates. *)
 val v : float -> float -> t
+
+(** [of_tup (x, y)]
+
+    Construct a vector from a tuple of xy coordinates. *)
 val of_tup : float * float -> t
+
+(** [to_tup t]
+
+    Convert the vector [t] to a tuple of xy coordinates. *)
 val to_tup : t -> float * float
+
+(** [left_of_line ?eps ~line t]
+
+    Return [1.] if [t] is left of [line], [-1.] if it is to the right, and [0.]
+    if it falls on (within [eps]) the [line]. Float is returned as this is
+    simply a clockwise check. *)
 val left_of_line : ?eps:float -> line:line -> t -> float
 
+(** [line_intersection ?eps ?bounds1 ?bounds2 a b]
+
+    Find the intersection (if it exists) between the lines [a] and [b].
+    [bounds1] and [bounds2] indicate whether the ends of [a] and [b]
+    respectively are bounded or are infinite rays. *)
 val line_intersection
   :  ?eps:float
   -> ?bounds1:bool * bool
