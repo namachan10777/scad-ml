@@ -5,15 +5,16 @@ type bbox =
   ; max : Vec3.t
   }
 
+(** [of_tups ps]
+
+    Create a 3d path from a list of xyz coordinate triples. *)
 val of_tups : (float * float * float) list -> t
-val of_path2 : ?plane:Plane.t -> Path2.t -> t
-val to_path2 : ?plane:Plane.t -> t -> Path2.t
-val bbox : t -> bbox
-val circle : ?fn:int -> ?plane:Plane.t -> float -> t
-val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
 (** {1 Drawing arcs (along a plane)} *)
 
+(** [arc ?rev ?fn ?plane ?wedge ~centre ~radius ~start a]
+
+    *)
 val arc
   :  ?rev:bool
   -> ?fn:int
@@ -25,6 +26,9 @@ val arc
   -> float
   -> t
 
+(** [arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2]
+
+    *)
 val arc_about_centre
   :  ?rev:bool
   -> ?fn:int
@@ -35,8 +39,14 @@ val arc_about_centre
   -> Vec3.t
   -> t
 
+(** [arc_through ?rev ?fn  ?wedge p1 p2 p3]
+
+    *)
 val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec3.t -> Vec3.t -> Vec3.t -> t
 
+(** [helix ?fn ?fa ?fs ?left ~n_turns ~pitch ?r2 r1]
+
+    *)
 val helix
   :  ?fn:int
   -> ?fa:float
@@ -48,7 +58,14 @@ val helix
   -> float
   -> t
 
+(** [scaler ~len scale]
+
+    *)
 val scaler : len:int -> Vec2.t -> int -> MultMatrix.t
+
+(** [twister ~len angle]
+
+    *)
 val twister : len:int -> float -> int -> MultMatrix.t
 
 (** [to_transforms t]
@@ -79,6 +96,9 @@ val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMat
   Calculate the normal vector of the path [t]. *)
 val normal : t -> Vec3.t
 
+(** [centroid ?eps t]
+
+    *)
 val centroid : ?eps:float -> t -> Vec3.t
 
 (** [area ?signed t]
@@ -93,12 +113,41 @@ val area : ?signed:bool -> t -> float
   If there are fewer than 3 points, or the path is colinear, this returns [false]. *)
 val coplanar : ?eps:float -> t -> bool
 
-val to_plane : t -> Plane.t
-val project : Plane.t -> t -> Vec2.t list
+(** [bbox t]
+
+    *)
+val bbox : t -> bbox
 
 (** {1 Roundovers}*)
 
 include Rounding.S with type vec := Vec.v3
+
+(** {1 2d-3d Conversion} *)
+
+(** [to_plane t]
+
+    *)
+val to_plane : t -> Plane.t
+
+(** [project plane t]
+
+    *)
+val project : Plane.t -> t -> Vec2.t list
+
+(** [of_path2 ?plane path]
+
+    *)
+val of_path2 : ?plane:Plane.t -> Path2.t -> t
+
+(** [to_path2 ?plane t]
+
+    *)
+val to_path2 : ?plane:Plane.t -> t -> Path2.t
+
+(** {1 Basic Shapes} *)
+
+val circle : ?fn:int -> ?plane:Plane.t -> float -> t
+val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
 (** {1 Basic Transfomations} *)
 

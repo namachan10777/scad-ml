@@ -3,19 +3,93 @@ module type S = sig
   type line
   type t = vec list
 
-  val length' : vec array -> float
-  val length : vec list -> float
-  val cummulative_length : vec list -> float list
-  val to_continuous : vec list -> float -> vec
-  val resample : freq:[< `N of int | `Spacing of float ] -> vec list -> vec list
-  val noncollinear_triple : ?eps:float -> vec list -> (vec * vec * vec) option
-  val is_collinear : ?eps:float -> vec list -> bool
-  val prune_collinear' : vec array -> vec array
-  val prune_collinear : vec list -> vec list
-  val deriv : ?closed:bool -> ?h:float -> vec list -> vec list
-  val deriv_nonuniform : ?closed:bool -> h:float list -> vec list -> vec list
-  val tangents : ?uniform:bool -> ?closed:bool -> vec list -> vec list
+  (** [length path]
 
+      Calculate the length (total travel distance) of the [path]. *)
+  val length : t -> float
+
+  (** [length' path]
+
+      Calculate the length (total travel distance) of the [path]. *)
+  val length' : vec array -> float
+
+  (** [cummulative_length path]
+
+      Calculate the cummulative length (distance travelled by each point) along
+    the [path].  *)
+  val cummulative_length : t -> float list
+
+  (** [to_continuous path]
+
+      Return a continuous function from values over the range of [0.] to [1.]
+    to positions along [path] (like a bezier function). *)
+  val to_continuous : t -> float -> vec
+
+  (** [resample ~freq path]
+
+      Resample [path] with the given [freq]uency (either a flat number of
+    points, or a target point spacing). *)
+  val resample : freq:[< `N of int | `Spacing of float ] -> t -> t
+
+  (** [noncollinear_triple ?eps path]
+
+      Returns a triple of non-collinear points from [path] (if the path is not
+    completely collinear). Two well separated points are selected, and the third
+    point is the furthest off the line drawn by the first two points.*)
+  val noncollinear_triple : ?eps:float -> t -> (vec * vec * vec) option
+
+  (** [is_collinear ?eps path]
+
+      Returns [true] if all points in [path] are collinear (fall within [eps]
+    distance of the same line). *)
+  val is_collinear : ?eps:float -> t -> bool
+
+  (** [prune_collinear path]
+
+      Remove collinear points from [path]. *)
+  val prune_collinear : t -> t
+
+  (** [prune_collinear' path]
+
+      Remove collinear points from [path]. *)
+  val prune_collinear' : vec array -> vec array
+
+  (** [deriv ?closed ?h path]
+
+      Computes a numerical derivative of [path], with [h] (default [1.]) giving
+    the step size of the sampling of [path], so that the derivative can be
+    scaled correctly. Setting [closed] to [true] will include computation of
+    the derivative between the last and first point of the [path] (default
+    [false]). *)
+  val deriv : ?closed:bool -> ?h:float -> t -> t
+
+  (** [deriv_nonuniform ?closed ?h path]
+
+      Computes a numerical derivative of [path], with [h] giving
+    the non-uniform step sizes of the sampling of [path], so that the derivative can be
+    scaled correctly. Setting [closed] to [true] will include computation of
+    the derivative between the last and first point of the [path] (default
+    [false]). As [h] provides scaling factors for each segment of the path, it
+    must have a length of one less than [path] if it's unclosed, and the same
+    length if [closed] is [true]. *)
+  val deriv_nonuniform : ?closed:bool -> h:float list -> t -> t
+
+  (** [tangents ?uniform ?closed path]
+
+      Compute tangent unit vectors of [path]. Set [closed] to [true] to indicate
+   that tangents should include between the end and beginning of the path
+   (default = [false]). Sampling of [path] is assumed to be [uniform] unless the
+   parameter is set to [false], in which case the derivatives will be adjusted
+   to correct for non-uniform sampling of points. *)
+  val tangents : ?uniform:bool -> ?closed:bool -> t -> t
+
+  (** [continuous_closest_point ?n_steps ?max_err f p]
+
+      Find the closest position (from [0.] to [1.]) along the path function [f]
+      to the point [p].
+
+      - [n_steps] sets the granularity of search at each stage.
+      - [max_err] the maximum distance the solution can be from the target [p] *)
   val continuous_closest_point
     :  ?n_steps:int
     -> ?max_err:float
@@ -23,7 +97,11 @@ module type S = sig
     -> vec
     -> float
 
-  val segment : ?closed:bool -> vec list -> line list
+  (** [segment ?closed path]
+
+      Break [path] into line segments. If [closed] is [true], include a segment
+    between the last and first points of [path] (default [false]). *)
+  val segment : ?closed:bool -> t -> line list
 end
 
 module Make (V : Vec.S) : S with type vec := V.t and type line = V.line = struct

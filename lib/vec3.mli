@@ -78,4 +78,8 @@ val projection : t -> t
 
 (** {1 2d - 3d conversion} *)
 
+(** [of_vec2 ?z v]
+
+    Create a 3d vector from the 2d vector [v] by adding a [z] coordinate
+    (default = [0.]) *)
 val of_vec2 : ?z:float -> Vec.v2 -> t
