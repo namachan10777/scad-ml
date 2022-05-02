@@ -116,6 +116,15 @@ module Cap : sig
     ; z : float
     }
 
+  type offset_mode =
+    | Delta
+    | Chamfer
+    | Radius of
+        { fn : int option
+        ; fs : float option
+        ; fa : float option
+        }
+
   (** A list of {!offset} describing a 3d end-cap extrusion roundover. *)
   type offsets
 
@@ -137,7 +146,7 @@ module Cap : sig
   type poly =
     { outer : offsets
     ; holes : holes
-    ; mode : [ `Chamfer | `Delta | `Radius ]
+    ; mode : offset_mode
     }
 
   (** Specifies whether an end of the extrusion should be left [`Empty], sealed
@@ -206,11 +215,7 @@ module Cap : sig
   (** [round ?mode ?holes offsets]
 
       Construct a roundover {!type:poly_spec}. *)
-  val round
-    :  ?mode:[ `Chamfer | `Delta | `Radius ]
-    -> ?holes:holes
-    -> offsets
-    -> [> `Round of poly ]
+  val round : ?mode:offset_mode -> ?holes:holes -> offsets -> [> `Round of poly ]
 
   (** [looped]
 
@@ -253,15 +258,12 @@ end
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?fn:int
-  -> ?fs:float
-  -> ?fa:float
   -> ?spec:Cap.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Mesh0.t
 
-(** [linear_extrude ?check_valid ?winding ?fn ?fs ?fa ?slices ?scale ?twist
+(** [linear_extrude ?check_valid ?winding ?fa ?slices ?scale ?twist
     ?center ?caps ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
@@ -272,8 +274,6 @@ val sweep
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?fn:int
-  -> ?fs:float
   -> ?fa:float
   -> ?slices:int
   -> ?scale:Vec2.t
@@ -306,8 +306,7 @@ val helix_extrude
   -> Poly2.t
   -> Mesh0.t
 
-(** [path_extrude ?check_valid ?winding ?fn ?fs ?fa ?spec ?euler
-    ?scale ?twist ~path poly]
+(** [path_extrude ?check_valid ?winding ?spec ?euler ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
     convenience function that composes transform generation using
@@ -315,9 +314,6 @@ val helix_extrude
 val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?fn:int
-  -> ?fs:float
-  -> ?fa:float
   -> ?spec:Cap.t
   -> ?euler:bool
   -> ?scale:Vec2.t

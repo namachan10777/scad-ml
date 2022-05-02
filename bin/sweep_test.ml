@@ -430,7 +430,6 @@ let offset_linear_extrude () =
     |> Mesh.(
          linear_extrude
            ~slices:100
-           ~fn:16
            ~scale:(v2 4. 4.)
            ~twist:(2. *. Float.pi)
            ~center:false
@@ -614,8 +613,8 @@ let rounded_text () =
             ~check_valid:(`Quality 1)
             ~caps:
               Cap.
-                { top = round ~mode:`Delta @@ circ ~fn:5 (`Cut 0.01)
-                ; bot = round ~mode:`Delta @@ circ ~fn:5 (`Cut 0.01)
+                { top = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.01)
+                ; bot = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.01)
                 }
               (* ~caps: *)
               (*   Spec. *)
