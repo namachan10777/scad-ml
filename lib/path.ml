@@ -8,9 +8,6 @@ module type S = sig
       Calculate the length (total travel distance) of the [path]. *)
   val length : t -> float
 
-  (** [length' path]
-
-      Calculate the length (total travel distance) of the [path]. *)
   val length' : vec array -> float
 
   (** [cummulative_length path]
@@ -49,9 +46,6 @@ module type S = sig
       Remove collinear points from [path]. *)
   val prune_collinear : t -> t
 
-  (** [prune_collinear' path]
-
-      Remove collinear points from [path]. *)
   val prune_collinear' : vec array -> vec array
 
   (** [deriv ?closed ?h path]

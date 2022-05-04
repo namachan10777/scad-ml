@@ -37,7 +37,7 @@ val project : t -> Vec3.t -> Vec2.t
 (** [lift t p]
 
  Lift the 2d point [p] onto the plane [t]. On partial application of [t],
- a {!MultMatrix.t} is computed to perform the lift transform.*)
+ a {!MultMatrix.t} is computed to perform the lift transform. *)
 val lift : t -> Vec2.t -> Vec3.t
 
 (** [normal t]

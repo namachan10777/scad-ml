@@ -125,7 +125,8 @@ module Cap : sig
         ; fa : float option
         }
 
-  (** A list of {!offset} describing a 3d end-cap extrusion roundover. *)
+  (** A list of {!offset} describing a 3d end-cap extrusion roundover.
+    Abstracted to enforce use of constructors. *)
   type offsets
 
   (** Specifies how holes in the end-cap should be treated, either relative to
@@ -212,6 +213,11 @@ module Cap : sig
       {!type:offset}. *)
   val custom : offset list -> offsets
 
+  (** [unwrap_offsets offsets]
+
+      Retrieve list of {!type:offset} from the abstract {!type:offsets}. *)
+  val unwrap_offsets : offsets -> offset list
+
   (** [round ?mode ?holes offsets]
 
       Construct a roundover {!type:poly_spec}. *)
@@ -252,9 +258,9 @@ end
 
    Relevant when roundovers are on:
     - [check_valid] determines whether validity checks are performed during
-    offset operations, see {!Offset.offset}, for cap roundovers (if specified).
+    offset operations, see {!Path2.offset}, for cap roundovers (if specified).
     - [fn], [fs], and [fa] determine number of points used when generating new
-    points in the {!Offset.offset} roundover, if [`Radius] mode is being used. *)
+    points in the {!Path2.offset} roundover, if [`Radius] mode is being used. *)
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]

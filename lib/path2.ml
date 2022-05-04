@@ -12,7 +12,7 @@ let of_tups = List.map Vec2.of_tup
 let of_path3 ?(plane = Plane.xy) = List.map (Plane.project plane)
 let to_path3 ?(plane = Plane.xy) = List.map (Plane.lift plane)
 
-let clockwise_sign' (ps : Vec2.t array) =
+let clockwise_sign' ?(eps = Util.epsilon) (ps : Vec2.t array) =
   let len = Array.length ps
   and sum = ref 0. in
   for i = 0 to len - 1 do
@@ -20,10 +20,10 @@ let clockwise_sign' (ps : Vec2.t array) =
     and p2 = ps.(Util.index_wrap ~len (i + 1)) in
     sum := !sum +. ((p1.x -. p2.x) *. (p1.y +. p2.y))
   done;
-  Float.(of_int @@ compare !sum 0.)
+  if Math.approx ~eps !sum 0. then 0. else Float.(of_int @@ compare !sum 0.)
 
 let is_clockwise' ps = Float.equal 1. (clockwise_sign' ps)
-let clockwise_sign ps = clockwise_sign' (Array.of_list ps)
+let clockwise_sign ?eps ps = clockwise_sign' ?eps (Array.of_list ps)
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
 let self_intersections' ?(eps = Util.epsilon) ?(closed = false) path =
@@ -167,6 +167,7 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
       in
       if (2 * (List.fold_left f 0 segs mod 2)) - 1 > 0 then `Inside else `Outside ) )
 
+let offset = Offset.offset
 let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)
 let rotate r = List.map (Vec2.rotate r)

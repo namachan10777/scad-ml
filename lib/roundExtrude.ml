@@ -91,10 +91,11 @@ module Cap = struct
 
   let circ ?(fn = 16) roundover =
     let radius = radius_of_roundover roundover in
-    let step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
+    let abs_radius = Float.abs radius
+    and step = Float.pi /. 2. /. Float.of_int (Int.max 3 fn) in
     let f i (acc, last_z) =
       let i = Float.of_int (i + 1) in
-      let z = quantize (Float.abs radius *. Float.sin (i *. step)) in
+      let z = quantize (abs_radius *. Float.sin (i *. step)) in
       if Math.approx last_z z
       then acc, last_z
       else { d = quantize (radius *. (Float.cos (i *. step) -. 1.)); z } :: acc, z
@@ -103,23 +104,36 @@ module Cap = struct
 
   let tear ?(fn = 16) roundover =
     let radius = radius_of_roundover roundover in
-    let step = Float.pi /. 4. /. Float.of_int (Int.max 3 fn) in
-    let f i =
+    let abs_radius = Float.abs radius
+    and step = Float.pi /. 4. /. Float.of_int (Int.max 3 fn) in
+    let f i (acc, last_z) =
       if i < fn
       then (
         let i = Float.of_int (i + 1) in
-        { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
-        ; z = quantize (Float.abs radius *. Float.sin (i *. step))
-        } )
-      else { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = Float.abs radius }
+        let z = quantize (abs_radius *. Float.sin (i *. step)) in
+        if Math.approx last_z z
+        then acc, last_z
+        else
+          ( { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
+            ; z = quantize (abs_radius *. Float.sin (i *. step))
+            }
+            :: acc
+          , z ) )
+      else
+        ( { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = abs_radius } :: acc
+        , abs_radius )
     in
-    Offsets (List.init (fn + 1) f)
+    Offsets (List.rev @@ fst @@ Util.fold_init fn f ([], Float.min_float))
 
   let bez ?(curv = 0.5) ?(fn = 16) spec =
     let joint =
       match spec with
       | `Joint j -> j
       | `Cut c   -> 16. *. c /. Float.sqrt 2. /. (1. +. (4. *. curv))
+    in
+    let f (acc, last_z) { x = d; y = z } =
+      let z = quantize z in
+      if Math.approx last_z z then acc, last_z else { d = quantize d; z } :: acc, z
     in
     Offsets
       ( R2.bez_corner
@@ -130,7 +144,8 @@ module Cap = struct
           (v2 0. (Float.abs joint))
           (v2 (-.joint) (Float.abs joint))
       |> List.tl
-      |> List.map (fun { x = d; y = z } -> { d = quantize d; z = quantize z }) )
+      |> List.fold_left f ([], Float.min_float)
+      |> fst )
 
   let custom offsets =
     let f (last_z, acc) { d; z } =
@@ -142,6 +157,7 @@ module Cap = struct
     let _, offsets = List.fold_left f (Float.min_float, []) offsets in
     Offsets (List.rev offsets)
 
+  let unwrap_offsets (Offsets l) = l
   let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
 end
 

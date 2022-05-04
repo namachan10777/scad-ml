@@ -1,3 +1,14 @@
+(* copied from Path2 to avoid cyclic dependency *)
+let clockwise_sign' ?(eps = Util.epsilon) (ps : Vec2.t array) =
+  let len = Array.length ps
+  and sum = ref 0. in
+  for i = 0 to len - 1 do
+    let p1 = ps.(Util.index_wrap ~len i)
+    and p2 = ps.(Util.index_wrap ~len (i + 1)) in
+    sum := !sum +. ((p1.x -. p2.x) *. (p1.y +. p2.y))
+  done;
+  if Math.approx ~eps !sum 0. then 0. else Float.(of_int @@ compare !sum 0.)
+
 let shift_segment ~d Vec2.{ a; b } =
   let shift = Vec2.(add (smul (Vec2.line_normal a b) d)) in
   Vec2.{ a = shift a; b = shift b }
@@ -95,7 +106,7 @@ let good_segments ~quality ~closed ~d path shifted_segs =
 let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = `Quality 1) offset path =
   let path = Array.of_list path in
   let mode, d =
-    let flip = if closed then Path2.clockwise_sign' path *. -1. else 1. in
+    let flip = if closed then clockwise_sign' path *. -1. else 1. in
     match offset with
     | `Delta d   -> `Delta, flip *. d
     | `Chamfer d -> `Chamfer, flip *. d
@@ -182,7 +193,7 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = `Quality 1) offset path
             Int.of_float (1. +. s)
           in
           if steps > 1
-          then Path2.arc_about_centre ~fn:steps ~centre prev_b a
+          then Arc2.arc_about_centre ~fn:steps ~centre prev_b a
           else [ sharp_corners.(i) ] )
         else [ sharp_corners.(i) ]
       in
