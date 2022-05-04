@@ -164,9 +164,9 @@ module Cap : sig
     }
 
   (** Top-level configuration type for {!Mesh.sweep}, allowing for the end-caps
-    to be specified using the types above, or to simply loop the first and last
-    layers of the mesh together (see: {!type:row_wrap} [`Loop] as used by
-    {!of_layers}). *)
+   to be specified using the types above, or to simply loop the first and last
+   layers of the mesh together (see: {!type:row_wrap} [`Loop] as used by
+   {!of_rows}). *)
   type t =
     [ `Looped
     | `Caps of caps

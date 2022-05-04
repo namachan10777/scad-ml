@@ -1,12 +1,22 @@
 module type S = sig
   type vec
 
+  (** Configuration module with types and helpers for specifying path
+    roundovers. *)
   module Round : sig
+    (** Radius of circular arc roundovers. *)
     type radius = [ `Radius of float ]
+
+    (** Distance away from the corner the roundover should start. *)
     type joint = [ `Joint of float ]
+
+    (** Distance in from the corner that should be cut off by the roundover. *)
     type cut = [ `Cut of float ]
+
+    (** Width of the segment replacing chamfered corners. *)
     type width = [ `Width of float ]
 
+    (** Roundover specification for a corner of a path. *)
     type corner =
       | Chamf of [ joint | cut | width ]
       | Circ of [ radius | joint | cut ]
@@ -15,24 +25,76 @@ module type S = sig
           ; curv : float
           }
 
+    (** Full roundover specification for a path, either given as a mixed list of
+         pairs of coordinates and {!type:corner} specifications that apply to them,
+         or a single spec to be applied to all corners of the included path. *)
     type t =
       | Mix of (vec * corner option) list
       | Flat of
           { shape : vec list
           ; corner : corner
           ; closed : bool
+                (** If [true], roundover will be applied on the first
+                        and last points, otherwise they will be left untouched. *)
           }
 
+    (** [chamf spec]
+
+        Create a chamfered {!type:corner} specification. *)
     val chamf : [ cut | joint | width ] -> corner
+
+    (** [circ spec]
+
+        Create a circular {!type:corner} specification. *)
     val circ : [ cut | joint | radius ] -> corner
+
+    (** [bez ?curv spec]
+
+        Create a continuous curvature {!type:corner} specification. [curv] sets
+        the smoothness of bezier curvature (default = [0.5]). *)
     val bez : ?curv:float -> [ cut | joint ] -> corner
-    val chamfers : kind:[ `Cut | `Joint | `Width ] -> (vec * float) list -> t
-    val circles : kind:[ `Radius | `Cut | `Joint ] -> (vec * float) list -> t
-    val beziers : ?curv:float -> kind:[ `Cut | `Joint ] -> (vec * float) list -> t
+
+    (** [mix l]
+
+        Wrap a list of point * optional corner specification pairs as a
+        {!type:t}. Note that it is the users responsibility to leave the specs for
+        the first and last points as [None] if they intend to treat the path as
+        open. *)
     val mix : (vec * corner option) list -> t
+
+    (** [flat ?closed ~corner path]
+
+        Create a roundover specification that will apply [corner] to each of
+        the points in [path] (other than the first and last points if [closed] is
+        [false], default = [true]). *)
     val flat : ?closed:bool -> corner:corner -> vec list -> t
+
+    (** [chamfers ~kind spec_pts]
+
+        Create an all chamfer {!type:t} specification, with variable amplitude
+        of the given [kind] paired with each point of the path. *)
+    val chamfers : kind:[ `Cut | `Joint | `Width ] -> (vec * float) list -> t
+
+    (** [circles ~kind spec_pts]
+
+        Create an all circular {!type:t} specification, with variable amplitude
+        of the given [kind] paired with each point of the path. *)
+    val circles : kind:[ `Radius | `Cut | `Joint ] -> (vec * float) list -> t
+
+    (** [bezier ?curv ~kind spec_pts]
+
+         Create an all continuour curvature {!type:t} specification, with variable
+         amplitude of the given [kind] paired with each point of the path. Curvature
+         smoothness of all roundovers is set by [curv] (default = [0.5]). If variable
+         smoothness is desired, {!val:bez} and {!val:mix} may be used in conjunction
+         to achieve it. *)
+    val beziers : ?curv:float -> kind:[ `Cut | `Joint ] -> (vec * float) list -> t
   end
 
+  (** [roundover ?fn ?fa ?fs shape_spec]
+
+      Apply the roundover specifactions in [shape_spec] on the bundled
+      path/shape, with quality set by the [fn], [fa], and [fs] parameters. *)
   val roundover : ?fn:int -> ?fa:float -> ?fs:float -> Round.t -> vec list
 end
 

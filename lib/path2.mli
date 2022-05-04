@@ -129,7 +129,20 @@ val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec
 
 (** [offset ?fn ?fs ?fa ?closed ?check_valid offset path]
 
-    *)
+    Offset a 2d [path] (treated as [closed] by default) by the specified amount.
+    - [`Delta d] will create a new outline whose sides are a fixed distance [d]
+      (+ve out, -ve in) from the original outline.
+    - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
+      chamfered.
+    - [`Radius r] creates a new outline as if a circle of some radius [r] is
+      rotated around the exterior ([r > 0]) or interior ([r < 0]) original
+      outline. [fn], [fs], and [fa] parameters govern the number of points that
+      will be used for these arcs (they are ignored for delta and chamfer modes).
+    - The [check_valid] default of [`Quality 1] will check the validity of
+      shifted line segments by checking whether their ends and [n] additional
+      points spaced throughout are far enough from the original path. If there are
+      no points that have been offset by the target [d], a [Failure] exception will
+      be raised. Checking can be turned off by setting this to [`No]. *)
 val offset
   :  ?fn:int
   -> ?fs:float
@@ -161,14 +174,16 @@ val lift : Plane.t -> t -> Vec3.t list
 
 (** {1 Basic shapes} *)
 
-(** [circle ?fn a]
+(** [circle ?fn r]
 
-    *)
+    Create a circular path of radius [r] with [fn] points (default = [30]). *)
 val circle : ?fn:int -> float -> t
 
 (** [square ?center dims]
 
-    *)
+    Create a rectangular path with xy [dims] (e.g. width and height). If
+    [center] is [true] then the path will be centred around the origin (default
+    = [false]). *)
 val square : ?center:bool -> Vec2.t -> t
 
 (** {1 Basic Transfomations} *)
