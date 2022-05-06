@@ -42,11 +42,11 @@ let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   List.init ((n_frags * n_turns) + 1) f
 
 let scaler ~len { x; y } =
-  let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int len) (v3 x y 1.) in
+  let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int (len - 1)) (v3 x y 1.) in
   fun i -> MultMatrix.scaling @@ Vec3.map (fun a -> (a *. Float.of_int i) +. 1.) step
 
-let twister ~len r =
-  let step = r /. Float.of_int len in
+let twister ~len angle =
+  let step = angle /. Float.of_int (len - 1) in
   fun i -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (step *. Float.of_int i))
 
 let to_transforms ?(euler = false) ?scale ?twist path =
@@ -144,16 +144,20 @@ let normal = function
       fst @@ List.fold_left f (f (Vec3.zero, p1) p2) poly
     in
     Vec3.(normalize @@ negate area_vec)
-  | _                      -> invalid_arg "Too few points to calculate polygon normal."
+  | _                      -> invalid_arg "Too few points to calculate path normal."
 
 let coplanar ?eps t =
   try Plane.are_points_on ?eps (Plane.of_normal @@ normal t) t with
   (* too few points, or co-linear *)
   | Invalid_argument _ -> false
 
-let to_plane = function
-  | []         -> invalid_arg "Empty path cannot be converted to plane."
-  | point :: t -> Plane.of_normal ~point (normal t)
+let to_plane ?eps = function
+  | []                 -> invalid_arg "Empty path cannot be converted to plane."
+  | point :: rest as t ->
+    let plane = Plane.of_normal ~point (normal rest) in
+    if Plane.are_points_on ?eps plane t
+    then plane
+    else invalid_arg "Path is not coplanar."
 
 let project plane = to_path2 ~plane
 

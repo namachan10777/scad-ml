@@ -31,7 +31,7 @@ module type S = sig
     type t =
       | Mix of (vec * corner option) list
       | Flat of
-          { shape : vec list
+          { path : vec list
           ; corner : corner
           ; closed : bool
                 (** If [true], roundover will be applied on the first
@@ -91,9 +91,9 @@ module type S = sig
     val beziers : ?curv:float -> kind:[ `Cut | `Joint ] -> (vec * float) list -> t
   end
 
-  (** [roundover ?fn ?fa ?fs shape_spec]
+  (** [roundover ?fn ?fa ?fs path_spec]
 
-      Apply the roundover specifactions in [shape_spec] on the bundled
+      Apply the roundover specifictions in [path_spec] on the bundled
       path/shape, with quality set by the [fn], [fa], and [fs] parameters. *)
   val roundover : ?fn:int -> ?fa:float -> ?fs:float -> Round.t -> vec list
 end
@@ -133,7 +133,7 @@ module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
     type t =
       | Mix of (V.t * corner option) list
       | Flat of
-          { shape : V.t list
+          { path : V.t list
           ; corner : corner
           ; closed : bool
           }
@@ -142,7 +142,7 @@ module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
     let circ spec = Circ spec
     let bez ?(curv = 0.5) spec = Bez { spec; curv }
     let mix ss = Mix ss
-    let flat ?(closed = true) ~corner shape = Flat { shape; corner; closed }
+    let flat ?(closed = true) ~corner path = Flat { path; corner; closed }
 
     let chamfers ~kind spec_pts =
       let wrap =
@@ -250,41 +250,41 @@ module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
     | Bez { spec; curv } -> bez_corner ?fn ?fs ~curv ~spec
 
   let prune_mixed_spec mix =
-    let shape, specs = Util.unzip mix in
-    let shape = Array.of_list shape in
-    let len = Array.length shape in
+    let path, specs = Util.unzip mix in
+    let path = Array.of_list path in
+    let len = Array.length path in
     let w = Util.index_wrap ~len in
     let f (i, pts, sps) sp =
-      let p = shape.(i) in
-      if (not (V.collinear shape.(w (i - 1)) p shape.(w (i + 1)))) || Option.is_none sp
+      let p = path.(i) in
+      if (not (V.collinear path.(w (i - 1)) p path.(w (i + 1)))) || Option.is_none sp
       then i + 1, p :: pts, sp :: sps
       else i + 1, pts, sps
     in
-    let _, shape, specs = List.fold_left f (0, [], []) specs in
-    Util.array_of_list_rev shape, Array.get (Util.array_of_list_rev specs)
+    let _, path, specs = List.fold_left f (0, [], []) specs in
+    Util.array_of_list_rev path, Array.get (Util.array_of_list_rev specs)
 
-  let roundover ?fn ?fa ?fs shape_spec =
-    let shape, get_spec =
-      match shape_spec with
-      | Mix mix -> prune_mixed_spec mix
-      | Flat { shape; corner; closed } ->
-        let shape = P.prune_collinear' (Array.of_list shape) in
-        let len = Array.length shape in
+  let roundover ?fn ?fa ?fs path_spec =
+    let path, get_spec =
+      match path_spec with
+      | Mix mix                       -> prune_mixed_spec mix
+      | Flat { path; corner; closed } ->
+        let path = P.prune_collinear' (Array.of_list path) in
+        let len = Array.length path in
         let get_corner =
           if closed
           then fun _ -> Some corner
           else fun i -> if i = 0 || i = len - 1 then None else Some corner
         in
-        shape, get_corner
+        path, get_corner
     in
-    let len = Array.length shape in
+    let len = Array.length path in
     let wrap = Util.index_wrap ~len in
     let f i =
       match get_spec i with
       | Some spec ->
         let corner = spec_to_corner ?fn ?fa ?fs spec in
-        corner shape.(wrap (i - 1)) shape.(i) shape.(wrap (i + 1))
-      | None      -> [ shape.(i) ]
+        corner path.(wrap (i - 1)) path.(i) path.(wrap (i + 1))
+      | None      -> [ path.(i) ]
     in
     List.init len f |> List.concat |> Util.deduplicate_consecutive ~equal:V.approx
 end
