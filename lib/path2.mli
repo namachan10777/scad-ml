@@ -1,4 +1,4 @@
-include Path.S with type vec := Vec.v2
+include Path.S with type vec := Vec2.t
 
 (** Bounding box. *)
 type bbox =
@@ -153,7 +153,7 @@ val offset
   -> t
   -> t
 
-include Rounding.S with type vec := Vec.v2
+include Rounding.S with type vec := Vec2.t
 
 (** {1 2d-3d conversion} *)
 

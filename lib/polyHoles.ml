@@ -1,4 +1,5 @@
-(* https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
+(* Polyhole partitioning algorithm ported from
+   https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 
 open Vec
 

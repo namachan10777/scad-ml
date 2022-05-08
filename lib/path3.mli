@@ -132,7 +132,7 @@ val bbox : t -> bbox
 
 (** {1 Roundovers}*)
 
-include Rounding.S with type vec := Vec.v3
+include Rounding.S with type vec := Vec3.t
 
 (** {1 2d-3d Conversion} *)
 

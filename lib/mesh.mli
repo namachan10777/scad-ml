@@ -1,15 +1,21 @@
+(** Generation, and manipulation of 3-dimensional meshes (points and faces)
+    that can be mapped into {!Scad.d3} as polyhedrons. *)
+
+(** Points and faces 3-dimensional mesh. *)
 type t = Mesh0.t = private
   { n_points : int
   ; points : Vec3.t list
   ; faces : int list list
   }
 
+(** Describes desired row wrapping behaviour in {!of_rows}, which creates a
+    mesh from rows of points. *)
 type row_wrap =
-  [ `Loop
-  | `Both
-  | `None
-  | `Top
-  | `Bot
+  [ `Loop (** last/top row wrapped to the first/bottom *)
+  | `Both (** both bottom and top rows are closed with flat faces *)
+  | `None (** neither top or bottom rows are closed with a face *)
+  | `Top (** a face is generated to close the top row with itself *)
+  | `Bot (** a face is generated to close the bottom row with itself *)
   ]
 
 (** [empty]
@@ -102,8 +108,8 @@ val of_polygons : Path3.t list -> t
 (** {1 Sweeps and Extrusions with roundovers}
 
 Extrusions from 2d to 3d with optional roundovers based on the implementations found in
-the BOSL2 library's [offset_sweep] functions found in
-{{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding.scad}. *)
+the {{:https://github.com/revarbat/BOSL2} BOSL2} library's [offset_sweep] functions from
+the {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding} module. *)
 
 module Cap : sig
   (** Configuration module for declaring how extrusions from 2d to 3d via
@@ -267,7 +273,7 @@ val sweep
   -> ?spec:Cap.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
-  -> Mesh0.t
+  -> t
 
 (** [linear_extrude ?check_valid ?winding ?fa ?slices ?scale ?twist
     ?center ?caps ~height poly]
@@ -288,7 +294,7 @@ val linear_extrude
   -> ?caps:Cap.caps
   -> height:float
   -> Poly2.t
-  -> Mesh0.t
+  -> t
 
 (** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
@@ -310,7 +316,7 @@ val helix_extrude
   -> ?r2:float
   -> float
   -> Poly2.t
-  -> Mesh0.t
+  -> t
 
 (** [path_extrude ?check_valid ?winding ?spec ?euler ?scale ?twist ~path poly]
 
@@ -326,7 +332,7 @@ val path_extrude
   -> ?twist:float
   -> path:Path3.t
   -> Poly2.t
-  -> Mesh0.t
+  -> t
 
 (** [prism ?debug ?fn ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top
   ?joint_sides bottom top]
@@ -352,7 +358,7 @@ val prism
   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
   -> Vec3.t list
   -> Vec3.t list
-  -> Mesh0.t
+  -> t
 
 (** {1 Function Plotting}
 

@@ -1,4 +1,7 @@
 module type S = sig
+  (** Roundovers inspired by the {{:https://github.com/revarbat/BOSL2} BOSL2}
+   {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding} module. *)
+
   type vec
 
   (** Configuration module with types and helpers for specifying path

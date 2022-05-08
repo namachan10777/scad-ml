@@ -7,12 +7,6 @@ type boundary =
   | `Natural
   ]
 
-type plane =
-  [ `XY
-  | `YZ
-  | `XZ
-  ]
-
 type coef =
   { a : float
   ; b : float
@@ -222,12 +216,3 @@ let interpolate_path t n =
     | None   -> pts
   in
   List.rev @@ Util.fold_init n f []
-
-let path_to_3d ?(plane = `XY) ps =
-  let f =
-    match plane with
-    | `XY -> fun { x; y } -> v3 x y 0.
-    | `YZ -> fun { x = y; y = z } -> v3 0. y z
-    | `XZ -> fun { x; y = z } -> v3 x 0. z
-  in
-  List.map f ps

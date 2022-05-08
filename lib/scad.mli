@@ -105,7 +105,7 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> Vec.v2 -> d2
+val square : ?center:bool -> Vec2.t -> d2
 
 (** [circle ?fa ?fs ?fn radius]
 
@@ -123,7 +123,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> d2
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> Vec.v2 list -> d2
+val polygon : ?convexity:int -> ?paths:int list list -> Vec2.t list -> d2
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -367,7 +367,7 @@ val linear_extrude
   -> ?convexity:int
   -> ?twist:int
   -> ?slices:int
-  -> ?scale:Vec.v2
+  -> ?scale:Vec2.t
   -> ?fn:int
   -> d2
   -> d3
