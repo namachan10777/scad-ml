@@ -18,12 +18,13 @@ val of_tups : (float * float) list -> t
    (within the tolerance of [eps]), [0.] is returned. *)
 val clockwise_sign : ?eps:float -> t -> float
 
+val clockwise_sign' : ?eps:float -> Vec2.t array -> float
+
 (** [is_clockwise path]
 
     Returns [true] if the rotational ordering of [path] is clockwise. *)
 val is_clockwise : t -> bool
 
-val clockwise_sign' : ?eps:float -> Vec2.t array -> float
 val is_clockwise' : Vec2.t array -> bool
 
 (** [self_intersection ?eps ?closed path]

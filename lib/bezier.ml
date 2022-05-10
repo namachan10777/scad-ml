@@ -48,28 +48,75 @@ let bezier_matrix =
 
 module type S = sig
   type vec
+  type t = float -> vec
+
+  (** [coefs ps]
+
+      Compute the bezier algebraic coefficients for the control points [ps]. *)
+  val coefs : vec list -> vec array
 
   val coefs' : vec array -> vec array
-  val coefs : vec list -> vec array
-  val make' : vec array -> float -> vec
-  val make : vec list -> float -> vec
 
-  val curve
-    :  ?init:vec list
-    -> ?rev:bool
-    -> ?fn:int
-    -> ?endpoint:bool
-    -> (float -> vec)
-    -> vec list
+  (** [make ps]
 
-  val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> (float -> vec) -> vec array
+      Create bezier function of degree n ([n = List.length ps - 1]) from the
+      control points [ps]. The resulting continuous curve advances from the 0th
+      control point at [0.], to the final control point at [1.]. *)
+  val make : vec list -> t
+
+  val make' : vec array -> t
+
+  (** [curve ?init ?rev ?fn ?endpoint t]
+
+      Draw a path of [fn] points (default = [16]) along the bezier curve [t].
+
+      - [init] can be provided to be prepended to (defaults to an empty list)
+      - If [rev] is [true], the bezier will be drawn in reverse (default = [false])
+      - If [endpoint] is [true], the last point will be a control point (last or
+        first depending on [rev]), otherwise it will be off by the step size
+        ([1 / fn]) *)
+  val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec list
+
+  val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec array
+
+  (** [length ?start_u ?end_u ?max_deflect ps]
+
+      Compute the length along the bezier defined by the control points [ps]
+      between the fractional positions [start_u] and [end_u] ([0.] to [1.] by
+      default). This is approximated as the sum of line segments whose midpoints
+      deviate from the bezier by no more than [max_deflect]. *)
   val length : ?start_u:float -> ?end_u:float -> ?max_deflect:float -> vec list -> float
-  val patch : vec list list -> float -> float -> vec
-  val patch' : vec array array -> float -> float -> vec
-  val patch_curve' : ?fn:int -> (float -> float -> vec) -> vec array array
-  val patch_curve : ?fn:int -> (float -> float -> vec) -> vec list list
-  val of_bezpath : ?n:int -> vec list -> float -> vec
 
+  (** [patch grid]
+
+      Create a bezier patch (curved surface) from an rectangular [grid] of
+      control points. *)
+  val patch : vec list list -> float -> t
+
+  val patch' : vec array array -> float -> t
+
+  (** [patch_curve ?fn p]
+
+      Sample a grid of [fn] by [fn] points describing a curved surface from the
+      bezier patch [p]. (default [fn = 16]). *)
+  val patch_curve : ?fn:int -> (float -> t) -> vec list list
+
+  val patch_curve' : ?fn:int -> (float -> t) -> vec array array
+
+  (** [of_bezpath ?n ps]
+
+      Create a bezier function from a series of degree [n] beziers connected
+      end-to-end defined by the control points [ps]. The end-point of the first
+      curve is the start-point of the next, and so on. Thus, two cubic-beziers
+      ([n = 3], the default) in series is described by seven control points
+      (middle point is shared). The number of curves is [List.length ps - 1 / n],
+      if [ps] cannot be broken by degree [n] in this way, an [Invalid_argument]
+      exception will be raised. *)
+  val of_bezpath : ?n:int -> vec list -> t
+
+  (** [bezpath_of_path ?closed ?uniform ?size ?tangents path]
+
+      *)
   val bezpath_of_path
     :  ?closed:bool
     -> ?uniform:bool
@@ -83,8 +130,14 @@ module type S = sig
     -> vec list
     -> vec list
 
+  (** [bezpath_curve ?fn ?n ps]
+
+      *)
   val bezpath_curve : ?fn:int -> ?n:int -> vec list -> vec list
 
+  (** [of_path ?closed ?uniform ?size ?tangents path]
+
+      *)
   val of_path
     :  ?closed:bool
     -> ?uniform:bool
@@ -96,13 +149,20 @@ module type S = sig
          ]
     -> ?tangents:vec list
     -> vec list
-    -> float
-    -> vec
+    -> t
 
-  val closest_point : ?n:int -> ?max_err:float -> (float -> vec) -> vec -> float
+  (** [closest_point ?n ?max_err t p]
+
+      Find the fractional position along the bezier [t] closest to the point
+      [p]. [t] is treated as cubic (degree [n = 3]) by default, subdividing the
+      bezier by [3] for each degree. Search continues until a position less
+      [max_err] (default = [0.01]) distance from [p] is found. *)
+  val closest_point : ?n:int -> ?max_err:float -> t -> vec -> float
 end
 
 module Make (V : Vec.S) : S with type vec := V.t = struct
+  type t = float -> V.t
+
   module P = Path.Make (V)
 
   let coefs' ps =
