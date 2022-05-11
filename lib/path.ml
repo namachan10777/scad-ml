@@ -8,8 +8,6 @@ module type S = sig
       Calculate the length (total travel distance) of the [path]. *)
   val length : t -> float
 
-  val length' : vec array -> float
-
   (** [cummulative_length path]
 
       Calculate the cummulative length (distance travelled by each point) along
@@ -46,8 +44,6 @@ module type S = sig
       Remove collinear points from [path]. *)
   val prune_collinear : t -> t
 
-  val prune_collinear' : vec array -> vec array
-
   (** [deriv ?closed ?h path]
 
       Computes a numerical derivative of [path], with [h] (default [1.]) giving
@@ -71,10 +67,10 @@ module type S = sig
   (** [tangents ?uniform ?closed path]
 
       Compute tangent unit vectors of [path]. Set [closed] to [true] to indicate
-   that tangents should include between the end and beginning of the path
-   (default = [false]). Sampling of [path] is assumed to be [uniform] unless the
-   parameter is set to [false], in which case the derivatives will be adjusted
-   to correct for non-uniform sampling of points. *)
+      that tangents should include between the end and beginning of the path
+      (default = [false]). Sampling of [path] is assumed to be [uniform] unless the
+      parameter is set to [false], in which case the derivatives will be adjusted
+      to correct for non-uniform sampling of points. *)
   val tangents : ?uniform:bool -> ?closed:bool -> t -> t
 
   (** [continuous_closest_point ?n_steps ?max_err f p]
@@ -98,7 +94,14 @@ module type S = sig
   val segment : ?closed:bool -> t -> line list
 end
 
-module Make (V : Vec.S) : S with type vec := V.t and type line = V.line = struct
+module type S' = sig
+  include S
+
+  val length' : vec array -> float
+  val prune_collinear' : vec array -> vec array
+end
+
+module Make (V : Vec.S) = struct
   type vec = V.t
   type line = V.line
   type t = vec list

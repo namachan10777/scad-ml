@@ -15,7 +15,7 @@ let validation ?(eps = Util.epsilon) = function
     let paths = Array.map Array.of_list (Array.of_list (outer :: holes)) in
     Array.iteri
       (fun i p ->
-        if not @@ Path2.is_simple' ~eps ~closed:true p then raise (SelfIntersection i) )
+        if not @@ APath2.is_simple ~eps ~closed:true p then raise (SelfIntersection i) )
       paths;
     (* check for intersections *)
     let n = Array.length paths

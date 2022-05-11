@@ -55,16 +55,12 @@ module type S = sig
       Compute the bezier algebraic coefficients for the control points [ps]. *)
   val coefs : vec list -> vec array
 
-  val coefs' : vec array -> vec array
-
   (** [make ps]
 
       Create bezier function of degree n ([n = List.length ps - 1]) from the
       control points [ps]. The resulting continuous curve advances from the 0th
       control point at [0.], to the final control point at [1.]. *)
   val make : vec list -> t
-
-  val make' : vec array -> t
 
   (** [curve ?init ?rev ?fn ?endpoint t]
 
@@ -76,8 +72,6 @@ module type S = sig
         first depending on [rev]), otherwise it will be off by the step size
         ([1 / fn]) *)
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec list
-
-  val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec array
 
   (** [length ?start_u ?end_u ?max_deflect ps]
 
@@ -93,15 +87,11 @@ module type S = sig
       control points. *)
   val patch : vec list list -> float -> t
 
-  val patch' : vec array array -> float -> t
-
   (** [patch_curve ?fn p]
 
       Sample a grid of [fn] by [fn] points describing a curved surface from the
       bezier patch [p]. (default [fn = 16]). *)
   val patch_curve : ?fn:int -> (float -> t) -> vec list list
-
-  val patch_curve' : ?fn:int -> (float -> t) -> vec array array
 
   (** [of_bezpath ?n ps]
 
@@ -116,38 +106,66 @@ module type S = sig
 
   (** [bezpath_of_path ?closed ?uniform ?size ?tangents path]
 
-      *)
+    Create a bezier path (see {!of_bezpath}) which defines a curve that
+    passes through the points of [path].
+
+    - [size] sets the absolute or relative (as a fraction of segment length)
+      distance that the computed curve can deviate from the input [path].
+      Provided either as a flat value for all points, or a list with a value for
+      each {i segment} of the [path] (default = [`FlatRel 0.1]).
+    - [tangents] provides control over the tangents of the computed curve where
+      it passes through the points of [path]. Tangents can either be provided by
+      the user with [`Tangents l], or computed [`NonUniform | `Uniform] (see
+      {!Path2.tangents}).
+    - If [closed] is [true] (default = [false]), an additional segment between
+      the last and first points of [path] will be included in the computations.
+      Thus, this impacts the correct lengths of lists provided to the [size] and
+      [tangents] parameters (= length of [path] if [closed], one less if not). *)
   val bezpath_of_path
     :  ?closed:bool
-    -> ?uniform:bool
     -> ?size:
-         [> `Abs of float list
+         [ `Abs of float list
          | `FlatAbs of float
          | `FlatRel of float
          | `Rel of float list
          ]
-    -> ?tangents:vec list
+    -> ?tangents:[ `NonUniform | `Uniform | `Tangents of vec list ]
     -> vec list
     -> vec list
 
   (** [bezpath_curve ?fn ?n ps]
 
-      *)
+      Compute a bezier function from a series of degree [n] beziers connected
+      end-to-end defined by the control points [ps] and use to draw a path of
+      [fn] points. See {!of_bezpath} for explanation of bezier paths. *)
   val bezpath_curve : ?fn:int -> ?n:int -> vec list -> vec list
 
   (** [of_path ?closed ?uniform ?size ?tangents path]
 
-      *)
+    Create a bezier function which defines a curve that passes through the
+    points of [path].
+
+    - [size] sets the absolute or relative (as a fraction of segment length)
+      distance that the computed curve can deviate from the input [path].
+      Provided either as a flat value for all points, or a list with a value for
+      each {i segment} of the [path] (default = [`FlatRel 0.1]).
+    - [tangents] provides control over the tangents of the computed curve where
+      it passes through the points of [path]. Tangents can either be provided by
+      the user with [`Tangents l], or computed [`NonUniform | `Uniform] (see
+      {!Path2.tangents}).
+    - If [closed] is [true] (default = [false]), an additional segment between
+      the last and first points of [path] will be included in the computations.
+      Thus, this impacts the correct lengths of lists provided to the [size] and
+      [tangents] parameters (= length of [path] if [closed], one less if not). *)
   val of_path
     :  ?closed:bool
-    -> ?uniform:bool
     -> ?size:
-         [> `Abs of float list
+         [ `Abs of float list
          | `FlatAbs of float
          | `FlatRel of float
          | `Rel of float list
          ]
-    -> ?tangents:vec list
+    -> ?tangents:[ `NonUniform | `Uniform | `Tangents of vec list ]
     -> vec list
     -> t
 
@@ -160,7 +178,17 @@ module type S = sig
   val closest_point : ?n:int -> ?max_err:float -> t -> vec -> float
 end
 
-module Make (V : Vec.S) : S with type vec := V.t = struct
+module type S' = sig
+  include S
+
+  val coefs' : vec array -> vec array
+  val make' : vec array -> t
+  val curve' : ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec array
+  val patch' : vec array array -> float -> t
+  val patch_curve' : ?fn:int -> (float -> t) -> vec array array
+end
+
+module Make (V : Vec.S) = struct
   type t = float -> V.t
 
   module P = Path.Make (V)
@@ -320,9 +348,8 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
 
   let bezpath_of_path
       ?(closed = false)
-      ?(uniform = false)
       ?(size = `FlatRel 0.1)
-      ?tangents
+      ?(tangents = `NonUniform)
       path
     =
     let ps = Array.of_list path
@@ -346,8 +373,9 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
     in
     let tangents =
       ( match tangents with
-      | Some tangents -> List.map V.normalize tangents
-      | None          -> P.tangents ~uniform ~closed path )
+      | `Tangents tangents -> List.map V.normalize tangents
+      | `NonUniform        -> P.tangents ~uniform:false ~closed path
+      | `Uniform           -> P.tangents ~uniform:true ~closed path )
       |> Array.of_list
     in
     let len_ps = Array.length ps
@@ -411,8 +439,8 @@ module Make (V : Vec.S) : S with type vec := V.t = struct
     in
     List.rev @@ Util.fold_init n_segs f []
 
-  let of_path ?closed ?uniform ?size ?tangents path =
-    of_bezpath ~n:3 @@ bezpath_of_path ?closed ?uniform ?size ?tangents path
+  let of_path ?closed ?size ?tangents path =
+    of_bezpath ~n:3 @@ bezpath_of_path ?closed ?size ?tangents path
 
   let closest_point ?(n = 3) ?max_err bez p =
     P.continuous_closest_point ~n_steps:(n * 3) ?max_err bez p

@@ -1,13 +1,14 @@
 open Cairo
 open Vec
+module Bez = Bezier.Make (Vec2)
 
 let pathdata_to_outlines ?(fn = 5) data =
   let f (paths, ps, last_p) = function
     | MOVE_TO (x, y) -> paths, ps, v2 x y
     | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
     | CURVE_TO (x1, y1, x2, y2, x3, y3) ->
-      let bez = Bezier2.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
-      paths, Bezier2.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
+      let bez = Bez.make' [| last_p; v2 x1 y1; v2 x2 y2; v2 x3 y3 |] in
+      paths, Bez.curve ~fn ~rev:true ~endpoint:false ~init:ps bez, v2 x3 y3
     | CLOSE_PATH ->
       let path =
         match ps with

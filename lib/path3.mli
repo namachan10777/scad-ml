@@ -1,4 +1,4 @@
-include Path.S with type vec := Vec3.t
+include Path.S with type vec := Vec3.t and type line = Vec3.line
 
 (** Bounding box. *)
 type bbox =

@@ -1,4 +1,5 @@
 open Util
+module Bez = Bezier.Make (Vec3)
 
 type patch_edges =
   { left : Path3.t
@@ -28,13 +29,13 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
       let f = if full_degen then Fun.id else fun i -> if i <= fn / 2 then 2 * i else fn in
       Array.init (fn + 1) f
     and bezpatch =
-      Array.map (fun row -> Bezier3.(curve' @@ make' row)) bp |> Math.transpose
+      Array.map (fun row -> Bez.(curve' @@ make' row)) bp |> Math.transpose
     in
     let pts =
       [ bezpatch.(0).(0) ]
       :: List.init fn (fun i ->
              let fn = row_max.(i) + 2 in
-             Bezier3.(curve ~fn @@ make' bezpatch.(i + 1)) )
+             Bez.(curve ~fn @@ make' bezpatch.(i + 1)) )
     in
     let left = List.map List.hd pts
     and right = List.map last_element pts
@@ -46,15 +47,15 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
     let p = [ bezpatch.(0).(0) ] in
     Mesh0.empty, { left = p; right = p; top = p; bot = p }
   | true, false, _, _, _, _ ->
-    let col = Bezier3.(curve ~fn @@ make' trans_bezpatch.(0)) in
+    let col = Bez.(curve ~fn @@ make' trans_bezpatch.(0)) in
     let bot = [ last_element col ] in
     Mesh0.empty, { left = col; right = col; top = [ List.hd col ]; bot }
   | false, true, _, _, _, _ ->
-    let row = Bezier3.(curve ~fn @@ make' bezpatch.(0)) in
+    let row = Bez.(curve ~fn @@ make' bezpatch.(0)) in
     let right = [ last_element row ] in
     Mesh0.empty, { left = [ List.hd row ]; right; top = row; bot = row }
   | false, false, false, false, false, false ->
-    let pts = Bezier3.(patch_curve ~fn @@ patch' bezpatch) in
+    let pts = Bez.(patch_curve ~fn @@ patch' bezpatch) in
     let left = List.map List.hd pts
     and right = List.map last_element pts
     and mesh = Mesh0.of_ragged ~rev:(not rev) pts in
@@ -73,8 +74,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
       a
     in
     let bezpatch =
-      Array.map (fun row -> Bezier3.(curve' @@ make' row)) trans_bezpatch
-      |> Math.transpose
+      Array.map (fun row -> Bez.(curve' @@ make' row)) trans_bezpatch |> Math.transpose
     in
     let pts =
       [ bezpatch.(0).(0) ]
@@ -82,7 +82,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
            (fn - 1)
            (fun j acc ->
              let i = fn - 2 - j in
-             Bezier3.(curve ~fn:row_count.(i) @@ make' bezpatch.(i + 1)) :: acc )
+             Bez.(curve ~fn:row_count.(i) @@ make' bezpatch.(i + 1)) :: acc )
            [ [ bezpatch.(0).(Array.length bezpatch - 1) ] ]
     in
     let left = List.map List.hd pts
@@ -299,7 +299,7 @@ let prism
     let plane = Plane.make bottom.(0) bottom.(1) bottom.(2) in
     Array.map (Plane.project plane) bottom
   in
-  let bottom_sign = Path2.clockwise_sign' bot_proj in
+  let bottom_sign = APath2.clockwise_sign bot_proj in
   let concave =
     let f i =
       let line = Vec2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in

@@ -1,4 +1,4 @@
-include Path.S with type vec := Vec2.t
+include Path.S with type vec := Vec2.t and type line = Vec2.line
 
 (** Bounding box. *)
 type bbox =
@@ -18,14 +18,10 @@ val of_tups : (float * float) list -> t
    (within the tolerance of [eps]), [0.] is returned. *)
 val clockwise_sign : ?eps:float -> t -> float
 
-val clockwise_sign' : ?eps:float -> Vec2.t array -> float
-
 (** [is_clockwise path]
 
     Returns [true] if the rotational ordering of [path] is clockwise. *)
 val is_clockwise : t -> bool
-
-val is_clockwise' : Vec2.t array -> bool
 
 (** [self_intersection ?eps ?closed path]
 
@@ -34,8 +30,6 @@ val is_clockwise' : Vec2.t array -> bool
     points will be considered (default = [false]). *)
 val self_intersections : ?eps:float -> ?closed:bool -> t -> t
 
-val self_intersections' : ?eps:float -> ?closed:bool -> Vec2.t array -> t
-
 (** [is_simple ?eps ?closed path]
 
     Return [true] if [path] is simple, e.g. contains no (paralell) reversals or
@@ -43,8 +37,6 @@ val self_intersections' : ?eps:float -> ?closed:bool -> Vec2.t array -> t
    line segment between the last and first points will be considered (default =
    [false]).*)
 val is_simple : ?eps:float -> ?closed:bool -> t -> bool
-
-val is_simple' : ?eps:float -> ?closed:bool -> Vec2.t array -> bool
 
 (** [bbox t]
 
