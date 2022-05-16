@@ -11,6 +11,6 @@ let line_intersection ~(line : Vec2.line) ps =
     then Vec2.(dot (sub bez_coefs.(0) line.a) normal)
     else Vec2.dot bez_coefs.(n - i) normal
   in
-  let roots = Math.real_roots' @@ Array.init (n + 1) f in
+  let roots = Math.real_roots @@ Array.init (n + 1) f in
   let f i acc = if roots.(i) >= 0. && roots.(i) <= 1. then roots.(i) :: acc else acc in
   Util.fold_init (Array.length roots) f []

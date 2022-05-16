@@ -58,7 +58,8 @@ let transpose a =
   done;
   m
 
-let poly_trim_head' p =
+(* Removes the leading zero terms of a polynomial. *)
+let poly_trim_head p =
   let i = ref 0
   and first = ref None
   and len = Array.length p in
@@ -69,13 +70,8 @@ let poly_trim_head' p =
   | Some first -> Array.init (len - first) (fun i -> p.(i + first))
   | None       -> [| 0. |]
 
-let poly_trim_head p =
-  let f acc x = if Float.equal x 0. then acc else x :: acc in
-  match List.fold_left f [] p with
-  | [] -> [ 0. ]
-  | p  -> List.rev p
-
-let poly_trim_head_tail' p =
+(* Removes the leading and trailing zero terms of a polynomial. *)
+let poly_trim_head_tail p =
   let len = Array.length p in
   let i = ref 0
   and j = ref (len - 1)
@@ -89,27 +85,20 @@ let poly_trim_head_tail' p =
   | Some first, Some last -> Array.init (last - first + 1) (fun i -> p.(i + first))
   | _                     -> [| 0. |]
 
-let poly_trim_head_tail p = Array.to_list @@ poly_trim_head_tail' (Array.of_list p)
-
-let polynomial_real' p z =
-  let f total x = (total *. z) +. x in
-  Array.fold_left f 0. (poly_trim_head' p)
-
+(* Evaluates the real polynomial p at the real input value z. *)
 let polynomial_real p z =
   let f total x = (total *. z) +. x in
-  List.fold_left f 0. (poly_trim_head p)
+  Array.fold_left f 0. (poly_trim_head p)
 
-let polynomial_complex' p z =
-  let f total re = Complex.(add (mul total z) { re; im = 0. }) in
-  Array.fold_left f Complex.zero (poly_trim_head' p)
-
+(* Evaluates the real polynomial p at the complex input value z. *)
 let polynomial_complex p z =
   let f total re = Complex.(add (mul total z) { re; im = 0. }) in
-  List.fold_left f Complex.zero (poly_trim_head p)
+  Array.fold_left f Complex.zero (poly_trim_head p)
 
-(* Adapted from: https://github.com/revarbat/BOSL2/blob/master/math.scad#L1418 *)
-let poly_roots' ?(tol = 1e-14) p =
-  let p = poly_trim_head_tail' p in
+(* Returns all complex roots of the real polynomial p.
+   Adapted from: https://github.com/revarbat/BOSL2/blob/master/math.scad#L1418 *)
+let poly_roots ?(tol = 1e-14) p =
+  let p = poly_trim_head_tail p in
   if Array.for_all (( = ) 0.) p then invalid_arg "Input polynomial cannot be zero.";
   let n = Array.length p - 1 in
   (* polynomial degree *)
@@ -127,7 +116,7 @@ let poly_roots' ?(tol = 1e-14) p =
     and beta = -.p1 /. p0 /. Float.of_int n in
     let z =
       let r =
-        let poly = polynomial_real' p beta in
+        let poly = polynomial_real p beta in
         1. +. Float.(pow (abs (poly /. p0)) (1. /. of_int n))
       in
       let f i =
@@ -145,14 +134,14 @@ let poly_roots' ?(tol = 1e-14) p =
       for j = 0 to n - 1 do
         if not complete.(j)
         then (
-          let sval = tol *. polynomial_real' s (Complex.norm z.(j))
-          and p_of_z = polynomial_complex' p z.(j) in
+          let sval = tol *. polynomial_real s (Complex.norm z.(j))
+          and p_of_z = polynomial_complex p z.(j) in
           if Complex.norm p_of_z <= sval
           then (
             complete.(j) <- true;
             incr n_complete )
           else (
-            let newton = Complex.div p_of_z (polynomial_complex' p_deriv z.(j)) in
+            let newton = Complex.div p_of_z (polynomial_complex p_deriv z.(j)) in
             for k = 0 to n - 1 do
               if j <> k then z_diff := Complex.(add !z_diff (div one (sub z.(j) z.(k))))
             done;
@@ -166,12 +155,12 @@ let poly_roots' ?(tol = 1e-14) p =
     let error =
       let f xi =
         let num =
-          Complex.norm (polynomial_complex' p xi)
-          +. (tol *. polynomial_real' s (Complex.norm xi))
+          Complex.norm (polynomial_complex p xi)
+          +. (tol *. polynomial_real s (Complex.norm xi))
         and denom =
           Float.abs
-            ( Complex.norm (polynomial_complex' p_deriv xi)
-            -. (tol *. polynomial_real' s (Complex.norm xi)) )
+            ( Complex.norm (polynomial_complex p_deriv xi)
+            -. (tol *. polynomial_real s (Complex.norm xi)) )
         in
         Float.of_int n *. num /. denom
       in
@@ -179,13 +168,9 @@ let poly_roots' ?(tol = 1e-14) p =
     in
     z, error )
 
-let poly_roots ?tol p =
-  let roots, errors = poly_roots' ?tol (Array.of_list p) in
-  Array.to_list roots, Array.to_list errors
-
-let real_roots' ?eps ?(tol = 1e-14) p =
-  let p = poly_trim_head' p in
-  let roots, errors = poly_roots' ~tol p in
+let real_roots ?eps ?(tol = 1e-14) p =
+  let p = poly_trim_head p in
+  let roots, errors = poly_roots ~tol p in
   let f =
     match eps with
     | Some eps ->
@@ -197,5 +182,3 @@ let real_roots' ?eps ?(tol = 1e-14) p =
   in
   let _, l = Array.fold_left f (0, []) roots in
   Util.array_of_list_rev l
-
-let real_roots ?eps ?tol p = Array.to_list @@ real_roots' ?eps ?tol (Array.of_list p)
