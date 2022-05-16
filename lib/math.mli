@@ -1,43 +1,82 @@
 (** {1 Float operations} *)
 
-(** [deg_of_rad r] *)
-val deg_of_rad : float -> float
+(** [sign v]
 
-(** [rad_of_deg d] *)
-val rad_of_deg : float -> float
+    Return the sign of [v] as a float ([-1.], [0.], or [1.]). *)
+val sign : float -> float
 
-(** [sign v] *)
-val sign : Float.t -> float
+(** [clamp ~min ~max v]
 
-(** [clamp ~min ~max v] *)
-val clamp : min:'a -> max:'a -> 'a -> 'a
+    Clamp the float [v] between [min] and [max]. *)
+val clamp : min:float -> max:float -> float -> float
 
-(** [lerp a b u] *)
+(** [lerp a b u]
+
+    Linearly interpolate between floats [a] and [b]. *)
 val lerp : float -> float -> float -> float
 
-(** [lerpn ?endpoint a b n] *)
+(** [lerpn ?endpoint a b n]
+
+    Linearly interpolate [n] values between [a] and [b]. If [endpoint]
+    is [true], the last value will be equal to [b], otherwise, it will be about
+    [a + (b - a) * (1 - 1 / n)]. *)
 val lerpn : ?endpoint:bool -> float -> float -> int -> float list
 
-(** [quant ~q v] *)
+(** [quant ~q v]
+
+    Quantize [v] to a multiple of the quantum size [q]. For example:
+    {[
+      quant ~q:0.2 1.5 = 1.6
+    ]} *)
 val quant : q:float -> float -> float
 
-(** [quant_down ~q v] *)
+(** [quant_down ~q v]
+
+    Quantize [v] to a multiple of the quantum size [q], always rounding down.
+    For example:
+    {[
+      quant_down ~q:0.2 1.75 = 1.6
+    ]} *)
 val quant_down : q:float -> float -> float
 
-(** [quant_up ~q v] *)
+(** [quant_up ~q v]
+
+    Quantize [v] to a multiple of the quantum size [q], always rounding up.
+    For example:
+    {[
+      quant_up ~q:0.2 1.51 = 1.6
+    ]} *)
 val quant_up : q:float -> float -> float
 
-(** [approx ?eps a b] *)
-val approx : ?eps:Float.t -> float -> float -> bool
+(** [approx ?eps a b]
 
-(** [law_of_cosines a b c] *)
-val law_of_cosines : float -> float -> float -> float
+    Return [true] if [a] is within the tolerance [eps] of [b]. *)
+val approx : ?eps:float -> float -> float -> bool
 
 (** [posmod a m]
 
     Compute the positive modulo [m] of [a]. The resulting value will be in the
     range of [0.] to [m -. 1.]. *)
 val posmod : float -> float -> float
+
+(** {1 Angles and Trigonometry} *)
+
+(** [deg_of_rad r]
+
+    Convert [r] from radians to degrees. *)
+val deg_of_rad : float -> float
+
+(** [rad_of_deg d]
+
+    Convert [d] from degrees to radians. *)
+val rad_of_deg : float -> float
+
+(** [law_of_cosines a b c]
+
+    Apply the Law of Cosines for a triangle with side lengths [a], [b], and [c].
+    The angle in radians of the corner opposite of the third side [c] is
+    returned. *)
+val law_of_cosines : float -> float -> float -> float
 
 (** {1 2d matrix operations} *)
 
@@ -70,6 +109,6 @@ val transpose : 'a array array -> 'a array array
     - [tol] is the tolerance for the complex polynomial root finder
 
     Adapted from the [real_roots] function found in the
-    {:{https://github.com/revarbat/BOSL2/blob/master/math.scad#L1361} BOSL2 math
+    {{:https://github.com/revarbat/BOSL2/blob/master/math.scad#L1361} BOSL2 math
     module}. *)
 val real_roots : ?eps:float -> ?tol:float -> float array -> float array

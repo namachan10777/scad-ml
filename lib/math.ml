@@ -18,8 +18,8 @@ let approx ?(eps = Util.epsilon) a b =
   not (Int.equal Float.(compare (abs (a -. b)) eps) 1)
 
 let law_of_cosines a b c =
-  clamp ~min:(-1.) ~max:1.
-  @@ Float.acos (((a *. a) +. (b *. b) -. (c *. c)) /. (2. *. a *. b))
+  Float.acos
+  @@ clamp ~min:(-1.) ~max:1. (((a *. a) +. (b *. b) -. (c *. c)) /. (2. *. a *. b))
 
 let posmod a m = mod_float (mod_float a m +. m) m
 
