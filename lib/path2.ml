@@ -118,6 +118,9 @@ let circle ?(fn = 30) r =
   in
   List.init fn f
 
+let wedge ?fn ~centre ~radius ~start angle =
+  arc ?fn ~wedge:true ~centre ~radius ~start angle
+
 let square ?(center = false) { x; y } =
   if center
   then (

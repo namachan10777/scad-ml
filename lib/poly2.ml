@@ -117,8 +117,11 @@ let bbox { outer; _ } = Path2.bbox outer
 let centroid ?eps { outer; _ } = Path2.centroid ?eps outer
 
 let area ?signed { outer; holes } =
-  Path2.area ?signed outer
-  -. List.fold_left (fun sum h -> Path2.area ?signed h +. sum) 0. holes
+  let outside = Path2.area ?signed outer
+  and inside = List.fold_left (fun sum h -> Path2.area ?signed h +. sum) 0. holes in
+  match signed with
+  | Some true -> outside +. inside
+  | _         -> outside -. inside
 
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 

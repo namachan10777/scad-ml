@@ -46,8 +46,8 @@ val bbox : t -> bbox
 (** [centroid ?eps t]
 
     Compute the centroid of the path [t]. If [t] is collinear or
-   self-intersecting (within [eps] tolerance), an [Invalid_argument] exception is
-   raised. *)
+    self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
+    is raised. *)
 val centroid : ?eps:float -> t -> Vec2.t
 
 (** [area ?signed t]
@@ -171,6 +171,12 @@ val lift : Plane.t -> t -> Vec3.t list
 
     Create a circular path of radius [r] with [fn] points (default = [30]). *)
 val circle : ?fn:int -> float -> t
+
+(** [wedge ?fn ~centre ~radius ~start a]
+
+    Create an arcing path (as in {!val:arc}), with the [centre] point included
+    to close the path, forming a wedge. *)
+val wedge : ?fn:int -> centre:Vec2.t -> radius:float -> start:float -> float -> t
 
 (** [square ?center dims]
 
