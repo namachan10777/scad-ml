@@ -23,6 +23,12 @@ module type S = sig
     ; b : t
     }
 
+  (** Bounding box. *)
+  type bbox =
+    { min : t
+    ; max : t
+    }
+
   (** Zero vector *)
   val zero : t
 

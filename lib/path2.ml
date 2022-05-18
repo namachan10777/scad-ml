@@ -3,11 +3,6 @@ include Path.Make (Vec2)
 include Arc2
 include Rounding.Make (Vec2) (Arc2)
 
-type bbox =
-  { min : Vec2.t
-  ; max : Vec2.t
-  }
-
 let of_tups = List.map Vec2.of_tup
 let of_path3 ?(plane = Plane.xy) = List.map (Plane.project plane)
 let to_path3 ?(plane = Plane.xy) = List.map (Plane.lift plane)
@@ -22,10 +17,10 @@ let is_simple ?eps ?closed path = APath2.is_simple ?eps ?closed (Array.of_list p
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
   | hd :: tl ->
-    let f bb { x; y } =
+    let f (bb : Vec2.bbox) { x; y } =
       let min = Float.{ x = min bb.min.x x; y = min bb.min.y y }
       and max = Float.{ x = max bb.max.x x; y = max bb.max.y y } in
-      { min; max }
+      Vec2.{ min; max }
     in
     List.fold_left f { min = hd; max = hd } tl
 
@@ -117,9 +112,6 @@ let circle ?(fn = 30) r =
     v2 (r *. Float.cos a) (r *. Float.sin a)
   in
   List.init fn f
-
-let wedge ?fn ~centre ~radius ~start angle =
-  arc ?fn ~wedge:true ~centre ~radius ~start angle
 
 let square ?(center = false) { x; y } =
   if center

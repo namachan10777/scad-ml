@@ -3,6 +3,8 @@ module type S = sig
   type line
   type t = vec list
 
+  (** {1 General Path Utilities} *)
+
   (** [length path]
 
       Calculate the length (total travel distance) of the [path]. *)

@@ -1,76 +1,42 @@
-include Path.S with type vec := Vec2.t and type line = Vec2.line
+include Path.S with type vec := Vec2.t and type line := Vec2.line
 
-(** Bounding box. *)
-type bbox =
-  { min : Vec2.t (** minimum x and y *)
-  ; max : Vec2.t (** maximum x and y *)
-  }
+(** {1 Creation and 2d-3d conversion} *)
 
 (** [of_tups ps]
 
     Create a 2d path from a list of xy coordinate tuples. *)
 val of_tups : (float * float) list -> t
 
-(** [clockwise_sign path]
+(** [of_path3 p]
 
-    Returns the rotational ordering of [path] as a signed float, [-1.] for
-   clockwise, and [1.] for counter-clockwise. If all points are collinear
-   (within the tolerance of [eps]), [0.] is returned. *)
-val clockwise_sign : ?eps:float -> t -> float
+    Project the 3d path [p] onto the given [plane] (default = {!Plane.xy}). *)
+val of_path3 : ?plane:Plane.t -> Vec3.t list -> t
 
-(** [is_clockwise path]
+(** [to_path3 t]
 
-    Returns [true] if the rotational ordering of [path] is clockwise. *)
-val is_clockwise : t -> bool
+    Lift the 2d path [p] onto the given [plane] (default = {!Plane.xy}). *)
+val to_path3 : ?plane:Plane.t -> t -> Vec3.t list
 
-(** [self_intersection ?eps ?closed path]
+(** [lift plane t]
 
-    Find the points at which [path] intersects itself (within the tolerance of
-    [eps]). If [closed] is [true], a line segment between the last and first
-    points will be considered (default = [false]). *)
-val self_intersections : ?eps:float -> ?closed:bool -> t -> t
+    Lift the 2d path [t] onto the 3d [plane]. *)
+val lift : Plane.t -> t -> Vec3.t list
 
-(** [is_simple ?eps ?closed path]
+(** {1 Basic Shapes} *)
 
-    Return [true] if [path] is simple, e.g. contains no (paralell) reversals or
-   self-intersections (within the tolerance [eps]).  If [closed] is [true], a
-   line segment between the last and first points will be considered (default =
-   [false]).*)
-val is_simple : ?eps:float -> ?closed:bool -> t -> bool
+(** [circle ?fn r]
 
-(** [bbox t]
+    Create a circular path of radius [r] with [fn] points (default = [30]). *)
+val circle : ?fn:int -> float -> t
 
-    Compute the 2d bounding box of the path [t]. *)
-val bbox : t -> bbox
+(** [square ?center dims]
 
-(** [centroid ?eps t]
+    Create a rectangular path with xy [dims] (e.g. width and height). If
+    [center] is [true] then the path will be centred around the origin (default
+    = [false]). *)
+val square : ?center:bool -> Vec2.t -> t
 
-    Compute the centroid of the path [t]. If [t] is collinear or
-    self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
-    is raised. *)
-val centroid : ?eps:float -> t -> Vec2.t
-
-(** [area ?signed t]
-
-    Compute the signed or unsigned area of the path [t] (unsigned by default). *)
-val area : ?signed:bool -> t -> float
-
-(** [point_inside ?eps ?nonzero t p]
-
-    Determine whether the point [p] is inside, on the border of, or outside the
-   closed path [t] (may be non-simple / contain self-intersections). If
-   [nonzero] is [true], the {{:https://en.wikipedia.org/wiki/Nonzero-rule}
-   Nonzero rule} is followed, wherein a point is considered inside the polygon
-   formed by [t] regardless of the number of times the containing regions
-   overlap, by default this is [false], and the
-   {{:https://en.wikipedia.org/wiki/Even–odd_rule}Even-Odd rule} is followed (as
-   with in OpenSCAD). *)
-val point_inside
-  :  ?eps:float
-  -> ?nonzero:bool
-  -> t
-  -> Vec2.t
-  -> [> `Inside | `OnBorder | `Outside ]
+(** {1 Drawing Arcs} *)
 
 (** [arc ?rev ?fn ?wedge ~centre ~radius ~start a]
 
@@ -120,9 +86,9 @@ val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec
 
 (** {1 Roundovers} *)
 
-(** [offset ?fn ?fs ?fa ?closed ?check_valid offset path]
+(** [offset ?fn ?fs ?fa ?closed ?check_valid spec path]
 
-    Offset a 2d [path] (treated as [closed] by default) by the specified amount.
+    Offset a 2d [path] (treated as [closed] by default) by the [spec]ified amount.
     - [`Delta d] will create a new outline whose sides are a fixed distance [d]
       (+ve out, -ve in) from the original outline.
     - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
@@ -148,42 +114,68 @@ val offset
 
 include Rounding.S with type vec := Vec2.t
 
-(** {1 2d-3d conversion} *)
+(** {1 Geometry } *)
 
-(** [of_path3 p]
+(** [clockwise_sign path]
 
-    Project the 3d path [p] onto the given [plane] (default = {!Plane.xy}). *)
-val of_path3 : ?plane:Plane.t -> Vec3.t list -> t
+    Returns the rotational ordering of [path] as a signed float, [-1.] for
+   clockwise, and [1.] for counter-clockwise. If all points are collinear
+   (within the tolerance of [eps]), [0.] is returned. *)
+val clockwise_sign : ?eps:float -> t -> float
 
-(** [to_path3 t]
+(** [is_clockwise path]
 
-    Lift the 2d path [p] onto the given [plane] (default = {!Plane.xy}). *)
-val to_path3 : ?plane:Plane.t -> t -> Vec3.t list
+    Returns [true] if the rotational ordering of [path] is clockwise. *)
+val is_clockwise : t -> bool
 
-(** [lift plane t]
+(** [self_intersection ?eps ?closed path]
 
-    Lift the 2d path [t] onto the 3d [plane]. *)
-val lift : Plane.t -> t -> Vec3.t list
+    Find the points at which [path] intersects itself (within the tolerance of
+    [eps]). If [closed] is [true], a line segment between the last and first
+    points will be considered (default = [false]). *)
+val self_intersections : ?eps:float -> ?closed:bool -> t -> t
 
-(** {1 Basic shapes} *)
+(** [is_simple ?eps ?closed path]
 
-(** [circle ?fn r]
+    Return [true] if [path] is simple, e.g. contains no (paralell) reversals or
+   self-intersections (within the tolerance [eps]).  If [closed] is [true], a
+   line segment between the last and first points will be considered (default =
+   [false]).*)
+val is_simple : ?eps:float -> ?closed:bool -> t -> bool
 
-    Create a circular path of radius [r] with [fn] points (default = [30]). *)
-val circle : ?fn:int -> float -> t
+(** [bbox t]
 
-(** [wedge ?fn ~centre ~radius ~start a]
+    Compute the 2d bounding box of the path [t]. *)
+val bbox : t -> Vec2.bbox
 
-    Create an arcing path (as in {!val:arc}), with the [centre] point included
-    to close the path, forming a wedge. *)
-val wedge : ?fn:int -> centre:Vec2.t -> radius:float -> start:float -> float -> t
+(** [centroid ?eps t]
 
-(** [square ?center dims]
+    Compute the centroid of the path [t]. If [t] is collinear or
+    self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
+    is raised. *)
+val centroid : ?eps:float -> t -> Vec2.t
 
-    Create a rectangular path with xy [dims] (e.g. width and height). If
-    [center] is [true] then the path will be centred around the origin (default
-    = [false]). *)
-val square : ?center:bool -> Vec2.t -> t
+(** [area ?signed t]
+
+    Compute the signed or unsigned area of the path [t] (unsigned by default). *)
+val area : ?signed:bool -> t -> float
+
+(** [point_inside ?eps ?nonzero t p]
+
+    Determine whether the point [p] is inside, on the border of, or outside the
+   closed path [t] (may be non-simple / contain self-intersections). If
+   [nonzero] is [true], the {{:https://en.wikipedia.org/wiki/Nonzero-rule}
+   Nonzero rule} is followed, wherein a point is considered inside the polygon
+   formed by [t] regardless of the number of times the containing regions
+   overlap, by default this is [false], and the
+   {{:https://en.wikipedia.org/wiki/Even–odd_rule}Even-Odd rule} is followed (as
+   with in OpenSCAD). *)
+val point_inside
+  :  ?eps:float
+  -> ?nonzero:bool
+  -> t
+  -> Vec2.t
+  -> [> `Inside | `OnBorder | `Outside ]
 
 (** {1 Basic Transfomations} *)
 
@@ -196,4 +188,7 @@ val multmatrix : MultMatrix.t -> t -> Vec3.t list
 
 (** {1 Output} *)
 
+(** [to_scad ?convexity t]
+
+    Create a {!Scad.t} from the path [t], via {!Scad.polygon}. *)
 val to_scad : ?convexity:int -> t -> Scad.d2

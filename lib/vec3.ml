@@ -9,6 +9,11 @@ type line =
   ; b : t
   }
 
+type bbox =
+  { min : t
+  ; max : t
+  }
+
 let zero = { x = 0.; y = 0.; z = 0. }
 let v = Vec.v3
 let of_tup (x, y, z) = { x; y; z }

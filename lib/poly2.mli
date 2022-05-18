@@ -86,7 +86,7 @@ val box : ?center:bool -> thickness:Vec2.t -> Vec2.t -> t
 (** [bbox t]
 
     Compute the 2d bounding box of the polygon [t]. *)
-val bbox : t -> Path2.bbox
+val bbox : t -> Vec2.bbox
 
 (** [centroid ?eps t]
 
@@ -106,17 +106,29 @@ val area : ?signed:bool -> t -> float
 
 (** [map f t]
 
-    *)
+    Map the outer and inner paths of [t] with the function [f]. *)
 val map : (Path2.t -> Path2.t) -> t -> t
 
-(** [offset ?fn ?fs ?fa ?closed ?check_valid spec t]
+(** [offset ?fn ?fs ?fa ?check_valid spec t]
 
-    *)
+    Offset outer and inner paths of [t] by the [spec]ified amount.
+    - [`Delta d] will create a new outline whose sides are a fixed distance [d]
+      (+ve out, -ve in) from the original outline.
+    - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
+      chamfered.
+    - [`Radius r] creates a new outline as if a circle of some radius [r] is
+      rotated around the exterior ([r > 0]) or interior ([r < 0]) original
+      outline. [fn], [fs], and [fa] parameters govern the number of points that
+      will be used for these arcs (they are ignored for delta and chamfer modes).
+    - The [check_valid] default of [`Quality 1] will check the validity of
+      shifted line segments by checking whether their ends and [n] additional
+      points spaced throughout are far enough from the original path. If there are
+      no points that have been offset by the target [d], a [Failure] exception will
+      be raised. Checking can be turned off by setting this to [`No]. *)
 val offset
   :  ?fn:int
   -> ?fs:float
   -> ?fa:float
-  -> ?closed:bool
   -> ?check_valid:[ `No | `Quality of int ]
   -> [< `Chamfer of float | `Delta of float | `Radius of float ]
   -> t
@@ -134,5 +146,5 @@ val mirror : Vec2.t -> t -> t
 
 (** [to_scad ?convexity t]
 
-    *)
+    Create a {!Scad.t} from the polygon [t], via {!Scad.polygon}. *)
 val to_scad : ?convexity:int -> t -> Scad.d2

@@ -97,6 +97,8 @@ let make ?(validate = true) ?(holes = []) outer =
 let circle ?fn r = make @@ Path2.circle ?fn r
 
 let wedge ?fn ~centre ~radius ~start angle =
+  if Math.approx 0. angle || Float.abs angle >= 2. *. Float.pi
+  then invalid_arg "Wedge angle must not be 0, or greater than +/- 2π.";
   { outer = Path2.arc ?fn ~wedge:true ~centre ~radius ~start angle; holes = [] }
 
 let square ?center dims = make (Path2.square ?center dims)
@@ -125,8 +127,8 @@ let area ?signed { outer; holes } =
 
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
-let offset ?fn ?fs ?fa ?closed ?check_valid mode =
-  map (Offset.offset ?fn ?fs ?fa ?closed ?check_valid mode)
+let offset ?fn ?fs ?fa ?check_valid mode =
+  map (Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid mode)
 
 let translate p = map (Path2.translate p)
 let rotate r = map (Path2.rotate r)

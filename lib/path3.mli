@@ -1,17 +1,53 @@
-include Path.S with type vec := Vec3.t and type line = Vec3.line
+(** 3d path creation, manipulation, and measurment. *)
 
-(** Bounding box. *)
-type bbox =
-  { min : Vec3.t (** minimum x, y, and z *)
-  ; max : Vec3.t (** maximum x, y, and z *)
-  }
+include Path.S with type vec := Vec3.t and type line := Vec3.line
+
+(** {1 Creation and 2d-3d Conversion} *)
 
 (** [of_tups ps]
 
     Create a 3d path from a list of xyz coordinate triples. *)
 val of_tups : (float * float * float) list -> t
 
-(** {1 Drawing arcs (along a plane)} *)
+(** [of_path2 ?plane path]
+
+    Lift a 2d [path] onto [plane] (default = {!Plane.xy}). *)
+val of_path2 : ?plane:Plane.t -> Path2.t -> t
+
+(** [to_path2 ?plane t]
+
+    Project the 3d path [t] onto [plane] (default = {!Plane.xy}). *)
+val to_path2 : ?plane:Plane.t -> t -> Path2.t
+
+(** [to_plane ?eps t]
+
+    Compute the normalized cartesian equation of the plane that the path [t]
+   resides on. If there are fewer than three points in [t], or they are not
+   coplanar within the tolerance [eps], an [Invalid_argument] exception is
+   raised. *)
+val to_plane : ?eps:float -> t -> Plane.t
+
+(** [project plane t]
+
+    Project the 3d path [t] onto [plane]. *)
+val project : Plane.t -> t -> Path2.t
+
+(** {1 Basic Shapes} *)
+
+(** [circle ?fn ?plane radius]
+
+    Create a circular path of radius [r] with [fn] points (default = [30]) onto
+    [plane] (default = {!Plane.xy}). *)
+val circle : ?fn:int -> ?plane:Plane.t -> float -> t
+
+(** [square ?center ?plane dims]
+
+    Create a rectangular path with xy [dims] (e.g. width and height) onto
+    [plane] (default = {!Plane.xy}). If [center] is [true] then the path will be
+    centred around the origin (default = [false]). *)
+val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
+
+(** {1 Drawing Arcs} *)
 
 (** [arc ?rev ?fn ?plane ?wedge ~centre ~radius ~start a]
 
@@ -65,6 +101,44 @@ val helix
   -> float
   -> t
 
+(** {1 Roundovers} *)
+
+include Rounding.S with type vec := Vec3.t
+
+(** {1 Geometry} *)
+
+(** [normal t]
+
+   Calculate the normal vector of the path [t]. An [Invalid_argument] exception
+   is raised if there are fewer than three points in [t]. *)
+val normal : t -> Vec3.t
+
+(** [centroid ?eps t]
+
+    Compute the centroid of the path [t]. If [t] is collinear or
+   self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
+   is raised. *)
+val centroid : ?eps:float -> t -> Vec3.t
+
+(** [area ?signed t]
+
+  Calculate the area of the co-planar path (describing a polygon) [t]. If
+  [signed] is [true], the signed area is returned. *)
+val area : ?signed:bool -> t -> float
+
+(** [coplanar ?eps t]
+
+  Returns [true] if all points in [t] are coplanar, within the tolerance [eps].
+  If there are fewer than 3 points, or the path is collinear, this returns [false]. *)
+val coplanar : ?eps:float -> t -> bool
+
+(** [bbox t]
+
+    Compute the 3d bounding box of the path [t]. *)
+val bbox : t -> Vec3.bbox
+
+(** {1 Sweeping Transform Helpers} *)
+
 (** [scaler ~len scale]
 
     Create a lookup from index to scaling transformation matrix for
@@ -99,80 +173,6 @@ val twister : len:int -> float -> int -> MultMatrix.t
    applied to along the path, analogous to the parameters of the same names in
    {!Scad.linear_extrude}. *)
 val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMatrix.t list
-
-(** [normal t]
-
-   Calculate the normal vector of the path [t]. An [Invalid_argument] exception
-   is raised if there are fewer than three points in [t]. *)
-val normal : t -> Vec3.t
-
-(** [centroid ?eps t]
-
-    Compute the centroid of the path [t]. If [t] is collinear or
-   self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
-   is raised. *)
-val centroid : ?eps:float -> t -> Vec3.t
-
-(** [area ?signed t]
-
-  Calculate the area of the co-planar path (describing a polygon) [t]. If
-  [signed] is [true], the signed area is returned. *)
-val area : ?signed:bool -> t -> float
-
-(** [coplanar ?eps t]
-
-  Returns [true] if all points in [t] are coplanar, within the tolerance [eps].
-  If there are fewer than 3 points, or the path is collinear, this returns [false]. *)
-val coplanar : ?eps:float -> t -> bool
-
-(** [bbox t]
-
-    Compute the 3d bounding box of the path [t]. *)
-val bbox : t -> bbox
-
-(** {1 Roundovers}*)
-
-include Rounding.S with type vec := Vec3.t
-
-(** {1 2d-3d Conversion} *)
-
-(** [to_plane ?eps t]
-
-    Compute the normalized cartesian equation of the plane that the path [t]
-   resides on. If there are fewer than three points in [t], or they are not
-   coplanar within the tolerance [eps], an [Invalid_argument] exception is
-   raised. *)
-val to_plane : ?eps:float -> t -> Plane.t
-
-(** [project plane t]
-
-    Project the 3d path [t] onto [plane]. *)
-val project : Plane.t -> t -> Path2.t
-
-(** [of_path2 ?plane path]
-
-    Lift a 2d [path] onto [plane] (default = {!Plane.xy}). *)
-val of_path2 : ?plane:Plane.t -> Path2.t -> t
-
-(** [to_path2 ?plane t]
-
-    Project the 3d path [t] onto [plane] (default = {!Plane.xy}). *)
-val to_path2 : ?plane:Plane.t -> t -> Path2.t
-
-(** {1 Basic Shapes} *)
-
-(** [circle ?fn ?plane radius]
-
-    Create a circular path of radius [r] with [fn] points (default = [30]) onto
-    [plane] (default = {!Plane.xy}). *)
-val circle : ?fn:int -> ?plane:Plane.t -> float -> t
-
-(** [square ?center ?plane dims]
-
-    Create a rectangular path with xy [dims] (e.g. width and height) onto
-    [plane] (default = {!Plane.xy}). If [center] is [true] then the path will be
-    centred around the origin (default = [false]). *)
-val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
 (** {1 Basic Transfomations} *)
 

@@ -3,10 +3,10 @@ include Path.Make (Vec3)
 include Arc3
 include Rounding.Make (Vec3) (Arc3)
 
-type bbox =
-  { min : Vec3.t
-  ; max : Vec3.t
-  }
+(* type bbox = *)
+(*   { min : Vec3.t *)
+(*   ; max : Vec3.t *)
+(*   } *)
 
 let of_tups = List.map Vec3.of_tup
 let of_path2 ?(plane = Plane.xy) = Path2.lift plane
@@ -15,12 +15,12 @@ let to_path2 ?(plane = Plane.xy) = List.map (Plane.project plane)
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
   | hd :: tl ->
-    let f bb { x; y; z } =
+    let f (bb : Vec3.bbox) { x; y; z } =
       let min = Float.{ x = min bb.min.x x; y = min bb.min.y y; z = min bb.min.z z }
       and max = Float.{ x = max bb.max.x x; y = max bb.max.y y; z = max bb.max.z z } in
-      { min; max }
+      Vec3.{ min; max }
     in
-    List.fold_left f { min = hd; max = hd } tl
+    List.fold_left f Vec3.{ min = hd; max = hd } tl
 
 let circle ?fn ?(plane = Plane.xy) r = Path2.lift plane (Path2.circle ?fn r)
 

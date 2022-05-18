@@ -47,10 +47,10 @@ let area ?signed { outer; holes } =
 
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
-let offset ?fn ?fs ?fa ?closed ?check_valid mode t =
+let offset ?fn ?fs ?fa ?check_valid mode t =
   let plane = Path3.to_plane t.outer in
   let f p =
-    Offset.offset ?fn ?fs ?fa ?closed ?check_valid mode (Path2.of_path3 ~plane p)
+    Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid mode (Path2.of_path3 ~plane p)
     |> Path2.lift plane
   in
   map f t

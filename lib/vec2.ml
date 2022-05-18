@@ -8,6 +8,11 @@ type line =
   ; b : t
   }
 
+type bbox =
+  { min : t
+  ; max : t
+  }
+
 let zero = { x = 0.; y = 0. }
 let v = Vec.v2
 let of_tup (x, y) = { x; y }
