@@ -187,6 +187,25 @@ let area ?(signed = false) = function
     let area, _ = List.fold_left f (0., p1) tl in
     if signed then area else Float.abs area
 
+let nearby_idxs ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
+  if List.length path < min_tree_size
+  then
+    fun target ->
+    let g (i, idxs) p =
+      if Vec3.approx ~eps:radius p target then i + 1, i :: idxs else i + 1, idxs
+    in
+    snd @@ List.fold_left g (0, []) path
+  else (
+    let tree = BallTree3.make path in
+    BallTree3.search_idxs ~radius tree )
+
+let nearby_points ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
+  if List.length path < min_tree_size
+  then fun target -> List.filter (fun p -> Vec3.approx ~eps:radius p target) path
+  else (
+    let tree = BallTree3.make path in
+    BallTree3.search_points ~radius tree )
+
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)
 let rotate_about_pt r p = List.map (Vec3.rotate_about_pt r p)

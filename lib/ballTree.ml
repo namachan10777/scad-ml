@@ -1,13 +1,51 @@
 module type S = sig
   type vec
+
+  (** Ball Tree structure. *)
   type t
 
+  (** [t.%(idx)]
+
+       Indexed access to vectors/points used to build the ball tree [t]. *)
   val ( .%() ) : t -> int -> vec
+
+  (** [points t]
+
+       Return a list of the vectors/points used to build the ball tree [t]. *)
   val points : t -> vec list
+
+  (** [points' t]
+
+       Return a copied array of the vectors/points used to build the ball tree
+       [t]. *)
   val points' : t -> vec array
+
+  (** [make ?leaf_size pts]
+
+      Build a ball tree from the list of vectors [pts]. Recursive construction
+      of the tree will cease branching when a node holds a number of points less
+      than or equal to [leaf_size]. *)
   val make : ?leaf_size:int -> vec list -> t
+
+  (** [make' ?leaf_size pts]
+
+      Build a ball tree from the array of vectors [pts]. Recursive construction
+      of the tree will cease branching when a node holds a number of points less
+      than or equal to [leaf_size]. *)
   val make' : ?leaf_size:int -> vec array -> t
+
+  (** [search_idxs ?radius t p]
+
+       Search through the ball tree [t] for points that are within a distance
+       [radius] of the target point [p]. Matches are returned as an arbitrarily
+       ordered list of indices (into the point array used to construct [t]). *)
   val search_idxs : ?radius:float -> t -> vec -> int list
+
+  (** [search_points ?radius t p]
+
+       Search through the ball tree [t] for points that are within a distance
+       [radius] of the target point [p]. Matches are returned as an arbitrarily
+       ordered (not sorted from nearest to furthest) list of points. *)
   val search_points : ?radius:float -> t -> vec -> vec list
 end
 
@@ -73,7 +111,7 @@ struct
   let points t = List.init (Array.length t.points) (fun i -> t.points.(i))
   let points' t = Array.copy t.points
 
-  let make' ?(leaf_size = 25) points =
+  let make'' ?(leaf_size = 25) points =
     let rec aux idxs =
       let len = Array.length idxs in
       if len <= leaf_size
@@ -116,7 +154,8 @@ struct
     in
     { points; tree = aux (Array.init (Array.length points) Fun.id) }
 
-  let make ?leaf_size points = make' ?leaf_size (Array.of_list points)
+  let make' ?leaf_size points = make'' ?leaf_size (Array.copy points)
+  let make ?leaf_size points = make'' ?leaf_size (Array.of_list points)
 
   let search_idxs ?(radius = Util.epsilon) { points; tree } target =
     let rec aux = function

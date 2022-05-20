@@ -102,6 +102,7 @@ module Bezier2 = Bezier2
 module CubicSpline = CubicSpline
 module Poly2 = Poly2
 module PolyText = PolyText
+module BallTree2 = BallTree2
 
 (** {1 3-dimensional paths, coplanar polygons, and meshes} *)
 
@@ -109,6 +110,7 @@ module Path3 = Path3
 module Bezier3 = Bezier3
 module Mesh = Mesh
 module PolyRound = PolyRound
+module BallTree3 = BallTree3
 
 (** {1 Float utilities} *)
 

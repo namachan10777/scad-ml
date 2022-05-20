@@ -96,6 +96,25 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
       in
       if (2 * (List.fold_left f 0 segs mod 2)) - 1 > 0 then `Inside else `Outside ) )
 
+let nearby_idxs ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
+  if List.length path < min_tree_size
+  then
+    fun target ->
+    let g (i, idxs) p =
+      if Vec2.approx ~eps:radius p target then i + 1, i :: idxs else i + 1, idxs
+    in
+    snd @@ List.fold_left g (0, []) path
+  else (
+    let tree = BallTree2.make path in
+    BallTree2.search_idxs ~radius tree )
+
+let nearby_points ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
+  if List.length path < min_tree_size
+  then fun target -> List.filter (fun p -> Vec2.approx ~eps:radius p target) path
+  else (
+    let tree = BallTree2.make path in
+    BallTree2.search_points ~radius tree )
+
 let offset = Offset.offset
 let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)

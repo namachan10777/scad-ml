@@ -1,5 +1,36 @@
 include Path.S with type vec := Vec2.t and type line := Vec2.line
 
+(** [nearby_idxs ?min_tree_size ?radius path p]
+
+    Find the indices of points within [radius] (default = [1e-9]) distance from
+    the target point [p] in [path]. Match indices will be returned in arbitrary
+    order (unsorted). When [path] is provided (eagerly on partial application),
+    the length will be checked and a function to perform the search will be
+    generated. If [path] is shorter than [min_tree_size], it will be a simple
+    direct search otherwise a {!BallTree2.t} will be constructed. Thus, if you
+    plan to search for more than one target point, take care to apply this
+    function in two steps to avoid repeated length checks and closure/tree
+    generations. *)
+val nearby_idxs : ?min_tree_size:int -> ?radius:float -> Vec2.t list -> Vec2.t -> int list
+
+(** [nearby_points ?min_tree_size ?radius path]
+
+    Find the points within [radius] (default = [1e-9]) distance from the target
+    point [p] in [path]. Matched points will be returned in arbitrary order
+    (unsorted). When [path] is provided (eagerly on partial application), the
+    length will be checked and a function to perform the search will be
+    generated. If [path] is shorter than [min_tree_size], it will be a simple
+    direct search otherwise a {!BallTree2.t} will be constructed. Thus, if you
+    plan to search for more than one target point, take care to apply this
+    function in two steps to avoid repeated length checks and closure/tree
+    generations. *)
+val nearby_points
+  :  ?min_tree_size:int
+  -> ?radius:float
+  -> Vec2.t list
+  -> Vec2.t
+  -> Vec2.t list
+
 (** {1 Creation and 2d-3d conversion} *)
 
 (** [of_tups ps]
