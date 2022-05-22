@@ -1,3 +1,6 @@
+(** 2d path generation (including arcs and basic shapes), manipulation
+   (including offset and roundovers (see {!module:Round}), and measurement. *)
+
 include Path.S with type vec := Vec2.t and type line := Vec2.line
 
 (** [nearby_idxs ?min_tree_size ?radius path p]
@@ -115,7 +118,16 @@ val arc_about_centre
    - See {!arc} for notes on [rev], [fn], and [wedge]. *)
 val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec2.t -> t
 
-(** {1 Roundovers} *)
+(** {1 Roundovers}
+
+    Outline offsets with optional rounding/chamfering as found in OpenSCADs 2d
+    sub-system, as well as specification and application of non-offseting
+    roundovers (circular, chamfer, and bezier (continuous curvature)) to 2d
+    paths.
+
+    Based on the {{:https://github.com/revarbat/BOSL2} BOSL2}
+    {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding}
+    module. *)
 
 (** [offset ?fn ?fs ?fa ?closed ?check_valid spec path]
 

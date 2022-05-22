@@ -21,11 +21,11 @@ module type S = sig
 
     (** Roundover specification for a corner of a path. *)
     type corner =
-      | Chamf of [ joint | cut | width ]
-      | Circ of [ radius | joint | cut ]
+      | Chamf of [ joint | cut | width ] (** corner chamfer *)
+      | Circ of [ radius | joint | cut ] (** circular roundover *)
       | Bez of
-          { spec : [ joint | cut ]
-          ; curv : float
+          { spec : [ joint | cut ] (** continuous curvature roundover *)
+          ; curv : float (** bezier curvature smoothness *)
           }
 
     (** Full roundover specification for a path, either given as a mixed list of

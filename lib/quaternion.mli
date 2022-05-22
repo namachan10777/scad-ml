@@ -1,7 +1,7 @@
 (** Provides functions for the creation of and operations between
     {{:https://en.wikipedia.org/wiki/Quaternion} quaternions}. These can be used
-    to create composable and interpolatable rotations to be applied to vectors
-    (e.g. {!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
+    to create composable and interpolatable rotations to be applied to 3d vectors
+    ({!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
 
 type t
 

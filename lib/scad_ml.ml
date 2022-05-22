@@ -6,28 +6,36 @@ module Color = Color
 
 (** {1 Vectors} *)
 
+(** 3-dimensional vector *)
 type v3 = Vec.v3 =
   { x : float
   ; y : float
   ; z : float
   }
 
+(** 2-dimensional vector *)
 type v2 = Vec.v2 =
   { x : float
   ; y : float
   }
 
+(** [v2 x y]
+
+    Construct a 2d vector from [x] and [y] coordinates. *)
 let v2 : float -> float -> v2 = Vec.v2
+
+(** [v3 x y z]
+
+    Construct a 3d vector from [x], [y], and [z] coordinates. *)
 let v3 : float -> float -> float -> v3 = Vec.v3
 
 module Vec2 = Vec2
 
-(** 3-dimensional vector type.
-
-    In addition to basic math and vector operations, relevant transformation
-    functions (and aliases) are mirroring those found in {!module:Scad} are
-    provided. This allows for points in space represented by this type to moved
-    around in a similar fashion to {!Scad.t}. *)
+(** 3-dimensional vector type, including basic mathematical/geometrical
+    operations and transformations mirroring those found in {!module:Scad},
+    allowing for points in 3d space, and higher level types composed of them
+    ({i e.g.} {!Path3.t}, {!Poly3.t}, and {!Mesh.t}) to be manipulated in
+    similar fashion to 3d OpenSCAD shapes ({!Scad.d3}). *)
 module Vec3 = struct
   include Vec3
 
@@ -54,10 +62,8 @@ end
 
 (** {1 Transformations} *)
 
-(** A rotation matrix.
-
-    Used in conjunction with {!module:Quaternion} to provide an additional means
-    of rotating OpenSCAD objects and vectors ({!Vec3.t}). *)
+(** Rotation matrices providing an additional means of rotating 3d vectors
+   ({!Vec3.t}), and by way of {!MultMatrix.t}, 3d OpenSCAD shapes ({!Scad.t}). *)
 module RotMatrix = struct
   include RotMatrix
 
@@ -67,11 +73,10 @@ module RotMatrix = struct
   let align a b = Quaternion.(to_rotmatrix @@ alignment a b)
 end
 
-(** An affine transformation matrix.
-
-    To be used with OpenSCADs
-    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
-    which is applied in this library with {!Scad.multmatrix}. *)
+(** Affine transformation matrices for transforming 3d vectors ({!Vec3.t}), and
+   3d shapes ({!Scad.t}) via OpenSCAD's own
+   {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
+   (see {!Scad.multmatrix}). *)
 module MultMatrix = struct
   include MultMatrix
 
@@ -108,6 +113,7 @@ module BallTree2 = BallTree2
 
 module Path3 = Path3
 module Bezier3 = Bezier3
+module Poly3 = Poly3
 module Mesh = Mesh
 module PolyRound = PolyRound
 module BallTree3 = BallTree3

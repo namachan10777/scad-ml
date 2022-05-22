@@ -1,3 +1,6 @@
+(** Normalized cartesian plane operations facilitating conversion between 2d
+    and 3d space. *)
+
 (** Normalized cartesian equation of a plane.
 
     The type {!t} contains the coefficients {b A}, {b B}, {b C}, and {b D},

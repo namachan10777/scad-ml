@@ -62,10 +62,7 @@ module Cap = struct
   let delta_mode = Delta
   let chamfer_mode = Chamfer
   let radius_mode ?fn ?fs ?fa () = Radius { fn; fs; fa }
-
-  let round ?(mode = radius_mode ()) ?(holes = `Flip) outer =
-    `Round { outer; holes; mode }
-
+  let round ?(mode = Delta) ?(holes = `Flip) outer = `Round { outer; holes; mode }
   let looped = `Looped
   let capped ~top ~bot = `Caps { top; bot }
   let flat_caps = `Caps { top = `Flat; bot = `Flat }

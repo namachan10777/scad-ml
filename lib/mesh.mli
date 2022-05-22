@@ -226,7 +226,9 @@ module Cap : sig
 
   (** [round ?mode ?holes offsets]
 
-      Construct a roundover {!type:poly_spec}. *)
+      Construct a roundover {!type:poly_spec}. [mode] specifies the kind offset
+      (see {!val:Path2.offset}) performed on the paths on each "vertical" step of
+      the roundover.  *)
   val round : ?mode:offset_mode -> ?holes:holes -> offsets -> [> `Round of poly ]
 
   (** [looped]

@@ -48,6 +48,8 @@ let bezier_matrix =
 
 module type S = sig
   type vec
+
+  (** A bezier curve function. *)
   type t = float -> vec
 
   (** [coefs ps]

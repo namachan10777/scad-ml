@@ -1,3 +1,9 @@
+(** 2-dimensional vector type, including basic mathematical/geometrical
+    operations and transformations mirroring those found in {!module:Scad},
+    allowing for points in 2d space, and higher level types composed of them
+    ({i e.g.} {!Path2.t} and {!Poly2.t}) to be manipulated in
+    similar fashion to 2d OpenSCAD shapes ({!Scad.d2}). *)
+
 type t = Vec.v2 =
   { x : float
   ; y : float

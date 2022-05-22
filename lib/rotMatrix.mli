@@ -1,8 +1,3 @@
-(** A rotation matrix.
-
-    Used in conjunction with {!module:Quaternion} to provide an additional means
-    of rotating OpenSCAD objects and vectors ({!Vec3.t}). *)
-
 type t = private float array array
 
 (** [of_row_list_exn l]

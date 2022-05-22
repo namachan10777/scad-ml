@@ -1,4 +1,6 @@
-(** 3d path creation, manipulation, and measurment. *)
+(** 3d path generation (including arcs and basic shapes), manipulation
+   (including roundovers (see {!module:Round}), and conversion to sweeping
+   transformations with {!to_transforms}), and measurement. *)
 
 include Path.S with type vec := Vec3.t and type line := Vec3.line
 
@@ -132,7 +134,14 @@ val helix
   -> float
   -> t
 
-(** {1 Roundovers} *)
+(** {1 Roundovers}
+
+    Specification and application of circular, chamfer, and bezier (continuous
+    curvature) roundovers to 3d paths.
+
+    Based on the {{:https://github.com/revarbat/BOSL2} BOSL2}
+    {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding}
+    module. *)
 
 include Rounding.S with type vec := Vec3.t
 
