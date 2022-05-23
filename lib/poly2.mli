@@ -1,3 +1,7 @@
+(** 2d polygons (made up of an outer, and zero or more inner {!Path2.t}s) that map into
+   {!Scad.d2}. Includes basic shape creation helpers, manipulations, (including
+    offset and basic transformations), measurement, and validation. *)
+
 (** [SelfIntersection i]
 
     Raised during polygon validation if a path is found to self-intersect. The
@@ -17,11 +21,25 @@ exception CrossIntersection of int * int
     all of the paths contained within {!type:t}. *)
 exception DuplicatePoints
 
-(** 2-dimensional polygon *)
-type t =
+(** 2-dimensional polygon
+
+    This type is kept private to force use of {!make}, which performs
+    {!validation} by default, hopefully providing an early warning that the
+    shape may have issues rendering in OpenSCAD. *)
+type t = private
   { outer : Path2.t (** outer perimeter *)
   ; holes : Path2.t list (** inner paths to be subtracted from the outer shape *)
   }
+
+(** {1 Creation and Validation} *)
+
+(** [make ?validate ?holes outer]
+
+    Create a 2d polygon from an [outer] path (perimeter), and zero or more
+    [holes] (default = [[]]). If validate is [true] (as it is by default),
+    {!val:validation} is performed, raising exceptions if the defined polygon is
+    not simple (and thus, may cause problems in CGAL). *)
+val make : ?validate:bool -> ?holes:Path2.t list -> Path2.t -> t
 
 (** [validation ?eps t]
 
@@ -42,13 +60,7 @@ val validation : ?eps:float -> t -> unit
     checks are performed with the tolerance [eps]. *)
 val is_simple : ?eps:float -> t -> bool
 
-(** [make ?validate ?holes outer]
-
-    Create a 2d polygon from an [outer] path (perimeter), and zero or more
-    [holes] (default = [[]]). If validate is [true] (as it is by default),
-    {!val:validation} is performed, raising exceptions if the defined polygon is
-    not simple (and thus, may cause problems in CGAL). *)
-val make : ?validate:bool -> ?holes:Path2.t list -> Path2.t -> t
+(** {1 Basic Shapes} *)
 
 (** [circle ?fn r]
 
@@ -83,6 +95,8 @@ val ring : ?fn:int -> thickness:float -> float -> t
     (default = [false]). *)
 val box : ?center:bool -> thickness:Vec2.t -> Vec2.t -> t
 
+(** {1 Geometry} *)
+
 (** [bbox t]
 
     Compute the 2d bounding box of the polygon [t]. *)
@@ -104,10 +118,7 @@ val centroid : ?eps:float -> t -> Vec2.t
     area of the [holes] will be subtracted (default = [false]). *)
 val area : ?signed:bool -> t -> float
 
-(** [map f t]
-
-    Map the outer and inner paths of [t] with the function [f]. *)
-val map : (Path2.t -> Path2.t) -> t -> t
+(** {1 Offset and Basic Transformations} *)
 
 (** [offset ?fn ?fs ?fa ?check_valid spec t]
 
@@ -134,7 +145,10 @@ val offset
   -> t
   -> t
 
-(** {1 Basic Transfomations} *)
+(** [map f t]
+
+    Map the outer and inner paths of [t] with the function [f]. *)
+val map : (Path2.t -> Path2.t) -> t -> t
 
 val translate : Vec2.t -> t -> t
 val rotate : float -> t -> t

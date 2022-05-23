@@ -1,3 +1,12 @@
+(** Cubic {{:https://en.wikipedia.org/wiki/Spline_interpolation} spline
+    interpolation} of 2d paths.
+
+    This is a port of a
+   {{:https://github.com/Simsso/Online-Tools/blob/master/src/page/logic/cubic-spline-interpolation.js}
+   javascript implementation} underlying a
+   {{:https://tools.timodenk.com/cubic-spline-interpolation} spline
+   visualization tool} by Timo Denk. *)
+
 (** Boundary condition for cubic spline fitting. *)
 type boundary =
   [ `Quadratic

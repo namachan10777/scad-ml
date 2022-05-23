@@ -1,3 +1,6 @@
+(** Various operations on floats ({i e.g.} approximate equality, linear
+    interpolation), and basic arbitrary size 2d matrix operations. *)
+
 (** {1 Float operations} *)
 
 (** [sign v]

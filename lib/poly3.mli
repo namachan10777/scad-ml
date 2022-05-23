@@ -1,7 +1,28 @@
+(** Planar 3d polygons (made up of an outer, and zero or more inner {!Path3.t}s) that map into
+   {!Scad.d2}. Includes basic shape creation helpers, manipulations, (including
+    offset and basic transformations), measurement, and validation. *)
+
+(** 3-dimensional (planar) polygon
+
+    This type is kept private to force use of {!make}, which ensures that all
+    points of the polygon are planar and performs {!Poly2.validation} by default,
+    hopefully providing an early warning that the shape may have issues rendering
+    in OpenSCAD. *)
 type t =
   { outer : Path3.t
   ; holes : Path3.t list
   }
+
+(** {1 Creation and 2d-3d conversion} *)
+
+(** [make ?validate ?holes outer]
+
+    Create a 3d polygon from an [outer] path (perimeter), and zero or more
+    [holes] (default = [[]]). If validate is [true] (as it is by default), all
+    paths are checked for coplanarity, then {!val:Poly2.validation} is performed
+    on a 2d projection, raising exceptions if the defined polygon is not simple
+    (and thus, may cause problems in CGAL). *)
+val make : ?validate:bool -> ?holes:Path3.t list -> Path3.t -> t
 
 (** [of_poly2 ?plane poly]
 
@@ -15,14 +36,7 @@ val of_poly2 : ?plane:Plane.t -> Poly2.t -> t
     [true]). *)
 val to_poly2 : ?validate:bool -> ?plane:Plane.t -> t -> Poly2.t
 
-(** [make ?validate ?holes outer]
-
-    Create a 3d polygon from an [outer] path (perimeter), and zero or more
-    [holes] (default = [[]]). If validate is [true] (as it is by default), all
-    paths are checked for coplanarity, then {!val:Poly2.validation} is performed
-    on a 2d projection, raising exceptions if the defined polygon is not simple
-    (and thus, may cause problems in CGAL). *)
-val make : ?validate:bool -> ?holes:Path3.t list -> Path3.t -> t
+(** {1 Basic Shapes} *)
 
 (** [circle ?fn ?plane r]
 
@@ -69,6 +83,8 @@ val ring : ?fn:int -> ?plane:Plane.t -> thickness:float -> float -> t
     (default = {!val:Plane.xy}). *)
 val box : ?center:bool -> ?plane:Plane.t -> thickness:Vec2.t -> Vec2.t -> t
 
+(** {1 Geometry} *)
+
 (** [bbox t]
 
     Compute the 3d bounding box of the polygon [t]. *)
@@ -90,10 +106,7 @@ val centroid : ?eps:float -> t -> Vec3.t
     area of the [holes] will be subtracted (default = [false]). *)
 val area : ?signed:bool -> t -> float
 
-(** [map f t]
-
-    Map the outer and inner paths of [t] with the function [f]. *)
-val map : (Path3.t -> Path3.t) -> t -> t
+(** {1 Offset and Basic Transformations} *)
 
 (** [offset ?fn ?fs ?fa ?check_valid spec t]
 
@@ -120,7 +133,10 @@ val offset
   -> t
   -> t
 
-(** {1 Basic Transformations} *)
+(** [map f t]
+
+    Map the outer and inner paths of [t] with the function [f]. *)
+val map : (Path3.t -> Path3.t) -> t -> t
 
 val translate : Vec3.t -> t -> t
 val rotate : Vec3.t -> t -> t
@@ -128,3 +144,8 @@ val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
 val multmatrix : MultMatrix.t -> t -> t
+
+(** {1 Output}
+
+    Mapping from {!t} into a {!Scad.d3} can be done via {!Mesh.to_scad}, by way
+    of {!Mesh.of_poly3}. *)
