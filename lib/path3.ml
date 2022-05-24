@@ -153,6 +153,7 @@ let coplanar ?eps t =
 
 let to_plane ?eps = function
   | []                 -> invalid_arg "Empty path cannot be converted to plane."
+  | [ p0; p1; p2 ]     -> Plane.make p0 p1 p2
   | point :: rest as t ->
     let plane = Plane.of_normal ~point (normal rest) in
     if Plane.are_points_on ?eps plane t

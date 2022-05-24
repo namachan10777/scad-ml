@@ -1,6 +1,19 @@
 open Util
 module Bez = Bezier.Make (Vec3)
 
+(* TODO: think about / try a config record based specification like used in
+    RoundExtrude, and take advantage of that by changing from using Path3 to
+    Poly3. This way coplanar input is normalized, and holes become possible. *)
+(* type spec = *)
+(*   { k : float *)
+(*   ; k_bot : float option *)
+(*   ; k_top : float option *)
+(*   ; k_sides : float option *)
+(*   ; joint_bot : float * float *)
+(*   ; joint_top : float * float *)
+(*   ; joint_sides : [ `Flat of float * float | `Mix of (float * float) list ] *)
+(*   } *)
+
 type patch_edges =
   { left : Path3.t
   ; right : Path3.t
@@ -318,8 +331,8 @@ let prism
   and bot_samples, bot_edges =
     unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch
   in
-  let top_faces = fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
-  and bot_faces = fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) [] in
+  let top_face = fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) []
+  and bot_face = fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) [] in
   let edge_points =
     let f i acc =
       let top_edge = [ top_edges.(i).right; top_edges.(wrap (i + 1)).left ]
@@ -337,11 +350,14 @@ let prism
           ; top_patch.(i).(4).(4)
           ] )
     in
-    List.rev top_faces :: bot_faces :: patches
+    List.rev top_face :: bot_face :: patches
   in
   if not debug then curvature_continuity ~len ~bot_patch ~top_patch;
-  if not debug then roundover_interference "top" top_faces;
-  if not debug then roundover_interference "bottom" bot_faces;
+  (* NOTE: I think there is finickyness with winding direction and normal
+    calculation for some paths, as reversing top_face (for this interference
+    test) passes this test (fails otherwise) for the slanted prism example. *)
+  if not debug then roundover_interference "top" (List.rev top_face);
+  if not debug then roundover_interference "bottom" bot_face;
   List.fold_left
     (fun acc pts -> Mesh0.of_ragged pts :: acc)
     [ Mesh0.of_polygons faces ]
