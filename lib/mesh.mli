@@ -458,7 +458,7 @@ val mirror : Vec3.t -> t -> t
 
 (** {1 Debugging helpers} *)
 
-val show_points : (int -> 'a Scad.t) -> t -> 'a Scad.t
+val show_points : (int -> Scad.d3) -> t -> Scad.d3
 
 (** {1 Output} *)
 

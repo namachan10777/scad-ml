@@ -85,10 +85,10 @@ let arc_points () =
   let arc = Path2.arc_through ~fn:5 (v2 10. 10.) (v2 20. 20.) (v2 10. 30.) in
   let scad =
     List.mapi
-      (fun i { x; y } ->
+      (fun i p ->
         Scad.text ~size:5. (Printf.sprintf "%i" i)
         |> Scad.color Color.Red
-        |> Scad.translate (v3 x y 0.) )
+        |> Scad.translate p )
       arc
     |> Scad.union
   and oc = open_out "arc_points.scad" in
@@ -102,6 +102,7 @@ let arc_points_3d () =
       (fun i { x; y; z } ->
         Scad.text ~size:5. (Printf.sprintf "%i" i)
         |> Scad.color Color.Red
+        |> Scad.linear_extrude ~height:1.
         |> Scad.translate { x; y; z } )
       arc
     |> Scad.union
