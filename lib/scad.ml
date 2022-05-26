@@ -111,7 +111,7 @@ let map : type a b. (scad -> scad) -> (a, b) t -> (a, b) t =
   | D2 scad -> D2 (f scad)
   | D3 scad -> D3 (f scad)
 
-let cylinder ?(center = false) ?fa ?fs ?fn r h =
+let cylinder ?(center = false) ?fa ?fs ?fn ~height:h r =
   d3 @@ Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
 
 let cone ?(center = false) ?fa ?fs ?fn ~height r1 r2 =
@@ -154,7 +154,7 @@ let rotate_about_pt (type a b) (r : b) (p : a) (t : (a, b) t) : (a, b) t =
   in
   translate p t |> rotate r |> translate p'
 
-let vector_rotate ax r = map (fun scad -> VectorRotate (ax, r, scad))
+let vector_rotate ax r (D3 scad) = d3 @@ VectorRotate (ax, r, scad)
 
 let vector_rotate_about_pt ax r p t =
   translate p t |> vector_rotate ax r |> translate (Vec3.negate p)

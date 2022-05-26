@@ -15,7 +15,7 @@ type scad
     that should only apply to one or the other, and preventing mixing during
     boolean operations.
     - The ['space] parameter can be {!Vec2.t} or {!Vec3.t}, corresponding to
-      dimensions through which the scad can be transformed.
+      dimensions over which the scad can be transformed.
     - The ['rot] parameter corresponds to the axes rotation available to the
       scad. For 2d shapes, this is a [float] representing z-axis rotation, and
       for 3d shapes, xyz axes are available through {!Vec3.t}. *)
@@ -31,7 +31,8 @@ type d3 = (Vec3.t, Vec3.t) t
 
     The optional parameters ?fa, ?fs, and ?fn correspond to the OpenSCAD
     "special parameters" governing the number of facets used to generate arcs
-    ($fa, $fs, and $fn respectively). Where present, they govern the following:
+    ({b $fa}, {b $fs}, and {b $fn} respectively). Where present, they govern the
+    following:
 
     - [?fa] is the minimum angle for a fragment. Note that this should be given
       in radians here (as opposed to degrees in the OpenSCAD language).
@@ -54,12 +55,19 @@ val cube : ?center:bool -> Vec3.t -> d3
     Creates a sphere with given [radius] at the origin of the coordinate system. *)
 val sphere : ?fa:float -> ?fs:float -> ?fn:int -> float -> d3
 
-(** [cylinder ?center ?fa ?fs ?fn radius height]
+(** [cylinder ?center ?fa ?fs ?fn ~height radius]
 
      Creates a cylinder centered about the z axis. When center is true, it will
      also be centered vertically, otherwise the base will sit upon the XY
      plane. *)
-val cylinder : ?center:bool -> ?fa:float -> ?fs:float -> ?fn:int -> float -> float -> d3
+val cylinder
+  :  ?center:bool
+  -> ?fa:float
+  -> ?fs:float
+  -> ?fn:int
+  -> height:float
+  -> float
+  -> d3
 
 (** [cone ?center ?fa ?fs ?fn ~height r1 r2 ]
 

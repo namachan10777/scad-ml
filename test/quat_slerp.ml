@@ -1,7 +1,7 @@
 open Scad_ml
 
 let quat_slerp =
-  let cyl = Scad.cylinder ~center:true 2.5 20. in
+  let cyl = Scad.cylinder ~center:true ~height:20. 2.5 in
   let q0 = Quaternion.make (v3 0. 1. 0.) 0. in
   let q1 = Quaternion.make (v3 0. 1. 0.) (Float.pi /. 2.) in
   let slerp = Quaternion.slerp q0 q1 in
