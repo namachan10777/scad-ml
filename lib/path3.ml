@@ -3,11 +3,6 @@ include Path.Make (Vec3)
 include Arc3
 include Rounding.Make (Vec3) (Arc3)
 
-(* type bbox = *)
-(*   { min : Vec3.t *)
-(*   ; max : Vec3.t *)
-(*   } *)
-
 let of_tups = List.map Vec3.of_tup
 let of_path2 ?(plane = Plane.xy) = Path2.lift plane
 let to_path2 ?(plane = Plane.xy) = List.map (Plane.project plane)
@@ -152,11 +147,11 @@ let coplanar ?eps t =
   | Invalid_argument _ -> false
 
 let to_plane ?eps = function
-  | []                 -> invalid_arg "Empty path cannot be converted to plane."
-  | [ p0; p1; p2 ]     -> Plane.make p0 p1 p2
-  | point :: rest as t ->
-    let plane = Plane.of_normal ~point (normal rest) in
-    if Plane.are_points_on ?eps plane t
+  | []              -> invalid_arg "Empty path cannot be converted to plane."
+  | [ p0; p1; p2 ]  -> Plane.make p0 p1 p2
+  | point :: _ as t ->
+    let plane = Plane.of_normal ~point (normal t) in
+    if Plane.are_points_on ?eps ~neg_check:true plane t
     then plane
     else invalid_arg "Path is not coplanar."
 

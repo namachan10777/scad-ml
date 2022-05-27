@@ -87,12 +87,22 @@ let is_simple ?eps t =
   | _ -> false
 
 let make ?(validate = true) ?(holes = []) outer =
-  let t = { outer; holes } in
+  let rewind =
+    match holes with
+    | [] -> Fun.id
+    | _  ->
+      let outer_sign = Path2.clockwise_sign outer in
+      fun p -> if Path2.clockwise_sign p = outer_sign then List.rev p else p
+  in
+  let t = { outer; holes = List.map rewind holes } in
   if validate
   then (
     validation t;
     t )
   else t
+
+let add_holes ?validate ~holes t =
+  make ?validate ~holes:(List.rev_append t.holes holes) t.outer
 
 let circle ?fn r = make @@ Path2.circle ?fn r
 

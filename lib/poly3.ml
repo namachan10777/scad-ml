@@ -17,11 +17,13 @@ let make ?(validate = true) ?(holes = []) outer =
   let plane = Path3.to_plane outer in
   if not validate
   then { outer; holes }
-  else (
-    let coplanar = Plane.are_points_on plane in
-    if coplanar outer && List.for_all coplanar holes
-    then of_poly2 ~plane @@ to_poly2 ~validate:true ~plane { outer; holes }
-    else invalid_arg "Polygon contains non-coplanar points." )
+  else if let coplanar = Plane.are_points_on plane in
+          coplanar outer && List.for_all coplanar holes
+  then of_poly2 ~plane @@ to_poly2 ~validate:true ~plane { outer; holes }
+  else invalid_arg "Polygon contains non-coplanar points."
+
+let add_holes ?validate ~holes t =
+  make ?validate ~holes:(List.rev_append t.holes holes) t.outer
 
 let circle ?fn ?plane r = { outer = Path3.circle ?fn ?plane r; holes = [] }
 

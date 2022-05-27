@@ -547,7 +547,7 @@ let rounded_polyhole_sweep () =
   in
   let scad =
     let holes =
-      let s = Path2.circle ~fn:90 2.
+      let s = List.rev @@ Path2.circle ~fn:90 2.
       and d = 1.9 in
       Path2.[ translate (v2 (-.d) (-.d)) s; translate (v2 d d) s ]
     and outer =
@@ -571,17 +571,36 @@ let rounded_polyhole_sweep () =
   close_out oc
 
 let rounded_prism_cube () =
-  let bot = Path2.square ~center:true (v2 5. 5.) |> List.rev_map Vec2.to_vec3 in
+  let bot =
+    Poly3.square ~center:true (v2 5. 5.)
+    |> Poly3.add_holes ~holes:[ Path3.square ~center:true (v2 2. 2.) ]
+    |> Poly3.map List.rev
+  in
   let top =
-    Path3.translate (v3 0. 0. 5.) (Path3.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
+    Poly3.translate (v3 0. 0. 5.) (Poly3.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
   in
   let scad =
-    Mesh.prism
-      ~joint_top:(1., 1.)
-      ~joint_bot:(1., 1.)
-      ~joint_sides:(`Flat (1.5, 1.5))
-      bot
-      top
+    Mesh.(
+      prism
+        ~debug:false
+        ~fn:5
+        ~outer:
+          Prism.(
+            spec
+              ~joint_top:(0.8, 0.8)
+              ~joint_bot:(0.8, 0.8)
+              ~joint_sides:(`Flat (1.5, 1.5))
+              ())
+        ~holes:
+          Prism.(
+            `Custom
+              (spec
+                 ~joint_top:(-0.5, 0.5)
+                 ~joint_bot:(-0.5, 0.5)
+                 ~joint_sides:(`Flat (0.5, 0.5))
+                 () ))
+        bot
+        top)
     |> Mesh.to_scad
   and oc = open_out "rounded_prism_cube.scad" in
   Scad.write oc scad;
@@ -589,16 +608,24 @@ let rounded_prism_cube () =
 
 let rounded_prism_pointy () =
   let bot =
-    Vec3.[ v (-4.) 0. 0.; v 5. 3. 0.; v 0. 7. 0.; v 8. 7. 0.; v 20. 20. 0.; v 10. 0. 0. ]
+    Poly3.make
+      Vec3.
+        [ v (-4.) 0. 0.; v 5. 3. 0.; v 0. 7. 0.; v 8. 7. 0.; v 20. 20. 0.; v 10. 0. 0. ]
+    |> Poly3.map List.rev
   in
-  let top = Path3.translate (v3 0. 0. 5.) bot in
+  let top = Poly3.translate (v3 0. 0. 5.) bot in
   let scad =
-    Mesh.prism
-      ~joint_top:(0.25, 0.25)
-      ~joint_bot:(0.25, 0.25)
-      ~joint_sides:(`Flat (2.5, 2.5))
-      bot
-      top
+    Mesh.(
+      prism
+        ~outer:
+          Prism.(
+            spec
+              ~joint_top:(0.25, 0.25)
+              ~joint_bot:(0.25, 0.25)
+              ~joint_sides:(`Flat (2.5, 2.5))
+              ())
+        bot
+        top)
     |> Mesh.to_scad
   and oc = open_out "rounded_prism_pointy.scad" in
   Scad.write oc scad;

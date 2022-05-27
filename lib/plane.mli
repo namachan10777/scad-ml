@@ -61,6 +61,11 @@ val offset : t -> float
   that their vector norm is equal to one. *)
 val normalize : t -> t
 
+(** [negate_normal t]
+
+    Negate the plane [t]. *)
+val negate : t -> t
+
 (** [distance_to_point t p]
 
  Calculate the distance to the point [p] from the plane [t]. A negative
@@ -73,10 +78,12 @@ val distance_to_point : t -> Vec3.t -> float
  points [ps]. *)
 val greatest_distance : t -> Vec3.t list -> float
 
-(** [are_points_on ?eps t ps]
+(** [are_points_on ?eps ?neg_check t ps]
 
- Returns [true] if all points [ps] are within [eps] distance of the plane [t]. *)
-val are_points_on : ?eps:float -> t -> Vec3.t list -> bool
+    Returns [true] if all points [ps] are within [eps] distance of the plane [t].
+    If [neg_check] is [true] (as is default) and the first check is [false],
+    then [t] will be negated and distances will be measured again. *)
+val are_points_on : ?eps:float -> ?neg_check:bool -> t -> Vec3.t list -> bool
 
 (** [is_point_above t p]
 

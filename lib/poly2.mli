@@ -41,6 +41,13 @@ type t = private
     not simple (and thus, may cause problems in CGAL). *)
 val make : ?validate:bool -> ?holes:Path2.t list -> Path2.t -> t
 
+(** [add_holes ?validate ~holes t]
+
+    Add [holes] to [t]. If validate is [true] (as it is by default),
+    {!val:validation} is performed, raising exceptions if the defined polygon is
+    not simple (and thus, may cause problems in CGAL). *)
+val add_holes : ?validate:bool -> holes:Vec2.t list list -> t -> t
+
 (** [validation ?eps t]
 
     Validate that [t] is a legal polygon, without self-intersections within

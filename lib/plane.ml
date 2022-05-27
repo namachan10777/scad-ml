@@ -45,18 +45,24 @@ let normalize { a; b; c; d } =
   let n = Vec3.norm (v3 a b c) in
   { a = a /. n; b = b /. n; c = c /. n; d = d /. n }
 
+let negate { a; b; c; d } = { a = -.a; b = -.b; c = -.c; d = -.d }
 let distance_to_point { a; b; c; d } p = Vec3.dot (v3 a b c) p -. d
 
-let greatest_distance { a; b; c; d } ps =
+let greatest_distance t ps =
+  let { a; b; c; d } = normalize t in
   let normal = v3 a b c in
   let f (min, max) p =
     let n = Vec3.dot p normal in
     Float.min min n, Float.max max n
   in
   let min_norm, max_norm = List.fold_left f (Float.max_float, Float.min_float) ps in
-  Float.max (max_norm -. d) (d -. min_norm) /. Vec3.norm normal
+  Float.max (max_norm -. d) (d -. min_norm)
 
-let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
+let are_points_on ?(eps = Util.epsilon) ?(neg_check = true) t ps =
+  if greatest_distance t ps > eps
+  then neg_check && greatest_distance (negate t) ps < eps
+  else true
+
 let is_point_above t p = distance_to_point t p > Util.epsilon
 
 let line_angle t (p1, p2) =

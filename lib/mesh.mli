@@ -336,6 +336,52 @@ val path_extrude
   -> Poly2.t
   -> t
 
+module Prism : sig
+  type spec =
+    { k : float
+    ; k_bot : float option
+    ; k_top : float option
+    ; k_sides : [ `Flat of float | `Mix of float list ] option
+    ; joint_bot : float * float
+    ; joint_top : float * float
+    ; joint_sides : [ `Flat of float * float | `Mix of (float * float) list ]
+    }
+
+  type holes =
+    [ `Custom of spec
+    | `Flip
+    | `Mix of [ `Custom of spec | `Flip | `Same ] list
+    | `Same
+    ]
+
+  val flip : spec -> spec
+
+  val spec
+    :  ?k:float
+    -> ?k_bot:float
+    -> ?k_top:float
+    -> ?k_sides:[ `Flat of float | `Mix of float list ]
+    -> ?joint_bot:float * float
+    -> ?joint_top:float * float
+    -> ?joint_sides:[ `Flat of float * float | `Mix of (float * float) list ]
+    -> unit
+    -> spec
+end
+
+(* val prism *)
+(*   :  ?debug:bool *)
+(*   -> ?fn:int *)
+(*   -> ?k:float *)
+(*   -> ?k_bot:float *)
+(*   -> ?k_top:float *)
+(*   -> ?k_sides:[< `Flat of float | `Mix of float list > `Flat ] *)
+(*   -> ?joint_bot:float * float *)
+(*   -> ?joint_top:float * float *)
+(*   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ] *)
+(*   -> Vec3.t list *)
+(*   -> Vec3.t list *)
+(*   -> t *)
+
 (** [prism ?debug ?fn ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top
   ?joint_sides bottom top]
 
@@ -351,16 +397,16 @@ val path_extrude
 val prism
   :  ?debug:bool
   -> ?fn:int
-  -> ?k:float
-  -> ?k_bot:float
-  -> ?k_top:float
-  -> ?k_sides:[< `Flat of float | `Mix of float list > `Flat ]
-  -> ?joint_bot:float * float
-  -> ?joint_top:float * float
-  -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ]
-  -> Vec3.t list
-  -> Vec3.t list
-  -> t
+  -> ?holes:
+       [ `Custom of Prism.spec
+       | `Flip
+       | `Mix of [ `Custom of Prism.spec | `Flip | `Same ] list
+       | `Same
+       ]
+  -> ?outer:Prism.spec
+  -> Poly3.t
+  -> Poly3.t
+  -> Mesh0.t
 
 (** {1 Function Plotting}
 

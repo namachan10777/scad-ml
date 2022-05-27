@@ -8,7 +8,7 @@
     points of the polygon are planar and performs {!Poly2.validation} by default,
     hopefully providing an early warning that the shape may have issues rendering
     in OpenSCAD. *)
-type t =
+type t = private
   { outer : Path3.t
   ; holes : Path3.t list
   }
@@ -23,6 +23,13 @@ type t =
     on a 2d projection, raising exceptions if the defined polygon is not simple
     (and thus, may cause problems in CGAL). *)
 val make : ?validate:bool -> ?holes:Path3.t list -> Path3.t -> t
+
+(** [add_holes ?validate ~holes t]
+
+    Add [holes] to [t]. If validate is [true] (as it is by default),
+    {!val:validation} is performed, raising exceptions if the defined polygon is
+    not simple (and thus, may cause problems in CGAL). *)
+val add_holes : ?validate:bool -> holes:Vec3.t list list -> t -> t
 
 (** [of_poly2 ?plane poly]
 
