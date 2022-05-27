@@ -151,7 +151,7 @@ let to_plane ?eps = function
   | [ p0; p1; p2 ]  -> Plane.make p0 p1 p2
   | point :: _ as t ->
     let plane = Plane.of_normal ~point (normal t) in
-    if Plane.are_points_on ?eps ~neg_check:true plane t
+    if Plane.are_points_on ?eps plane t
     then plane
     else invalid_arg "Path is not coplanar."
 

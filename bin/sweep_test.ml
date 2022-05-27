@@ -583,7 +583,7 @@ let rounded_prism_cube () =
     Mesh.(
       prism
         ~debug:false
-        ~fn:5
+        ~fn:16
         ~outer:
           Prism.(
             spec
@@ -593,7 +593,7 @@ let rounded_prism_cube () =
               ())
         ~holes:
           Prism.(
-            `Custom
+            `Spec
               (spec
                  ~joint_top:(-0.5, 0.5)
                  ~joint_bot:(-0.5, 0.5)
@@ -608,15 +608,12 @@ let rounded_prism_cube () =
 
 let rounded_prism_pointy () =
   let bot =
-    Poly3.make
-      Vec3.
-        [ v (-4.) 0. 0.; v 5. 3. 0.; v 0. 7. 0.; v 8. 7. 0.; v 20. 20. 0.; v 10. 0. 0. ]
-    |> Poly3.map List.rev
+    Poly2.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
+    |> Poly2.map List.rev
   in
-  let top = Poly3.translate (v3 0. 0. 5.) bot in
   let scad =
     Mesh.(
-      prism
+      linear_prism
         ~outer:
           Prism.(
             spec
@@ -624,8 +621,8 @@ let rounded_prism_pointy () =
               ~joint_bot:(0.25, 0.25)
               ~joint_sides:(`Flat (2.5, 2.5))
               ())
-        bot
-        top)
+        ~height:5.
+        bot)
     |> Mesh.to_scad
   and oc = open_out "rounded_prism_pointy.scad" in
   Scad.write oc scad;

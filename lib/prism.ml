@@ -29,8 +29,8 @@ module Prism = struct
   type holes =
     [ `Same
     | `Flip
-    | `Custom of spec
-    | `Mix of [ `Same | `Flip | `Custom of spec ] list
+    | `Spec of spec
+    | `Mix of [ `Same | `Flip | `Spec of spec ] list
     ]
 
   let flip ({ joint_bot = b_in, b_down; joint_top = t_in, t_down; _ } as spec) =
@@ -496,20 +496,20 @@ let prism ?debug ?fn ?(holes = `Flip) ?(outer = spec ()) (bottom : Poly3.t) (top
   then invalid_arg "Polys must have same number of holes.";
   let hole_spec =
     match holes with
-    | `Same        -> fun _ -> outer
-    | `Flip        ->
+    | `Same      -> fun _ -> outer
+    | `Flip      ->
       let flipped = flip outer in
       fun _ -> flipped
-    | `Custom spec -> fun _ -> spec
-    | `Mix specs   ->
+    | `Spec spec -> fun _ -> spec
+    | `Mix specs ->
       let specs = Array.of_list specs in
       if Array.length specs = n_holes
       then
         fun i ->
         match Array.get specs i with
-        | `Same        -> outer
-        | `Flip        -> flip outer
-        | `Custom spec -> spec
+        | `Same      -> outer
+        | `Flip      -> flip outer
+        | `Spec spec -> spec
       else invalid_arg "Mixed hole specs must match the number of holes."
   in
   let _, tunnel_bots, tunnel_tops, tunnels =
@@ -528,3 +528,11 @@ let prism ?debug ?fn ?(holes = `Flip) ?(outer = spec ()) (bottom : Poly3.t) (top
     Mesh0.of_poly3 ~rev:true (Poly3.make ?validate:debug ~holes:tunnel_tops outer_top)
   in
   Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
+
+let linear_prism ?debug ?fn ?holes ?outer ?(center = false) ~height (bottom : Poly2.t) =
+  let bottom =
+    let b = Poly3.of_poly2 bottom in
+    if center then Poly3.translate { x = 0.; y = 0.; z = height /. -2. } b else b
+  in
+  let top = Poly3.translate { x = 0.; y = 0.; z = height } bottom in
+  prism ?debug ?fn ?holes ?outer bottom top

@@ -143,11 +143,11 @@ module Cap : sig
     [ `Same (** Offset [d] and [z] values from outer are copied. *)
     | `Flip
       (** Offset [d] and [z] values from outer are copied, but [d] sign is flipped. *)
-    | `Custom of offsets
+    | `Spec of offsets
       (** Supplies a different set of offsets for the holes. Note that this
     should have the same [z] values, or else the roundover mesh will not be well
     formed. *)
-    | `Mix of [ `Same | `Flip | `Custom of offsets ] list
+    | `Mix of [ `Same | `Flip | `Spec of offsets ] list
     ]
 
   type poly =
@@ -213,11 +213,11 @@ module Cap : sig
     smoothness parameter, ranging from gradual [0.], to abrupt [1.] (default [0.5]). *)
   val bez : ?curv:float -> ?fn:int -> [< `Cut of float | `Joint of float ] -> offsets
 
-  (** [custom offsets]
+  (** [offsets offsets]
 
       Sanitize (enforce positive and increasing [z] values) and pack a list of
       {!type:offset}. *)
-  val custom : offset list -> offsets
+  val offsets : offset list -> offsets
 
   (** [unwrap_offsets offsets]
 
@@ -348,9 +348,9 @@ module Prism : sig
     }
 
   type holes =
-    [ `Custom of spec
+    [ `Spec of spec
     | `Flip
-    | `Mix of [ `Custom of spec | `Flip | `Same ] list
+    | `Mix of [ `Spec of spec | `Flip | `Same ] list
     | `Same
     ]
 
@@ -397,15 +397,20 @@ end
 val prism
   :  ?debug:bool
   -> ?fn:int
-  -> ?holes:
-       [ `Custom of Prism.spec
-       | `Flip
-       | `Mix of [ `Custom of Prism.spec | `Flip | `Same ] list
-       | `Same
-       ]
+  -> ?holes:Prism.holes
   -> ?outer:Prism.spec
   -> Poly3.t
   -> Poly3.t
+  -> Mesh0.t
+
+val linear_prism
+  :  ?debug:bool
+  -> ?fn:int
+  -> ?holes:Prism.holes
+  -> ?outer:Prism.spec
+  -> ?center:bool
+  -> height:float
+  -> Poly2.t
   -> Mesh0.t
 
 (** {1 Function Plotting}

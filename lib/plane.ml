@@ -20,9 +20,9 @@ let of_normal ?(point = Vec3.zero) ({ x; y; z } as normal) =
   if Math.approx 0. n then invalid_arg "Normal cannot be zero.";
   { a = x /. n; b = y /. n; c = z /. n; d = Vec3.dot normal point /. n }
 
-let xy = of_normal { x = 0.; y = 0.; z = 1. }
-let xz = of_normal { x = 0.; y = 1.; z = 0. }
-let yz = of_normal { x = 1.; y = 0.; z = 0. }
+let xy = { a = 0.; b = 0.; c = 1.; d = 0. }
+let xz = { a = 0.; b = 1.; c = 0.; d = 0. }
+let yz = { a = 1.; b = 0.; c = 0.; d = 0. }
 
 let project { a; b; c; d } =
   let n = v3 a b c in
@@ -48,6 +48,11 @@ let normalize { a; b; c; d } =
 let negate { a; b; c; d } = { a = -.a; b = -.b; c = -.c; d = -.d }
 let distance_to_point { a; b; c; d } p = Vec3.dot (v3 a b c) p -. d
 
+(** TODO: do some testing, and open an issue / PR with BOSL2 about greatest
+   distance having different results depending on winding direction (which
+   result in opposite polarity planes). For distance to point, the polarity
+   gives information, but I still think there is an issue, since a point on
+   the plane is still able to give a non-zero distance depending on winding.  *)
 let greatest_distance t ps =
   let { a; b; c; d } = normalize t in
   let normal = v3 a b c in
@@ -56,13 +61,14 @@ let greatest_distance t ps =
     Float.min min n, Float.max max n
   in
   let min_norm, max_norm = List.fold_left f (Float.max_float, Float.min_float) ps in
-  Float.max (max_norm -. d) (d -. min_norm)
+  (* Negate offset and norm products to check distance from negative plane [t].
+      Without this, non-zero distances can be retured for points that should be
+      on the plane. *)
+  Float.min
+    (Float.max (max_norm -. d) (d -. min_norm))
+    (Float.max (-.max_norm -. -.d) (-.min_norm -. -.d))
 
-let are_points_on ?(eps = Util.epsilon) ?(neg_check = true) t ps =
-  if greatest_distance t ps > eps
-  then neg_check && greatest_distance (negate t) ps < eps
-  else true
-
+let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
 let is_point_above t p = distance_to_point t p > Util.epsilon
 
 let line_angle t (p1, p2) =

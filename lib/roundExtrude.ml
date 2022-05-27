@@ -22,8 +22,8 @@ module Cap = struct
   type holes =
     [ `Same
     | `Flip
-    | `Custom of offsets
-    | `Mix of [ `Same | `Flip | `Custom of offsets ] list
+    | `Spec of offsets
+    | `Mix of [ `Same | `Flip | `Spec of offsets ] list
     ]
 
   type poly =
@@ -144,7 +144,7 @@ module Cap = struct
       |> List.fold_left f ([], Float.min_float)
       |> fst )
 
-  let custom offsets =
+  let offsets offsets =
     let f (last_z, acc) { d; z } =
       let z = quantize @@ Float.abs z in
       if Float.compare z last_z <> 1
@@ -252,20 +252,20 @@ let sweep ?check_valid ?winding ?(spec = flat_caps) ~transforms Poly2.{ outer; h
   | `Caps { top; bot }, holes ->
     let n_holes = List.length holes in
     let hole_spec outer_offsets = function
-      | `Same        -> fun _ -> `Round outer_offsets
-      | `Flip        ->
+      | `Same      -> fun _ -> `Round outer_offsets
+      | `Flip      ->
         let flipped = flip_d outer_offsets in
         fun _ -> `Round flipped
-      | `Custom offs -> fun _ -> `Round offs
-      | `Mix specs   ->
+      | `Spec offs -> fun _ -> `Round offs
+      | `Mix specs ->
         let specs = Array.of_list specs in
         if Array.length specs = n_holes
         then
           fun i ->
           match Array.get specs i with
-          | `Same        -> `Round outer_offsets
-          | `Flip        -> `Round (flip_d outer_offsets)
-          | `Custom offs -> `Round offs
+          | `Same      -> `Round outer_offsets
+          | `Flip      -> `Round (flip_d outer_offsets)
+          | `Spec offs -> `Round offs
         else invalid_arg "Mixed hole specs must match the number of holes."
     in
     let unpack_spec = function
