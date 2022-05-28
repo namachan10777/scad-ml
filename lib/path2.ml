@@ -6,7 +6,14 @@ include Rounding.Make (Vec2) (Arc2)
 let of_tups = List.map Vec2.of_tup
 let of_path3 ?(plane = Plane.xy) = List.map (Plane.project plane)
 let to_path3 ?(plane = Plane.xy) = List.map (Plane.lift plane)
-let clockwise_sign ?eps ps = APath2.clockwise_sign ?eps (Array.of_list ps)
+
+let clockwise_sign ?(eps = Util.epsilon) = function
+  | [] | [ _ ] | [ _; _ ] -> invalid_arg "Path/polygon must have more than two points."
+  | p0 :: p1 :: t         ->
+    let f (sum, last) p = sum +. ((last.x -. p.x) *. (last.y +. p.y)), p in
+    let sum, _ = List.fold_left f (f (0., p0) p1) t in
+    if Math.approx ~eps sum 0. then 0. else Float.(of_int @@ compare sum 0.)
+
 let is_clockwise ps = Float.equal 1. (clockwise_sign ps)
 
 let self_intersections ?eps ?closed path =
@@ -137,7 +144,7 @@ let square ?(center = false) { x; y } =
   then (
     let x' = x /. 2.
     and y' = y /. 2. in
-    Vec2.[ v x' y'; v (-.x') y'; v (-.x') (-.y'); v x' (-.y') ] )
-  else Vec2.[ v 0. 0.; v x 0.; v x y; v 0. y ]
+    Vec2.[ v x' (-.y'); v (-.x') (-.y'); v (-.x') y'; v x' y' ] )
+  else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
 
 let to_scad ?convexity t = Scad.polygon ?convexity t
