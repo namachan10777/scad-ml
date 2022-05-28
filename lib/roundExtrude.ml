@@ -110,17 +110,12 @@ module Cap = struct
         let z = quantize (abs_radius *. Float.sin (i *. step)) in
         if Math.approx last_z z
         then acc, last_z
-        else
-          ( { d = quantize (radius *. (Float.cos (i *. step) -. 1.))
-            ; z = quantize (abs_radius *. Float.sin (i *. step))
-            }
-            :: acc
-          , z ) )
+        else { d = quantize (radius *. (Float.cos (i *. step) -. 1.)); z } :: acc, z )
       else
         ( { d = -2. *. radius *. (1. -. (Float.sqrt 2. /. 2.)); z = abs_radius } :: acc
         , abs_radius )
     in
-    Offsets (List.rev @@ fst @@ Util.fold_init fn f ([], Float.min_float))
+    Offsets (List.rev @@ fst @@ Util.fold_init (fn + 1) f ([], Float.min_float))
 
   let bez ?(curv = 0.5) ?(fn = 16) spec =
     let joint =
@@ -142,7 +137,8 @@ module Cap = struct
           (v2 (-.joint) (Float.abs joint))
       |> List.tl
       |> List.fold_left f ([], Float.min_float)
-      |> fst )
+      |> fst
+      |> List.rev )
 
   let offsets offsets =
     let f (last_z, acc) { d; z } =
