@@ -337,25 +337,57 @@ val path_extrude
   -> t
 
 module Prism : sig
+  (** Rounded prism configuration.
+
+   In general, [joint_] parameters  are pairs determine the distance away from
+   the edge that curvature begins, and [k] parameters set the smoothness of the
+   curvature. *)
   type spec =
-    { k : float
-    ; k_bot : float option
-    ; k_top : float option
+    { k : float (** default curvature used if specific curvatures are [None] *)
+    ; k_bot : float option (** curvature smoothness of bottom edges *)
+    ; k_top : float option (** curvature smoothness of bottom top *)
     ; k_sides : [ `Flat of float | `Mix of float list ] option
+          (** smoothness to be applied flatly to all side edges, or a list
+                 specifying a smoothness for each edge (must be same length as
+                 corresponding paths) *)
     ; joint_bot : float * float
+          (** pair of inwards (into bottom face) and upwards (towards top)
+                joint distances  *)
     ; joint_top : float * float
+          (** pair of inwards (into top face) and downwards (towards bottom)
+                joint distances  *)
     ; joint_sides : [ `Flat of float * float | `Mix of (float * float) list ]
+          (** pair of backwards and forwards joint distances to be applied
+                flatly to all side edges, or a list specifying joints for each
+                edge (must be same length as corresponding paths) *)
     }
 
+  (** Specifies how holes in the prism should be treated, either relative to
+    the outer shape, or independantly. When multiple holes are present, [`Mix]
+    allows each one to be specified separately, to treat all the same, use the
+    other variants directly. *)
   type holes =
-    [ `Spec of spec
+    [ `Same (** the outer path {!type:spec} should be used for the holes *)
     | `Flip
+      (** the outer path {!type:spec} should be used for the holes, but
+             with the top and bottom inward joint directions flipped (see {!flip}) *)
+    | `Spec of spec (** one {!type:spec} to use for all holes *)
     | `Mix of [ `Spec of spec | `Flip | `Same ] list
-    | `Same
     ]
 
+  (** [flip spec]
+
+      Negate the top and bottom inwards joints (firsts of the [joint_bot] and
+      [joint_top] pairs) of [spec]. These values govern whether the roundover
+      flare inwards (positive when shape is CCW) or outwards (negative when shape
+      is CCW). Since holes (inner paths) have reverse winding compared the outer
+      path, you'll often want to use opposite polarity inward joints. *)
   val flip : spec -> spec
 
+  (** [spec ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top ?joint_sides ()]
+
+       Contruct a {!type:spec} with joint distances set to [0.] by default (no
+       rounding), and a default curvature smoothess [k = 0.5]. *)
   val spec
     :  ?k:float
     -> ?k_bot:float
@@ -368,28 +400,15 @@ module Prism : sig
     -> spec
 end
 
-(* val prism *)
-(*   :  ?debug:bool *)
-(*   -> ?fn:int *)
-(*   -> ?k:float *)
-(*   -> ?k_bot:float *)
-(*   -> ?k_top:float *)
-(*   -> ?k_sides:[< `Flat of float | `Mix of float list > `Flat ] *)
-(*   -> ?joint_bot:float * float *)
-(*   -> ?joint_top:float * float *)
-(*   -> ?joint_sides:[< `Flat of float * float | `Mix of (float * float) list > `Flat ] *)
-(*   -> Vec3.t list *)
-(*   -> Vec3.t list *)
-(*   -> t *)
-
-(** [prism ?debug ?fn ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top
-  ?joint_sides bottom top]
+(** [prism ?debug ?fn ?holes ?outer bottom top]
 
     Create a prism with continuous curvature rounding from the given [bottom]
-    and [top] paths. The edges running between the bounding polygons must
-    produce a valid polyhedron with coplanar side faces. [joint_] parameters
-    determine the distance away from the corner that curvature begins, and [k]
-    parameters set the smoothness of the curvature.
+    and [top] polygons. The edges running between the corresponding paths must
+    produce a valid polyhedron with coplanar side faces, thus the top should
+    generally be the same shape as the bottom translated/transformed in such a
+    way as to not violate this assumption (avoid z-rotation for one). Roundover
+    specifications are provided with [outer] and [holes] (see {!type:Prism.spec}
+    and {!type:Prism.holes} for details).
 
     - [debug] can be set to [true] to skip validity checks that would otherwise
     raise exceptions on failure, so a mesh can still be obtained for
@@ -403,6 +422,9 @@ val prism
   -> Poly3.t
   -> Mesh0.t
 
+(** [linear_prism ?debug ?fn ?holes ?outr ?center ~height bottom]
+
+    *)
 val linear_prism
   :  ?debug:bool
   -> ?fn:int

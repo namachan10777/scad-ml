@@ -197,10 +197,9 @@ let of_polygons polys =
   let n = Array.length lengths in
   let offsets =
     let a = Array.make (n + 1) 0 in
-    for i = 1 to n - 1 do
+    for i = 1 to n do
       a.(i) <- a.(i - 1) + lengths.(i - 1)
     done;
-    a.(n) <- a.(n - 1) + lengths.(n - 1);
     a
   in
   let faces = List.init n (fun i -> List.init lengths.(i) (fun j -> j + offsets.(i))) in

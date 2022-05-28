@@ -1,21 +1,7 @@
 open Util
 module Bez = Bezier.Make (Vec3)
 
-(* TODO: think about / try a config record based specification like used in
-    RoundExtrude, and take advantage of that by changing from using Path3 to
-    Poly3. This way coplanar input is normalized, and holes become possible. *)
-
 module Prism = struct
-  (* TODO:
-      - add a `Rel and `Abs joint type? Right now it is all absolute, but since
-      the vertices are always supposed to line up with eachother between the top
-      and bottom, calculating the edge lengths and adjusting the joint distance
-      should be possible right? See how they are broken up in practice. It may not
-      be since if you have a tilted top, that would mean different edge lengths
-      around the prism.
-     - it may be possible if compute_patches get arrays of joints in r_top
-       instead of single values (calculated in prism using edge lengths)
-  *)
   type spec =
     { k : float
     ; k_bot : float option
@@ -312,97 +298,6 @@ let roundover_interference label face =
     in
     failwith msg )
 
-(* let prism *)
-(*     ?(debug = false) *)
-(*     ?(fn = 16) *)
-(*     ?(k = 0.5) *)
-(*     ?k_bot *)
-(*     ?k_top *)
-(*     ?k_sides *)
-(*     ?(joint_bot = 0., 0.) *)
-(*     ?(joint_top = 0., 0.) *)
-(*     ?(joint_sides = `Flat (0., 0.)) *)
-(*     bottom *)
-(*     top *)
-(*   = *)
-(*   let bottom = Array.of_list bottom *)
-(*   and top = Array.of_list top in *)
-(*   let len = Array.length bottom in *)
-(*   let wrap = index_wrap ~len *)
-(*   and unpack_sides ~name = function *)
-(*     | `Flat s -> Array.make len s *)
-(*     | `Mix ss -> *)
-(*       let ss = Array.of_list ss in *)
-(*       if Array.length ss = len *)
-(*       then ss *)
-(*       else *)
-(*         invalid_arg *)
-(*         @@ Printf.sprintf "`Mix %s must be the same length as the top/bottom polys." name *)
-(*   in *)
-(*   if len <> Array.length top *)
-(*   then invalid_arg "Top and bottom shapes must have the same length."; *)
-(*   let k_bot = Option.value ~default:k k_bot *)
-(*   and k_top = Option.value ~default:k k_top *)
-(*   and k_sides = unpack_sides ~name:"k_sides" (Option.value ~default:(`Flat k) k_sides) *)
-(*   and r_sides = unpack_sides ~name:"joint_sides" joint_sides in *)
-(*   let bot_proj = *)
-(*     let plane = Plane.make bottom.(0) bottom.(1) bottom.(2) in *)
-(*     Array.map (Plane.project plane) bottom *)
-(*   in *)
-(*   let bottom_sign = APath2.clockwise_sign bot_proj in *)
-(*   let concave = *)
-(*     let f i = *)
-(*       let line = Vec2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in *)
-(*       bottom_sign *. Vec2.left_of_line ~line bot_proj.(wrap (i + 1)) > 0. *)
-(*     in *)
-(*     Array.init len f *)
-(*   in *)
-(*   let top_patch = *)
-(*     compute_patches ~r_top:joint_top ~r_sides ~k_top ~k_sides ~concave top bottom *)
-(*   and bot_patch = *)
-(*     compute_patches ~r_top:joint_bot ~r_sides ~k_top:k_bot ~k_sides ~concave bottom top *)
-(*   in *)
-(*   if not debug then bad_patches ~len ~bot_patch ~top_patch bottom top; *)
-(*   let top_samples, top_edges = *)
-(*     unzip_array @@ Array.map (degenerate_patch ~fn ~rev:false) top_patch *)
-(*   and bot_samples, bot_edges = *)
-(*     unzip_array @@ Array.map (degenerate_patch ~fn ~rev:true) bot_patch *)
-(*   in *)
-(*   let top_face = fold_init len (fun i acc -> List.rev_append top_edges.(i).top acc) [] *)
-(*   and bot_face = fold_init len (fun i acc -> List.rev_append bot_edges.(i).top acc) [] in *)
-(*   let edge_points = *)
-(*     let f i acc = *)
-(*       let top_edge = [ top_edges.(i).right; top_edges.(wrap (i + 1)).left ] *)
-(*       and bot_edge = [ bot_edges.(wrap (i + 1)).left; bot_edges.(i).right ] *)
-(*       and vert_edge = [ bot_edges.(i).bot; top_edges.(i).bot ] in *)
-(*       vert_edge :: bot_edge :: top_edge :: acc *)
-(*     in *)
-(*     fold_init len f [] *)
-(*   and faces = *)
-(*     let patches = *)
-(*       List.init len (fun i -> *)
-(*           [ bot_patch.(i).(4).(4) *)
-(*           ; bot_patch.(wrap (i + 1)).(4).(0) *)
-(*           ; top_patch.(wrap (i + 1)).(4).(0) *)
-(*           ; top_patch.(i).(4).(4) *)
-(*           ] ) *)
-(*     in *)
-(*     List.rev top_face :: bot_face :: patches *)
-(*   in *)
-(*   if not debug then curvature_continuity ~len ~bot_patch ~top_patch; *)
-(*   (\* NOTE: I think there is finickyness with winding direction and normal *)
-(*     calculation for some paths, as reversing top_face (for this interference *)
-(*     test) passes this test (fails otherwise) for the slanted prism example. *\) *)
-(*   if not debug then roundover_interference "top" (List.rev top_face); *)
-(*   if not debug then roundover_interference "bottom" bot_face; *)
-(*   List.fold_left *)
-(*     (fun acc pts -> Mesh0.of_ragged pts :: acc) *)
-(*     [ Mesh0.of_polygons faces ] *)
-(*     edge_points *)
-(*   |> fold_init len (fun i acc -> bot_samples.(i) :: acc) *)
-(*   |> fold_init len (fun i acc -> top_samples.(i) :: acc) *)
-(*   |> Mesh0.join *)
-
 let prism'
     ?(debug = false)
     ?(fn = 16)
@@ -472,10 +367,6 @@ let prism'
         ] )
   in
   if not debug then curvature_continuity ~len ~bot_patch ~top_patch;
-  (* NOTE: I think there is finickyness with winding direction and normal
-    calculation for some paths, as reversing top_face (for this interference
-    test) passes this test (fails otherwise) for the slanted prism example. *)
-  (* if not debug then roundover_interference "top" (List.rev top_face); *)
   if not debug then roundover_interference "top" top_face;
   if not debug then roundover_interference "bottom" bot_face;
   let mesh =
@@ -489,10 +380,10 @@ let prism'
   in
   bot_face, top_face, mesh
 
-let prism ?debug ?fn ?(holes = `Flip) ?(outer = spec ()) (bottom : Poly3.t) (top : Poly3.t)
-  =
-  let n_holes = List.length bottom.holes in
-  if List.length top.holes <> n_holes
+let prism ?debug ?fn ?(holes = `Flip) ?(outer = spec ()) bottom top =
+  let n_holes = List.length bottom.Poly3.holes
+  and validate = Option.map not debug in
+  if List.length top.Poly3.holes <> n_holes
   then invalid_arg "Polys must have same number of holes.";
   let hole_spec =
     match holes with
@@ -519,17 +410,12 @@ let prism ?debug ?fn ?(holes = `Flip) ?(outer = spec ()) (bottom : Poly3.t) (top
     in
     List.fold_left2 f (0, [], [], []) bottom.holes top.holes
   in
-  let outer_bot, outer_top, outer =
-    prism' ?debug ?fn ~spec:outer bottom.outer top.outer
-  in
-  let bot_lid =
-    Mesh0.of_poly3 ~rev:false (Poly3.make ?validate:debug ~holes:tunnel_bots outer_bot)
-  and top_lid =
-    Mesh0.of_poly3 ~rev:true (Poly3.make ?validate:debug ~holes:tunnel_tops outer_top)
-  in
+  let bot', top', outer = prism' ?debug ?fn ~spec:outer bottom.outer top.outer in
+  let bot_lid = Mesh0.of_poly3 (Poly3.make ?validate ~holes:tunnel_bots bot')
+  and top_lid = Mesh0.of_poly3 ~rev:true (Poly3.make ?validate ~holes:tunnel_tops top') in
   Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
 
-let linear_prism ?debug ?fn ?holes ?outer ?(center = false) ~height (bottom : Poly2.t) =
+let linear_prism ?debug ?fn ?holes ?outer ?(center = false) ~height bottom =
   let bottom =
     let b = Poly3.of_poly2 bottom in
     if center then Poly3.translate { x = 0.; y = 0.; z = height /. -2. } b else b
