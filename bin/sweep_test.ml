@@ -510,10 +510,14 @@ let polyholes () =
   let scad =
     let shape =
       let holes =
-        let s = Path2.square ~center:true (v2 2. 2.) |> Path2.rotate (Float.pi /. 4.) in
+        let s =
+          Path2.square ~center:true (v2 2. 2.)
+          |> Path2.rotate (Float.pi /. 4.)
+          |> List.rev
+        in
         Path2.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
       in
-      Poly2.make ~holes (List.rev @@ Path2.square ~center:true (v2 10. 10.))
+      Poly2.make ~holes (Path2.square ~center:true (v2 10. 10.))
     in
     let poly = Mesh.of_poly2 shape |> Mesh.to_scad |> Scad.color ~alpha:0.5 Color.Silver
     and reference =
@@ -530,9 +534,11 @@ let polyholes () =
 let poly2d_to_scad () =
   let scad =
     let holes =
-      let s = Path2.square ~center:true (v2 2. 2.) |> Path2.rotate (Float.pi /. 4.) in
+      let s =
+        Path2.square ~center:true (v2 2. 2.) |> Path2.rotate (Float.pi /. 4.) |> List.rev
+      in
       Path2.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
-    and outer = List.rev @@ Path2.square ~center:true (v2 10. 10.) in
+    and outer = Path2.square ~center:true (v2 10. 10.) in
     Poly2.(to_scad @@ make ~holes outer)
   and oc = open_out "poly2d_to_scad.scad" in
   Scad.write oc scad;
@@ -571,11 +577,7 @@ let rounded_polyhole_sweep () =
   close_out oc
 
 let rounded_prism_cube () =
-  let bot =
-    Poly3.square ~center:true (v2 5. 5.)
-    |> Poly3.add_holes ~holes:[ Path3.square ~center:true (v2 2. 2.) ]
-    |> Poly3.map List.rev
-  in
+  let bot = Poly3.box ~center:true ~thickness:(v2 3. 3.) (v2 5. 5.) in
   let top =
     Poly3.translate (v3 0. 0. 5.) (Poly3.rotate (v3 0. (Float.pi /. 4.) 0.) bot)
   in
