@@ -298,28 +298,6 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
-     ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
-
-    Helical extrusion of a 2d polygon into a 3d mesh. Like
-   {!Mesh.linear_extrude}, but following a path generated with
-   {!Path3.helix}. *)
-val helix_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?fn:int
-  -> ?fa:float
-  -> ?fs:float
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> ?caps:Cap.caps
-  -> ?left:bool
-  -> n_turns:int
-  -> pitch:float
-  -> ?r2:float
-  -> float
-  -> Poly2.t
-  -> t
-
 (** [path_extrude ?check_valid ?winding ?spec ?euler ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
@@ -336,8 +314,32 @@ val path_extrude
   -> Poly2.t
   -> t
 
+(** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
+     ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
+
+    Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
+    {!Mesh.path_extrude}, but following a path generated with {!Path3.helix}, and
+    using transforms that take the helical rotation into account. *)
+val helix_extrude
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?caps:Cap.caps
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> Poly2.t
+  -> t
+
 module Prism : sig
-  (** Rounded prism configuration.
+  (** Rounded prism configuration module. *)
+
+  (** Rounded prism joint and curvature specification.
 
    In general, [joint_] parameters  are pairs determine the distance away from
    the edge that curvature begins, and [k] parameters set the smoothness of the
@@ -422,9 +424,12 @@ val prism
   -> Poly3.t
   -> Mesh0.t
 
-(** [linear_prism ?debug ?fn ?holes ?outr ?center ~height bottom]
+(** [linear_prism ?debug ?fn ?holes ?outer ?center ~height bottom]
 
-    *)
+    Create a prism with continuous curvature rounding by extruding the polygon
+    [bottom] lineraly upward to the given [height]. If [center] is [true], the
+    resulting prism will be centred in z around the xy plane. See the
+    more general case {!val:prism} for more details. *)
 val linear_prism
   :  ?debug:bool
   -> ?fn:int
@@ -498,7 +503,7 @@ val add_faces : int list list -> t -> t
 
 (** [rev_faces t]
 
-    Flip all faces the mesh. *)
+    Flip all faces of the mesh [t]. *)
 val rev_faces : t -> t
 
 (** [volume t]

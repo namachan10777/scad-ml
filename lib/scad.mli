@@ -214,6 +214,15 @@ val resize : 's -> ('s, 'r) t -> ('s, 'r) t
     support color. Defaults to opaque (alpha = 1.0). *)
 val color : ?alpha:float -> Color.t -> ('s, 'r) t -> ('s, 'r) t
 
+(** [render ?convexity t]
+
+    Forces OpenSCAD to render and cache the mesh produced by the given [t]. This
+    can help to speed up previewing {b (F5)} when the cached shape is used many times.
+    Note that this does however remove any colouration applied previously with
+    {!color}, or resulting from boolean operations such as {!difference}.
+    Output rendering {b (F6)} performance is unaffected. *)
+val render : ?convexity:int -> ('s, 'r) t -> ('s, 'r) t
+
 (** {1 3d Only Transformations}
 
     Each of these transformations cannot be restricted to the 2-dimensional xy
@@ -416,6 +425,8 @@ val rotate_extrude
   -> d2
   -> d3
 
+(** {1 External (non-SCAD) Format Import} *)
+
 (** [import_2d ?dxf_layer ?convexity file]
 
     Imports a [file] for use in the current OpenSCAD model. The file extension
@@ -437,14 +448,7 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
 val import_3d : ?convexity:int -> string -> d3
 
-(** [render ?convexity t]
-
-    Forces OpenSCAD to render and cache the mesh produced by the given [t]. This
-    can help to speed up previewing (F5) when the cached shape is used many times.
-    Note that this does however remove any colouration applied previously with
-    {!color}, or resulting from boolean operations such as {!difference}.
-    Output rendering (F6) performance is unaffected. *)
-val render : ?convexity:int -> ('s, 'r) t -> ('s, 'r) t
+(** {1 Output} *)
 
 (** [to_string t]
 
@@ -456,6 +460,8 @@ val to_string : ('s, 'r) t -> string
     Write the scad [t] to the given [out_channel] (typically a file), as an
     OpenSCAD script (using {!to_string}). *)
 val write : out_channel -> ('s, 'r) t -> unit
+
+(** {1 Infix Operators} *)
 
 module Infix : sig
   (** [t |>> p]
