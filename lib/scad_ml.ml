@@ -115,7 +115,6 @@ module Path3 = Path3
 module Bezier3 = Bezier3
 module Poly3 = Poly3
 module Mesh = Mesh
-module PolyRound = PolyRound
 module BallTree3 = BallTree3
 
 (** {1 Float utilities} *)

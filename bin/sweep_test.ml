@@ -110,116 +110,6 @@ let arc_points_3d () =
   Scad.write oc scad;
   close_out oc
 
-let rounded_poly () =
-  let radii_pts = [ v3 0. 0. 0.5; v3 10. 0. 0.5; v3 0. 10. 0.5 ] in
-  let scad = Scad.polygon (PolyRound.polyround ~fn:10 radii_pts)
-  and oc = open_out "polyround_triangle_ml.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_basic () =
-  let radii_pts =
-    [ v3 (-4.) 0. 1.
-    ; v3 5. 3. 1.5
-    ; v3 0. 7. 0.1
-    ; v3 8. 7. 10.
-    ; v3 20. 20. 0.8
-    ; v3 10. 0. 10.
-    ]
-  in
-  let scad =
-    let rounded =
-      Scad.polygon (PolyRound.polyround ~fn:30 radii_pts)
-      |> Scad.linear_extrude ~height:1.
-    and pointy =
-      Scad.polygon (List.map Vec2.of_vec3 radii_pts)
-      |> Scad.linear_extrude ~height:1.
-      |> Scad.translate (v3 0. 0. (-0.5))
-      |> Scad.color ~alpha:0.5 Color.Silver
-    in
-    Scad.union [ rounded; pointy ]
-  and oc = open_out "polyround_basic_ml.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_parametric () =
-  let w = 20.
-  and h = 25.
-  and slot_w = 8.
-  and slot_h = 15.
-  and slot_pos = 8.
-  and min_r = 1.5
-  and far_corner_r = 6.
-  and internal_r = 3. in
-  let radii_pts =
-    [ v3 0. 0. far_corner_r
-    ; v3 0. h min_r
-    ; v3 slot_pos h min_r
-    ; v3 slot_pos (h -. slot_h) internal_r
-    ; v3 (slot_pos +. slot_w) (h -. slot_h) internal_r
-    ; v3 (slot_pos +. slot_w) h min_r
-    ; v3 w h min_r
-    ; v3 w 0. min_r
-    ]
-  in
-  let scad =
-    let rounded =
-      Scad.polygon (PolyRound.polyround ~fn:10 radii_pts)
-      |> Scad.linear_extrude ~height:1.
-    and pointy =
-      Scad.polygon (List.map Vec2.of_vec3 radii_pts)
-      |> Scad.linear_extrude ~height:1.
-      |> Scad.translate (v3 0. 0. (-0.5))
-      |> Scad.color ~alpha:0.5 Color.Silver
-    in
-    Scad.union [ rounded; pointy ]
-  and oc = open_out "polyround_parametric_ml.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_triangle_extrude () =
-  let radii_pts = [ v3 0. 0. 0.5; v3 10. 0. 0.5; v3 0. 10. 0.5 ] in
-  let scad =
-    PolyRound.polyround_extrude ~fn:4 ~height:4. ~r1:1. ~r2:1. radii_pts |> Mesh.to_scad
-  and oc = open_out "polyround_triangle_extrude_ml.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_basic_extrude () =
-  let radii_pts =
-    [ v3 (-4.) 0. 1.
-    ; v3 5. 3. 1.5
-    ; v3 0. 7. 0.1
-    ; v3 8. 7. 10.
-    ; v3 20. 20. 0.8
-    ; v3 10. 0. 10.
-    ]
-  in
-  let scad =
-    PolyRound.polyround_extrude ~fn:10 ~height:0.1 ~r1:(-1.) ~r2:1. radii_pts
-    |> Mesh.to_scad
-  and oc = open_out "polyround_basic_extrude_ml.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_sweep () =
-  let radii_pts = [ v3 0. 0. 0.5; v3 10. 0. 0.5; v3 0. 10. 0.5 ]
-  and step = 0.005 in
-  let f i =
-    let t = Float.of_int i *. step in
-    let x = ((t /. 1.5) +. 0.5) *. 100. *. Float.cos (6. *. 360. *. t *. Float.pi /. 180.)
-    and y = ((t /. 1.5) +. 0.5) *. 100. *. Float.sin (6. *. 360. *. t *. Float.pi /. 180.)
-    and z = 200. *. (1. -. t) in
-    v3 x y z
-  in
-  let scad =
-    let path = List.init (Int.of_float (1. /. step)) f in
-    let transforms = Path3.to_transforms ~euler:false path in
-    PolyRound.polyround_sweep ~fn:6 ~r1:2. ~r2:2. ~transforms radii_pts |> Mesh.to_scad
-  and oc = open_out "polyround_sweep.scad" in
-  Scad.write oc scad;
-  close_out oc
-
 let resample_path () =
   let path = [ v3 0. 0. 0.; v3 5. 5. 5.; v3 5. 5. 15. ] in
   (* let resampled = Path3.resample ~freq:(`N 10) path in *)
@@ -247,26 +137,6 @@ let poly_linear_extrude () =
          ~height:10.
     |> Mesh.to_scad
   and oc = open_out "poly_linear_extrude.scad" in
-  Scad.write oc scad;
-  close_out oc
-
-let polyround_linear_extrude () =
-  let scad =
-    Path2.square ~center:true (v2 3. 3.)
-    |> List.map (Vec3.of_vec2 ~z:0.5)
-    |> List.map (Vec3.translate (v3 1.5 1.5 0.))
-    |> PolyRound.polyround_extrude
-         ~slices:100
-         ~fn:10
-         ~cap_fn:30
-         ~scale:(v2 4. 4.)
-         ~twist:(2. *. Float.pi)
-         ~center:false
-         ~r1:0.5
-         ~r2:1.4
-         ~height:10.
-    |> Mesh.to_scad
-  and oc = open_out "polyround_linear_extrude.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -387,10 +257,10 @@ let offset_poly () =
 let offset_sweep () =
   let shape = Path2.square ~center:true (v2 3. 3.) in
   let shape_spec =
-    (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
+    (* Path2.Round.(flat ~corner:(circ (`Joint 2.))) shape *)
     Path2.Round.(flat ~corner:(circ (`Cut 0.5))) shape
-    (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
-    (* Rounding2.(flat ~spec:(bez ~curv:0.8 (`Joint 3.))) shape *)
+    (* Path2.Round.(flat ~corner:(chamf (`Width 0.5))) shape *)
+    (* Path2.Round.(flat ~corner:(bez ~curv:0.8 (`Joint 3.))) shape *)
   in
   let transforms =
     let step = 0.005 in
