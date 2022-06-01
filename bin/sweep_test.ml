@@ -25,7 +25,7 @@ let path () =
     let path = List.init (Int.of_float (1. /. step)) f in
     let transforms = Path3.to_transforms path in
     Mesh.(to_scad @@ sweep ~transforms elbow_shape)
-  and oc = open_out "ml_sweep_path.scad" in
+  and oc = open_out "sweep_path.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -42,7 +42,7 @@ let spiral_2d () =
   let scad =
     Mesh.sweep ~transforms:(List.init (Int.of_float (1. /. step) + 1) f) square
     |> Mesh.to_scad
-  and oc = open_out "ml_spiral.scad" in
+  and oc = open_out "spiral.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -62,7 +62,7 @@ let wave_cylinder () =
         (scaling (v3 1. (h +. (s *. Float.sin (rad (t *. 6.)))) 1.)))
   in
   let scad = Mesh.(to_scad @@ sweep ~transforms:(List.init ((360 / 4) + 1) f) shape)
-  and oc = open_out "ml_wave_cylinder.scad" in
+  and oc = open_out "wave_cylinder.scad" in
   Scad.write oc scad;
   close_out oc
 
@@ -112,7 +112,6 @@ let arc_points_3d () =
 
 let resample_path () =
   let path = [ v3 0. 0. 0.; v3 5. 5. 5.; v3 5. 5. 15. ] in
-  (* let resampled = Path3.resample ~freq:(`N 10) path in *)
   let resampled = Path3.resample ~freq:(`Spacing 1.) path in
   let old_marks =
     let s = Scad.color Color.Red @@ Scad.sphere 0.5 in
@@ -145,14 +144,13 @@ let helix_path () =
     let pts = Path3.helix ~left:false ~pitch:5. ~n_turns:10 ~r2:10. 5. in
     let s = Scad.color Color.Red @@ Scad.sphere 1. in
     Scad.union @@ List.map (fun p -> Scad.translate p s) pts
-  and oc = open_out "helix_path.scad" in
+  and oc = open_out "helix_path_points.scad" in
   Scad.write oc scad;
   close_out oc
 
 let helix_sweep () =
   let scad =
     let path = Path3.helix ~left:true ~pitch:30. ~n_turns:10 ~r2:100. 50. in
-    (* let transforms = Path3.to_transforms ~euler:true path in *)
     let transforms =
       Path3.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
     in
@@ -215,11 +213,7 @@ let rounding_basic () =
   let shape = Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ] in
   let shape_spec =
     let radii = [ 1.; 1.5; 0.1; 10.; 0.8; 10. ] in
-    Path2.Round.(mix (List.map2 (fun p r -> p, Some (circ (`Radius r))) shape radii))
-    (* Rounding2.(flat ~spec:(circ (`Joint 2.))) shape *)
-    (* Rounding2.(flat ~spec:(circ (`Cut 0.5))) shape *)
-    (* Rounding2.(flat ~spec:(chamf (`Width 0.5))) shape *)
-    (* Rounding2.(flat ~spec:(bez ~curv:0.8 (`Joint 1.))) shape *)
+    Path2.Round.circles ~kind:`Radius (List.combine shape radii)
   in
   let scad =
     let rounded =
@@ -305,7 +299,7 @@ let offset_linear_extrude () =
            ~twist:(2. *. Float.pi)
            ~center:false
            ~caps:
-             Cap.{ top = round @@ circ (`Radius (-0.2)); bot = round @@ bez (`Cut 0.1) }
+             Cap.{ top = round @@ bez (`Joint 1.); bot = round @@ circ (`Radius (-0.5)) }
            ~height:10.)
     |> Mesh.to_scad
   and oc = open_out "offset_linear_extrude.scad" in
@@ -319,7 +313,7 @@ let bezier_path () =
     let s = Scad.color Color.Red @@ Scad.sphere 2. in
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
-    let path = Bezier2.(List.map Vec2.to_vec3 @@ curve ~fn:100 (of_path control_pts)) in
+    let path = List.map Vec2.to_vec3 @@ Bezier2.(curve ~fn:100 (of_path control_pts)) in
     Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
   in
   let scad = Scad.union (line :: marks)
