@@ -13,14 +13,18 @@ let () =
       v3 x y z
     in
     List.init (Int.of_float (1. /. step)) f
+  and poly =
+    [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
+    |> Path2.of_tups
+    |> Poly2.make
   in
   let () =
     let transforms = Path3.to_transforms path
     and oc = open_out "sweep_path.scad" in
-    (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms Elbow.poly));
+    (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms poly));
     close_out oc
   in
   let transforms = Path3.to_transforms ~euler:true path
   and oc = open_out "sweep_path_euler.scad" in
-  (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms Elbow.poly));
+  (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms poly));
   close_out oc
