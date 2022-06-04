@@ -13,5 +13,5 @@ dune build @examples
 mkdir -p "things"
 cd "things"
 for ex in ../_build/default/examples/*.exe; do
-    eval "./$ex"
+    eval "$ex"
 done

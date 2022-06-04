@@ -32,3 +32,13 @@
  (name examples)
  (deps
   (glob_files "*.exe")))
+
+; TODO: make a bash script tailored for this rather than having the long string here
+
+(rule
+ (alias run)
+ (deps
+  (glob_files "*.exe"))
+ (action
+  (bash
+   "cd $(dirname $(dirname $INSIDE_DUNE)); mkdir -p things; cd things; for ex in $INSIDE_DUNE/examples/*.exe; do eval $ex; done")))
