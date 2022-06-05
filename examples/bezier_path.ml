@@ -1,6 +1,6 @@
 open Scad_ml
 
-let bezier_path () =
+let () =
   let control_pts = Vec2.[ v 0. 10.; v 10. 40.; v 20. 40.; v 30. (-20.); v 40. (-40.) ]
   and square = Poly2.square ~center:true (v2 2. 2.) in
   let marks =
