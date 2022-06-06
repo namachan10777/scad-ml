@@ -1,6 +1,3 @@
-type two_d = TwoD
-type three_d = ThreeD
-
 type scad =
   | Cylinder of
       { r1 : float
@@ -12,7 +9,7 @@ type scad =
       ; fn : int option
       }
   | Cube of
-      { size : float * float * float
+      { size : Vec3.t
       ; center : bool
       }
   | Sphere of
@@ -22,7 +19,7 @@ type scad =
       ; fn : int option
       }
   | Square of
-      { size : float * float
+      { size : Vec2.t
       ; center : bool
       }
   | Circle of
@@ -32,7 +29,7 @@ type scad =
       ; fn : int option
       }
   | Polygon of
-      { points : (float * float) list
+      { points : Vec2.t list
       ; paths : int list list option
       ; convexity : int
       }
@@ -56,7 +53,7 @@ type scad =
       ; faces : int list list
       ; convexity : int
       }
-  | Mirror of (float * float * float) * scad
+  | Mirror of Vec3.t * scad
   | Projection of
       { src : scad
       ; cut : bool
@@ -68,7 +65,7 @@ type scad =
       ; convexity : int
       ; twist : int option
       ; slices : int
-      ; scale : float * float
+      ; scale : Vec2.t
       ; fn : int
       }
   | RotateExtrude of
@@ -79,12 +76,11 @@ type scad =
       ; fs : float option
       ; fn : int option
       }
-  | Scale of (float * float * float) * scad
-  | Resize of (float * float * float) * scad
+  | Scale of Vec3.t * scad
+  | Resize of Vec3.t * scad
   | Offset of
       { src : scad
-      ; offset : [ `Radius of float | `Delta of float ]
-      ; chamfer : bool
+      ; offset : [ `Radius of float | `Delta of float | `Chamfer of float ]
       }
   | Import of
       { file : string
@@ -96,26 +92,26 @@ type scad =
       ; convexity : int
       }
 
-type 'space t =
-  | D2 : scad -> two_d t
-  | D3 : scad -> three_d t
+type ('space, 'rot) t =
+  | D2 : scad -> (Vec2.t, float) t
+  | D3 : scad -> (Vec3.t, Vec3.t) t
 
-type d2 = two_d t
-type d3 = three_d t
+type d2 = (Vec2.t, float) t
+type d3 = (Vec3.t, Vec3.t) t
 
 let d2 scad = D2 scad
 let d3 scad = D3 scad
 
-let unpack : type a. a t -> scad = function
+let unpack : type a b. (a, b) t -> scad = function
   | D2 scad -> scad
   | D3 scad -> scad
 
-let map : type a. (scad -> scad) -> a t -> a t =
+let map : type a b. (scad -> scad) -> (a, b) t -> (a, b) t =
  fun f -> function
   | D2 scad -> D2 (f scad)
   | D3 scad -> D3 (f scad)
 
-let cylinder ?(center = false) ?fa ?fs ?fn r h =
+let cylinder ?(center = false) ?fa ?fs ?fn ~height:h r =
   d3 @@ Cylinder { r1 = r; r2 = r; h; center; fa; fs; fn }
 
 let cone ?(center = false) ?fa ?fs ?fn ~height r1 r2 =
@@ -142,70 +138,87 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
        ; fn
        }
 
-let translate p = map (fun scad -> Translate (p, scad))
-let rotate r = map (fun scad -> Rotate (r, scad))
-let rotate_about_pt r p t = translate p t |> rotate r |> translate (Vec3.negate p)
-let vector_rotate ax r = map (fun scad -> VectorRotate (ax, r, scad))
+let translate (type a b) (p : a) : (a, b) t -> (a, b) t = function
+  | D2 scad -> d2 @@ Translate (Vec3.of_vec2 p, scad)
+  | D3 scad -> d3 @@ Translate (p, scad)
+
+let rotate (type a b) (r : b) : (a, b) t -> (a, b) t = function
+  | D2 scad -> d2 @@ Rotate ({ x = 0.; y = 0.; z = r }, scad)
+  | D3 scad -> d3 @@ Rotate (r, scad)
+
+let rotate_about_pt (type a b) (r : b) (p : a) (t : (a, b) t) : (a, b) t =
+  let p' : a =
+    match t with
+    | D2 _ -> Vec2.negate p
+    | D3 _ -> Vec3.negate p
+  in
+  translate p t |> rotate r |> translate p'
+
+let vector_rotate ax r (D3 scad) = d3 @@ VectorRotate (ax, r, scad)
 
 let vector_rotate_about_pt ax r p t =
   translate p t |> vector_rotate ax r |> translate (Vec3.negate p)
 
-let multmatrix mat = map (fun scad -> MultMatrix (mat, scad))
-let quaternion q = map (fun scad -> MultMatrix (Quaternion.to_multmatrix q, scad))
+let multmatrix mat (D3 scad) = d3 @@ MultMatrix (mat, scad)
+let quaternion q (D3 scad) = d3 @@ MultMatrix (Quaternion.to_multmatrix q, scad)
 let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3.negate p)
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
-let empty_message n =
-  Printf.sprintf
-    "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
-    n
-    n
+let empty_exn n =
+  invalid_arg
+    (Printf.sprintf
+       "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
+       n
+       n )
 
-let union : type a. a t list -> a t =
+let union : type a b. (a, b) t list -> (a, b) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> union_2d ts
   | D3 _ :: _ -> union_3d ts
-  | []        -> failwith (empty_message "union")
+  | []        -> empty_exn "union"
 
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
 
-let minkowski : type a. a t list -> a t =
+let minkowski : type a b. (a, b) t list -> (a, b) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> minkowski_2d ts
   | D3 _ :: _ -> minkowski_3d ts
-  | []        -> failwith (empty_message "minkowski")
+  | []        -> empty_exn "minkowski"
 
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
 
-let hull : type a. a t list -> a t =
+let hull : type a b. (a, b) t list -> (a, b) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> hull_2d ts
   | D3 _ :: _ -> hull_3d ts
-  | []        -> failwith (empty_message "hull")
+  | []        -> empty_exn "hull"
 
-let difference (type a) (t : a t) (sub : a t list) =
+let difference (type a b) (t : (a, b) t) (sub : (a, b) t list) =
   map (fun scad -> Difference (scad, List.map unpack sub)) t
 
 let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
 let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
 
-let intersection : type a. a t list -> a t =
+let intersection : type a b. (a, b) t list -> (a, b) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> intersection_2d ts
   | D3 _ :: _ -> intersection_3d ts
-  | []        -> failwith (empty_message "intersection")
+  | []        -> empty_exn "intersection"
 
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
 
-let mirror ax = map (fun scad -> Mirror (ax, scad))
+let mirror (type a b) (ax : a) : (a, b) t -> (a, b) t = function
+  | D2 scad -> d2 @@ Mirror (Vec3.of_vec2 ax, scad)
+  | D3 scad -> d3 @@ Mirror (ax, scad)
+
 let projection ?(cut = false) (D3 src) = d2 @@ Projection { src; cut }
 
 let linear_extrude
@@ -214,7 +227,7 @@ let linear_extrude
     ?(convexity = 10)
     ?twist
     ?(slices = 20)
-    ?(scale = 1.0, 1.0)
+    ?(scale = Vec2.v 1. 1.)
     ?(fn = 16)
     (D2 src)
   =
@@ -223,15 +236,21 @@ let linear_extrude
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
   d3 @@ RotateExtrude { src; angle; convexity; fa; fs; fn }
 
-let scale factors = map (fun scad -> Scale (factors, scad))
-let resize new_dims = map (fun scad -> Resize (new_dims, scad))
-let offset ?(chamfer = false) offset (D2 src) = d2 @@ Offset { src; offset; chamfer }
+let scale (type a b) (factors : a) : (a, b) t -> (a, b) t = function
+  | D2 scad -> d2 @@ Scale (Vec3.of_vec2 factors, scad)
+  | D3 scad -> d3 @@ Scale (factors, scad)
+
+let resize (type a b) (new_dims : a) : (a, b) t -> (a, b) t = function
+  | D2 scad -> d2 @@ Resize (Vec3.of_vec2 new_dims, scad)
+  | D3 scad -> d3 @@ Resize (new_dims, scad)
+
+let offset offset (D2 src) = d2 @@ Offset { src; offset }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
 
 let legal_ext allowed file =
   let ext =
     let len = String.length file in
-    String.sub file (len - 3) 3 |> String.uncapitalize_ascii
+    String.uncapitalize_ascii @@ String.sub file (len - 3) 3
   in
   let rec aux = function
     | h :: t -> if String.equal ext h then Ok () else aux t
@@ -243,45 +262,68 @@ let import_2d ?dxf_layer ?convexity file =
   match legal_ext [ "dxf"; "svg" ] file with
   | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
   | Error ext ->
-    failwith
+    invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
 let import_3d ?convexity file =
   match legal_ext [ "stl"; "off"; "amf"; "3mf" ] file with
   | Ok ()     -> d3 (import ?convexity file)
   | Error ext ->
-    failwith
+    invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
 
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
 let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
 
 let to_string t =
-  let value_map f ~default = function
-    | Some x -> f x
-    | None   -> default
-  and deg_of_rad r = 180.0 *. r /. Float.pi in
-  let string_of_list f = function
+  let value_map = Util.value_map_opt
+  and deg_of_rad r = 180.0 *. r /. Float.pi
+  and buf_add_list b f = function
     | h :: t ->
-      List.fold_left
-        (fun acc a -> Printf.sprintf "%s, %s" acc (f a))
-        (Printf.sprintf "[%s" (f h))
-        t
-      ^ "]"
-    | []     -> "[]"
-  and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
-  and string_of_f_ fa fs fn =
-    [ Option.map (fun fa -> Printf.sprintf "$fa=%f" @@ deg_of_rad fa) fa
-    ; Option.map (fun fs -> Printf.sprintf "$fs=%f" fs) fs
-    ; Option.map (fun fn -> Printf.sprintf "$fn=%d" fn) fn
-    ]
-    |> List.filter_map Fun.id
-    |> function
-    | [] -> ""
-    | l  -> List.fold_left ( ^ ) ", " l
+      let append a =
+        Buffer.add_char b ',';
+        f b a
+      in
+      Buffer.add_char b '[';
+      f b h;
+      List.iter append t;
+      Buffer.add_char b ']'
+    | []     ->
+      let b = Buffer.create 2 in
+      Buffer.add_char b '[';
+      Buffer.add_char b ']'
   in
-  let rec arrange_elms indent =
-    List.fold_left (fun stmts scad -> stmts ^ print indent scad) ""
+  let buf_of_list f l =
+    let b = Buffer.create 512 in
+    buf_add_list b f l;
+    b
+  and buf_add_idxs b = buf_add_list b (fun b' i -> Buffer.add_string b' (Int.to_string i))
+  and buf_add_vec2 b Vec.{ x; y } =
+    Buffer.add_char b '[';
+    Buffer.add_string b (Float.to_string x);
+    Buffer.add_char b ',';
+    Buffer.add_string b (Float.to_string y);
+    Buffer.add_char b ']'
+  and buf_add_vec3 b Vec.{ x; y; z } =
+    Buffer.add_char b '[';
+    Buffer.add_string b (Float.to_string x);
+    Buffer.add_char b ',';
+    Buffer.add_string b (Float.to_string y);
+    Buffer.add_char b ',';
+    Buffer.add_string b (Float.to_string z);
+    Buffer.add_char b ']'
+  and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
+  and string_of_f_ fa fs (fn : int option) =
+    Printf.sprintf
+      "%s%s%s"
+      (value_map ~default:"" (fun fa -> Printf.sprintf ", $fa=%f" @@ deg_of_rad fa) fa)
+      (value_map ~default:"" (Printf.sprintf ", $fs=%f") fs)
+      (value_map ~default:"" (Printf.sprintf ", $fn=%i") fn)
+  in
+  let rec arrange_elms indent scads =
+    let buf = Buffer.create 100 in
+    List.iter (fun scad -> Buffer.add_string buf (print indent scad)) scads;
+    Buffer.contents buf
   and print indent = function
     | Cylinder { r1; r2; h; center; fa; fs; fn } ->
       Printf.sprintf
@@ -292,20 +334,20 @@ let to_string t =
         r2
         center
         (string_of_f_ fa fs fn)
-    | Cube { size = w, h, d; center } ->
-      Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent w h d center
+    | Cube { size = { x; y; z }; center } ->
+      Printf.sprintf "%scube(size=[%f, %f, %f], center=%B);\n" indent x y z center
     | Sphere { r; fa; fs; fn } ->
       Printf.sprintf "%ssphere(%f%s);\n" indent r (string_of_f_ fa fs fn)
-    | Square { size = w, h; center } ->
-      Printf.sprintf "%ssquare(size=[%f, %f], center=%B);\n" indent w h center
+    | Square { size = { x; y }; center } ->
+      Printf.sprintf "%ssquare(size=[%f, %f], center=%B);\n" indent x y center
     | Circle { r; fa; fs; fn } ->
       Printf.sprintf "%scircle(%f%s);\n" indent r (string_of_f_ fa fs fn)
     | Polygon { points; paths; convexity } ->
       Printf.sprintf
         "%spolygon(points=%s%s, convexity=%d);\n"
         indent
-        (string_of_list (fun (w, h) -> Printf.sprintf "[%f, %f]" w h) points)
-        ( Option.map (string_of_list (string_of_list string_of_int)) paths
+        (Buffer.contents @@ buf_of_list buf_add_vec2 points)
+        ( Option.map (fun ps -> Buffer.contents @@ buf_of_list buf_add_idxs ps) paths
         |> maybe_fmt ", paths=%s" )
         convexity
     | Text { text; size; font; halign; valign; spacing; direction; language; script; fn }
@@ -314,12 +356,12 @@ let to_string t =
         "%stext(\"%s\"%s%s%s%s%s%s%s%s%s);\n"
         indent
         text
-        (maybe_fmt ", size=\"%f\"" size)
+        (maybe_fmt ", size=%f" size)
         (maybe_fmt ", font=\"%s\"" font)
-        (Option.map Text.h_align_to_string halign |> maybe_fmt ", halign=\"%s\"")
-        (Option.map Text.v_align_to_string valign |> maybe_fmt ", valign=\"%s\"")
-        (maybe_fmt ", spacing=\"%f\"" spacing)
-        (Option.map Text.direction_to_string direction |> maybe_fmt ", direction=\"%s\"")
+        (maybe_fmt ", halign=\"%s\"" @@ Option.map Text.h_align_to_string halign)
+        (maybe_fmt ", valign=\"%s\"" @@ Option.map Text.v_align_to_string valign)
+        (maybe_fmt ", spacing=%f" spacing)
+        (maybe_fmt ", direction=\"%s\"" @@ Option.map Text.direction_to_string direction)
         (maybe_fmt ", language=\"%s\"" language)
         (maybe_fmt ", script=\"%s\"" script)
         (maybe_fmt ", $fn=\"%i\"" fn)
@@ -328,81 +370,81 @@ let to_string t =
         "%stranslate(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Rotate (r, scad) ->
       Printf.sprintf
         "%srotate(%s)\n%s"
         indent
-        (Vec3.deg_of_rad r |> Vec3.to_string)
-        (print (indent ^ "\t") scad)
+        (Vec3.to_string @@ Vec3.deg_of_rad r)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | VectorRotate (axis, r, scad) ->
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
         (deg_of_rad r)
         (Vec3.to_string axis)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | MultMatrix (mat, scad) ->
       Printf.sprintf
         "%smultmatrix(%s)\n%s"
         indent
         (MultMatrix.to_string mat)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Union elements ->
       Printf.sprintf
         "%sunion(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Intersection elements ->
       Printf.sprintf
         "%sintersection(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Difference (minuend, subtrahend) ->
       Printf.sprintf
         "%sdifference(){\n%s%s%s}\n"
         indent
-        (print (indent ^ "\t") minuend)
-        (arrange_elms (indent ^ "\t") subtrahend)
+        (print (Printf.sprintf "%s\t" indent) minuend)
+        (arrange_elms (Printf.sprintf "%s\t" indent) subtrahend)
         indent
     | Minkowski elements ->
       Printf.sprintf
         "%sminkowski(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Hull elements ->
       Printf.sprintf
         "%shull(){\n%s%s}\n"
         indent
-        (arrange_elms (indent ^ "\t") elements)
+        (arrange_elms (Printf.sprintf "%s\t" indent) elements)
         indent
     | Polyhedron { points; faces; convexity } ->
       Printf.sprintf
         "%spolyhedron(points=%s, faces=%s, convexity=%i);\n"
         indent
-        (string_of_list Vec3.to_string points)
-        (string_of_list (string_of_list string_of_int) faces)
+        (Buffer.contents @@ buf_of_list buf_add_vec3 points)
+        (Buffer.contents @@ buf_of_list buf_add_idxs faces)
         convexity
-    | Mirror ((x, y, z), scad) ->
+    | Mirror ({ x; y; z }, scad) ->
       Printf.sprintf
         "%smirror(v=[%f, %f, %f])\n%s"
         indent
         x
         y
         z
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Projection { src; cut } ->
       Printf.sprintf
         "%sprojection(cut=%B){\n%s%s}\n"
         indent
         cut
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
         indent
-    | LinearExtrude { src; height; center; convexity; twist; slices; scale = sx, sy; fn }
-      ->
+    | LinearExtrude
+        { src; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
       Printf.sprintf
         "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=[%f, %f], $fn=%d)\n\
          %s"
@@ -412,39 +454,39 @@ let to_string t =
         convexity
         (maybe_fmt "twist=%d, " twist)
         slices
-        sx
-        sy
+        x
+        y
         fn
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | RotateExtrude { src; angle; convexity; fa; fs; fn } ->
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
-        (Option.map deg_of_rad angle |> maybe_fmt "angle=%f")
+        (maybe_fmt "angle=%f" @@ Option.map deg_of_rad angle)
         convexity
         (string_of_f_ fa fs fn)
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | Scale (p, scad) ->
       Printf.sprintf
         "%sscale(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Resize (p, scad) ->
       Printf.sprintf
         "%sresize(%s)\n%s"
         indent
         (Vec3.to_string p)
-        (print (indent ^ "\t") scad)
-    | Offset { src; offset; chamfer } ->
+        (print (Printf.sprintf "%s\t" indent) scad)
+    | Offset { src; offset } ->
       Printf.sprintf
-        "%soffset(%s, chamfer=%B)\n%s"
+        "%soffset(%s)\n%s"
         indent
         ( match offset with
-        | `Radius r -> Printf.sprintf "r = %f" r
-        | `Delta d  -> Printf.sprintf "delta = %f" d )
-        chamfer
-        (print (indent ^ "\t") src)
+        | `Radius r  -> Printf.sprintf "r = %f" r
+        | `Delta d   -> Printf.sprintf "delta = %f" d
+        | `Chamfer d -> Printf.sprintf "delta = %f, chamfer=true" d )
+        (print (Printf.sprintf "%s\t" indent) src)
     | Import { file; convexity; dxf_layer } ->
       Printf.sprintf
         "%simport(\"%s\", convexity=%i%s);\n"
@@ -458,19 +500,20 @@ let to_string t =
         indent
         (Color.to_string color)
         (maybe_fmt ", alpha=%f" alpha)
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
     | Render { src; convexity } ->
       Printf.sprintf
         "%srender(convexity=%i)\n%s"
         indent
         convexity
-        (print (indent ^ "\t") src)
+        (print (Printf.sprintf "%s\t" indent) src)
   in
   print "" (unpack t)
 
-let write oc t =
+let to_file path t =
+  let oc = open_out path in
   Printf.fprintf oc "%s" (to_string t);
-  flush oc
+  close_out oc
 
 module Infix = struct
   let ( |>> ) t p = translate p t

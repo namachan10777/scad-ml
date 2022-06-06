@@ -1,18 +1,33 @@
 (** Provides functions for the creation of and operations between
     {{:https://en.wikipedia.org/wiki/Quaternion} quaternions}. These can be used
-    to create composable and interpolatable rotations to be applied to vectors
-    (e.g. {!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
+    to create composable and interpolatable rotations to be applied to 3d vectors
+    ({!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
 
-type t = float * float * float * float
+type t
 
 (** The identity quaternion: [(0., 0., 0., 1.)] *)
 val id : t
+
+(** [coefficients t]
+
+    Returns the imaginary (xyz) and real (w) parts which describe the quaternion [t]. *)
+val coefficients : t -> float * float * float * float
 
 (** [make ax angle]
 
     Create a quaternion representing a rotation of [angle] (in radians) around
     the vector [ax]. *)
 val make : Vec3.t -> float -> t
+
+(** [of_euler v]
+
+    Create a quaternion equivalent to the Euler angle rotations represented by [v]. *)
+val of_euler : Vec3.t -> t
+
+(** [to_euler t]
+
+    Convert the quaternion [t] to equivalent Euler angles. *)
+val to_euler : t -> Vec3.t
 
 (** {1 Basic Arithmetic} *)
 
@@ -36,32 +51,32 @@ val mul : t -> t -> t
     Negation of all elements of [t]. *)
 val negate : t -> t
 
-(** [add_scalar t s]
+(** [sadd t s]
 
     Add [s] to the magnitude of [t], leaving the imaginary parts unchanged. *)
-val add_scalar : t -> float -> t
+val sadd : t -> float -> t
 
-(** [sub_scalar t s]
+(** [ssub t s]
 
     Subtract [s] from the magnitude of [t], leaving the imaginary parts
     unchanged. *)
-val sub_scalar : t -> float -> t
+val ssub : t -> float -> t
 
-(** [scalar_sub_quat t s]
+(** [ssub_neg t s]
 
     Negate the imaginary parts of [t], and subtract the magnitude from [s] to
     obtain the new magnitude. *)
-val scalar_sub_quat : t -> float -> t
+val ssub_neg : t -> float -> t
 
-(** [mul_scalar t s]
+(** [smul t s]
 
     Element-wise multiplication of [t] by [s]. *)
-val mul_scalar : t -> float -> t
+val smul : t -> float -> t
 
 (** [div_scalar t s]
 
     Element-wise division of [t] by [s]. *)
-val div_scalar : t -> float -> t
+val sdiv : t -> float -> t
 
 (** {1 Vector Math} *)
 
@@ -96,7 +111,13 @@ val distance : t -> t -> float
 (** {1 Matrix Conversions} *)
 
 val of_rotmatrix : RotMatrix.t -> t
-val to_multmatrix : t -> MultMatrix.t
+val to_rotmatrix : t -> RotMatrix.t
+
+(** [to_multmatrix ?trans t]
+
+    Convert quaternion [t] into a {!MultMatrix.t}, optionally providing a
+    translation vector [trans] to tack on. *)
+val to_multmatrix : ?trans:Vec3.t -> t -> MultMatrix.t
 
 (** {1 Utilities} *)
 

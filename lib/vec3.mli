@@ -1,96 +1,25 @@
-type t = float * float * float
+type t = Vec.v3 =
+  { x : float
+  ; y : float
+  ; z : float
+  }
 
-(** Zero vector = [(0., 0., 0.)] *)
-val zero : t
+include Vec.S with type t := t
 
-val equal : t -> t -> bool
+(** [v x y z]
 
-(** {1 Basic Arithmetic} *)
+    Construct a vector from [x], [y], and [z] coordinates. *)
+val v : float -> float -> float -> t
 
-(** [horizontal_op f a b]
+(** [of_tup (x, y, z)]
 
-    Hadamard (element-wise) operation between vectors [a] and [b] using the
-    function [f]. *)
-val horizontal_op : (float -> float -> float) -> t -> t -> t
+    Construct a vector from a tuple of xyz coordinates. *)
+val of_tup : float * float * float -> t
 
-(** [add a b]
+(** [to_tup t]
 
-    Hadamard (element-wise) addition of vectors [a] and [b]. *)
-val add : t -> t -> t
-
-(** [sub a b]
-
-    Hadamard (element-wise) subtraction of vector [b] from [a]. *)
-val sub : t -> t -> t
-
-(** [mul a b]
-
-    Hadamard (element-wise) product of vectors [a] and [b]. *)
-val mul : t -> t -> t
-
-(** [div a b]
-
-    Hadamard (element-wise) division of vector [a] by [b]. *)
-val div : t -> t -> t
-
-(** [negate t]
-
-    Negation of all elements of [t]. *)
-val negate : t -> t
-
-(** [add_scalar t s]
-
-    Element-wise addition of [s] to [t]. *)
-val add_scalar : t -> float -> t
-
-(** [sub_scalar t s]
-
-    Element-wise subtraction of [s] from [t]. *)
-val sub_scalar : t -> float -> t
-
-(** [mul_scalar t s]
-
-    Element-wise multiplication of [t] by [s]. *)
-val mul_scalar : t -> float -> t
-
-(** [div_scalar t s]
-
-    Element-wise division of [t] by [s]. *)
-val div_scalar : t -> float -> t
-
-(** {1 Vector Math} *)
-
-(** [norm t]
-
-    Calculate the vector norm (a.k.a. magnitude) of [t]. *)
-val norm : t -> float
-
-(** [distance a b]
-
-    Calculate the magnitude of the difference (Hadamard subtraction) between [a]
-    and [b]. *)
-val distance : t -> t -> float
-
-(** [normalize t]
-
-    Normalize [t] to a vector for which the magnitude is equal to 1.
-    e.g. [norm (normalize t) = 1.] *)
-val normalize : t -> t
-
-(** [dot a b]
-
-    Vector dot product of [a] and [b]. *)
-val dot : t -> t -> float
-
-(** [cross a b]
-
-    Vector cross product of [a] and [b]. *)
-val cross : t -> t -> t
-
-(** [mean l]
-
-    Calculate the mean / average of all vectors in [l]. *)
-val mean : t list -> t
+    Convert the vector [t] to a tuple of xyz coordinates. *)
+val to_tup : t -> float * float * float
 
 (** {1 Transformations}
 
@@ -147,47 +76,10 @@ val mirror : t -> t -> t
     Project [t] onto the XY plane. *)
 val projection : t -> t
 
-(** {1 Utilities} *)
-
-val map : (float -> 'b) -> t -> 'b * 'b * 'b
-val get_x : t -> float
-val get_y : t -> float
-val get_z : t -> float
-val to_string : t -> string
-
-(** [deg_of_rad t]
-
-    Element-wise conversion of [t] from radians to degrees. *)
-val deg_of_rad : t -> t
-
-(** [rad_to_deg t]
-
-    Element-wise conversion of [t] from degrees to radians. *)
-val rad_of_deg : t -> t
-
 (** {1 2d - 3d conversion} *)
 
-val to_vec2 : t -> float * float
-val of_vec2 : float * float -> t
+(** [of_vec2 ?z v]
 
-(** {1 Infix operations} *)
-
-(** [a <+> b]
-
-    Hadamard (element-wise) addition of [a] and [b]. *)
-val ( <+> ) : t -> t -> t
-
-(** [a <-> b]
-
-    Hadamard (element-wise) subtraction of [b] from [a]. *)
-val ( <-> ) : t -> t -> t
-
-(** [a <*> b]
-
-    Hadamard (element-wise) product of [a] and [b]. *)
-val ( <*> ) : t -> t -> t
-
-(** [a </> b]
-
-    Hadamard (element-wise) division of [a] by [b]. *)
-val ( </> ) : t -> t -> t
+    Create a 3d vector from the 2d vector [v] by adding a [z] coordinate
+    (default = [0.]) *)
+val of_vec2 : ?z:float -> Vec.v2 -> t

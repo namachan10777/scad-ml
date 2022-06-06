@@ -1,4 +1,6 @@
-(lang dune 2.9)
+(lang dune 3.2)
+
+(using directory-targets 0.1)
 
 (cram enable)
 
@@ -28,4 +30,6 @@
   "Scad_ml is an OCaml front-end to the OpenSCAD CAD programming language.")
  (depends
   (ocaml
-   (>= 4.08.0))))
+   (>= 4.08.0))
+  (cairo2
+   (>= 0.6.2))))

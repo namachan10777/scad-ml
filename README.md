@@ -12,30 +12,29 @@ and transformation functions are made available.
   OpenSCAD).
 - The dimensional system (2D or 3D) each shape inhabits is tracked by the type
   system. This is used to restrict the operations that can be legally applied
-  (e.g. `linear_extrude` can only be applied to 2D shapes) and enforcing
-  non-mixing of 2D and 3D shapes during boolean operations.
+  (e.g. 2D shapes cannot be moved off of the xy plane, `linear_extrude` can only
+  be applied to 2D shapes) and enforcing non-mixing of 2D and 3D shapes during
+  boolean operations.
 
 ## Usage
 
 ``` ocaml
 open Scad_ml
 
-let scad_logo =
-  let rad = 5.
-  and fn = 720 in
-  let cyl = Scad.cylinder ~fn ~center:true (rad /. 2.) (rad *. 2.3) in
-  let cross_cyl = Scad.rotate (0., Float.pi /. 2., 0.) cyl in
-  Scad.union
-    [ Scad.difference
-        (Scad.sphere ~fn rad)
-        [ cyl; cross_cyl; Scad.rotate (0., 0., Float.pi /. 2.) cross_cyl ]
-    ; Scad.color ~alpha:0.25 Color.Magenta cross_cyl
-    ]
-
 let () =
-  let oc = open_out "/path/to/things/scad_logo.scad" in
-  Scad.write oc scad_logo;
-  close_out oc
+  let scad_logo =
+    let rad = 5.
+    and fn = 720 in
+    let cyl = Scad.cylinder ~fn ~center:true ~height:(rad *. 2.3) (rad /. 2.) in
+    let cross_cyl = Scad.rotate (v3 0. (Float.pi /. 2.) 0.) cyl in
+    Scad.union
+      [ Scad.difference
+          (Scad.sphere ~fn rad)
+          [ cyl; cross_cyl; Scad.rotate (v3 0. 0. (Float.pi /. 2.)) cross_cyl ]
+      ; Scad.color ~alpha:0.25 Color.Magenta cross_cyl
+      ]
+  in
+  Scad.to_file "scad_logo.scad" scad_logo
 ```
 
 ![OpenSCAD logo](images/scad_logo.png)

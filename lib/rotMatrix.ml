@@ -1,3 +1,5 @@
+open Vec
+
 type t = float array array
 
 let of_row_list_exn l =
@@ -11,7 +13,7 @@ let of_row_list_exn l =
     in
     List.iteri set_row l;
     mat )
-  else failwith "Rotation matrix must have 3 rows."
+  else invalid_arg "Rotation matrix must have 3 rows."
 
 let of_row_list l =
   try Ok (of_row_list_exn l) with
@@ -28,24 +30,10 @@ let of_col_list_exn l =
     in
     List.iteri set_col l;
     mat )
-  else failwith "Rotation matrix must have 3 columns."
+  else invalid_arg "Rotation matrix must have 3 columns."
 
 let of_col_list l =
   try Ok (of_col_list_exn l) with
-  | Failure e -> Error e
-
-let align_exn a b =
-  if Vec3.(
-       equal a b || equal a (negate b) || equal a (0., 0., 0.) || equal b (0., 0., 0.))
-  then failwith "Vectors must not be equal or zero."
-  else (
-    let x = Vec3.normalize a
-    and z = Vec3.(normalize (cross a b)) in
-    let y = Vec3.(normalize (cross z x)) in
-    of_col_list_exn [ x; y; z ] )
-
-let align a b =
-  try Ok (align_exn a b) with
   | Failure e -> Error e
 
 let to_euler t =
@@ -56,10 +44,24 @@ let to_euler t =
       (Float.sqrt ((t.(2).(1) *. t.(2).(1)) +. (t.(2).(2) *. t.(2).(2))))
   in
   let z = Float.atan2 t.(1).(0) t.(0).(0) in
-  x, y, z
+  Vec3.v x y z
 
-let trace t = t.(0).(0) +. t.(1).(1) +. t.(2).(2)
-let get t r c = t.(r).(c)
+let transform t { x; y; z } =
+  let v = [| x; y; z |]
+  and a = Array.make 3 0. in
+  for i = 0 to 2 do
+    for j = 0 to 2 do
+      a.(i) <- a.(i) +. (t.(i).(j) *. v.(j))
+    done
+  done;
+  v3 a.(0) a.(1) a.(2)
+
+let to_string t =
+  let row i =
+    let comma = if i < 2 then "," else "" in
+    Printf.sprintf "[%f, %f, %f]%s" t.(i).(0) t.(i).(1) t.(i).(2) comma
+  in
+  Printf.sprintf "[ %s\n %s\n %s ]" (row 0) (row 1) (row 2)
 
 include (
   SquareMatrix.Make (struct

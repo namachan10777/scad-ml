@@ -1,0 +1,49 @@
+(executables
+ (names
+  runner_
+  rounded_text
+  wave_cylinder
+  spiral
+  rounded_linear_extrude
+  rounded_polyhole_sweep
+  helix_extrude
+  bezier_path
+  cartesian_gravity_well
+  spline
+  poly2d_to_scad
+  rounded_prism_pointy
+  poly_linear_extrude
+  arc_points_2d
+  arc_points_3d
+  ragged_tri_array_mesh
+  polar_rose
+  sweep_path
+  offset_poly
+  axial_chalice
+  polyholes
+  helix_sweep
+  resampled_path
+  sweep_starburst
+  circular_rounding
+  rounded_prism_tunnel
+  helix_path_points)
+ (libraries scad_ml))
+
+; Convenience rule/alias for building and running examples (output to things diectory)
+; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.
+
+(rule
+ (alias examples)
+ (deps
+  ; (sandbox always)
+  "runner_.exe"
+  (:scads
+   (glob_files "*[!_].exe")))
+ ; (targets
+ ;  (dir "things"))
+ ; (mode
+ ;  (promote (until-clean)))
+ (action
+  (chdir
+   "things"
+   (run ./../runner_.exe %{scads}))))
