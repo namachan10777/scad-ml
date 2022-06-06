@@ -2,7 +2,7 @@ open Cairo
 open Vec
 module Bez = Bezier.Make (Vec2)
 
-let pathdata_to_outlines ?(fn = 5) data =
+let path_to_outlines ?(fn = 5) data =
   let f (paths, ps, last_p) = function
     | MOVE_TO (x, y) -> paths, ps, v2 x y
     | LINE_TO (x, y) -> paths, last_p :: ps, v2 x y
@@ -17,7 +17,7 @@ let pathdata_to_outlines ?(fn = 5) data =
       in
       path :: paths, [], last_p
   in
-  let paths, _, _ = Array.fold_left f ([], [], v2 0. 0.) data in
+  let paths, _, _ = Path.fold data f ([], [], v2 0. 0.) in
   List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) paths
 
 let text ?fn ?(center = false) ?slant ?weight ?(size = 10.) ~font txt =
@@ -37,7 +37,7 @@ let text ?fn ?(center = false) ?slant ?weight ?(size = 10.) ~font txt =
     let s = String.make 1 c in
     Path.text ctxt s;
     let acc =
-      match pathdata_to_outlines ?fn Path.(to_array @@ copy ctxt) with
+      match path_to_outlines ?fn (Path.copy ctxt) with
       | []          -> acc
       | outer :: tl ->
         let rec aux polys outer holes = function
