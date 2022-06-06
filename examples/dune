@@ -1,5 +1,6 @@
 (executables
  (names
+  runner_
   rounded_text
   wave_cylinder
   spiral
@@ -33,29 +34,21 @@
  (deps
   (glob_files "*.exe")))
 
-; TODO: make a bash script tailored for this rather than having the long string here
-
 ; Convenience rule/alias for building and running examples (output to things diectory)
 ; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.
-
-; (rulexamples/e
-;  (alias run)
-;  (deps
-;   (glob_files "*.exe"))
-;  (action
-;   (bash
-;    "cd $(dirname $(dirname $INSIDE_DUNE)); mkdir -p things; cd things; for ex in $INSIDE_DUNE/examples/*.exe; do eval $ex; done")))
 
 (rule
  (alias run)
  (deps
-  (glob_files "*.exe"))
- ; (targets "things")
- (targets
-  (dir "things"))
- (mode
-  (promote (until-clean)))
+  ; (sandbox always)
+  "runner_.exe"
+  (:scads
+   (glob_files "*[!_].exe")))
+ ; (targets
+ ;  (dir "things"))
+ ; (mode
+ ;  (promote (until-clean)))
  (action
   (chdir
    "things"
-   (bash "for ex in $INSIDE_DUNE/examples/*.exe; do eval $ex; done"))))
+   (run ./../runner_.exe %{scads}))))
