@@ -28,6 +28,5 @@ let () =
         bot
         top)
     |> Mesh.to_scad
-  and oc = open_out "rounded_prism_tunnel.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "rounded_prism_tunnel.scad" scad

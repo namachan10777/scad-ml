@@ -1,6 +1,6 @@
 open Scad_ml
 
-let  () =
+let () =
   let shape =
     Poly2.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
   in
@@ -15,6 +15,5 @@ let  () =
       |> Scad.color ~alpha:0.5 Color.Silver
     in
     Scad.union [ rounded; pointy ]
-  and oc = open_out "offset_poly.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "offset_poly.scad" scad

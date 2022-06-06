@@ -25,6 +25,5 @@ let () =
       Mesh.to_scad mesh
     in
     Scad.union @@ List.map f hello
-  and oc = open_out "rounded_text.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "rounded_text.scad" scad

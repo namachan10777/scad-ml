@@ -10,6 +10,5 @@ let () =
          ~center:false
          ~height:10.
     |> Mesh.to_scad
-  and oc = open_out "poly_linear_extrude.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "poly_linear_extrude.scad" scad

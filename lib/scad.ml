@@ -510,9 +510,10 @@ let to_string t =
   in
   print "" (unpack t)
 
-let write oc t =
+let to_file path t =
+  let oc = open_out path in
   Printf.fprintf oc "%s" (to_string t);
-  flush oc
+  close_out oc
 
 module Infix = struct
   let ( |>> ) t p = translate p t

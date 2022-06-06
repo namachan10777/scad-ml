@@ -10,6 +10,5 @@ let () =
         |> Scad.translate p )
       arc
     |> Scad.union
-  and oc = open_out "arc_points_2d.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "arc_points_2d.scad" scad

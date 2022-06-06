@@ -21,6 +21,5 @@ let () =
       |> Scad.color ~alpha:0.5 Color.BlueViolet
     in
     Scad.union [ poly; reference ]
-  and oc = open_out "polyholes.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "polyholes.scad" scad

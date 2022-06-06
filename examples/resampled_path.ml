@@ -10,7 +10,5 @@ let () =
     let s = Scad.color ~alpha:0.1 Color.Yellow @@ Scad.sphere 1.0 in
     List.map (fun p -> Scad.translate p s) resampled
   in
-  let scad = Scad.union (old_marks @ new_marks)
-  and oc = open_out "resampled_path.scad" in
-  Scad.write oc scad;
-  close_out oc
+  let scad = Scad.union (old_marks @ new_marks) in
+  Scad.to_file "resampled_path.scad" scad

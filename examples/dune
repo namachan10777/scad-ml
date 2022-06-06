@@ -29,16 +29,11 @@
   helix_path_points)
  (libraries scad_ml))
 
-(alias
- (name examples)
- (deps
-  (glob_files "*.exe")))
-
 ; Convenience rule/alias for building and running examples (output to things diectory)
 ; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.
 
 (rule
- (alias run)
+ (alias examples)
  (deps
   ; (sandbox always)
   "runner_.exe"

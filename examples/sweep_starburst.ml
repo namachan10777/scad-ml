@@ -22,12 +22,10 @@ let () =
         Mesh.to_scad @@ Mesh.sweep ~transforms poly
       in
       Scad.union @@ (flat :: List.map f paths)
-    and oc =
-      open_out
-        (Printf.sprintf "sweep_starburst_%s.scad" (if euler then "euler" else "default"))
+    and name =
+      Printf.sprintf "sweep_starburst_%s.scad" (if euler then "euler" else "default")
     in
-    Scad.write oc scad;
-    close_out oc
+    Scad.to_file name scad
   in
   build false;
   build true

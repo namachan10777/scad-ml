@@ -10,7 +10,5 @@ let () =
     let path = Path3.of_path2 CubicSpline.(interpolate_path (fit control_pts) 100) in
     Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
   in
-  let scad = Scad.union (line :: marks)
-  and oc = open_out "spline.scad" in
-  Scad.write oc scad;
-  close_out oc
+  let scad = Scad.union (line :: marks) in
+  Scad.to_file "spline.scad" scad

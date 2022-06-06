@@ -12,6 +12,5 @@ let () =
       Path3.to_transforms ~twist:(-240. /. 180. *. Float.pi) ~euler:false path
     in
     Mesh.(to_scad @@ sweep ~transforms poly)
-  and oc = open_out "helix_sweep.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "helix_sweep.scad" scad

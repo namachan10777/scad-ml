@@ -1,4 +1,6 @@
-(** The core module of this library. Containing the core type, and all operations upon it.
+(** Build scad models with well-typed dimensional system (3d / 2d) aware
+    functions mapping down onto the similarly named operations made available
+    by the OpenSCAD language.
 
     OpenSCAD objects and the operations upon them are represented by the
     recursive type {!type:t}, which can then finally be translated into a scad
@@ -434,7 +436,7 @@ val rotate_extrude
     used to indicate a specific layer for import. Throws exception if the
     extension does not match (case insensitive) one of the following 2D formats:
     - DXF
-    - SVG {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
+    - SVG ({i Requires version 2019.05 of OpenSCAD}) *)
 val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
 
 (** [import_3d ?convexity file]
@@ -442,10 +444,10 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     Imports [file] for use in the current OpenSCAD model. The file extension is
     used to determine which type. Throws exception if the extension does not
     match (case insensitive) one of the following 3D formats:
-    - STL (both ASCII and Binary)
+    - STL ({i both ASCII and Binary})
     - OFF
-    - AMF {b Note: } {i Requires version 2019.05 of OpenSCAD }
-    - 3MF {b Note: } {i Requires version 2019.05 of OpenSCAD } *)
+    - AMF ({i Requires version 2019.05 of OpenSCAD })
+    - 3MF ({i Requires version 2019.05 of OpenSCAD }) *)
 val import_3d : ?convexity:int -> string -> d3
 
 (** {1 Output} *)
@@ -455,11 +457,11 @@ val import_3d : ?convexity:int -> string -> d3
     Convert the scad [t] to a string in the OpenSCAD language. *)
 val to_string : ('s, 'r) t -> string
 
-(** [write oc t]
+(** [to_file path t]
 
-    Write the scad [t] to the given [out_channel] (typically a file), as an
-    OpenSCAD script (using {!to_string}). *)
-val write : out_channel -> ('s, 'r) t -> unit
+    Write the scad [t] to a file at the given [path], as an OpenSCAD script
+    (using {!to_string}). *)
+val to_file : string -> ('s, 'r) t -> unit
 
 (** {1 Infix Operators} *)
 

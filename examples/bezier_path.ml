@@ -10,7 +10,5 @@ let () =
     let path = List.map Vec2.to_vec3 @@ Bezier2.(curve ~fn:100 (of_path control_pts)) in
     Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
   in
-  let scad = Scad.union (line :: marks)
-  and oc = open_out "bezier_path.scad" in
-  Scad.write oc scad;
-  close_out oc
+  let scad = Scad.union (line :: marks) in
+  Scad.to_file "bezier_path.scad" scad

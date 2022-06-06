@@ -16,6 +16,5 @@ let () =
       50.
       poly
     |> Mesh.to_scad
-  and oc = open_out "helix_extrude.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "helix_extrude.scad" scad

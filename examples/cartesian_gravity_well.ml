@@ -15,6 +15,5 @@ let () =
       ~max_y:10.
       gravity_well
     |> Mesh.to_scad
-  and oc = open_out "cartesian_gravity_well.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "cartesian_gravity_well.scad" scad

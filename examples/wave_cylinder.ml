@@ -15,7 +15,5 @@ let () =
         (mul (rotation (v3 (rad 90.) 0. (rad t))) (translation (v3 r 0. 0.)))
         (scaling (v3 1. (h +. (s *. Float.sin (rad (t *. 6.)))) 1.)))
   in
-  let scad = Mesh.(to_scad @@ sweep ~transforms:(List.init ((360 / 4) + 1) f) shape)
-  and oc = open_out "wave_cylinder.scad" in
-  Scad.write oc scad;
-  close_out oc
+  let scad = Mesh.(to_scad @@ sweep ~transforms:(List.init ((360 / 4) + 1) f) shape) in
+  Scad.to_file "wave_cylinder.scad" scad

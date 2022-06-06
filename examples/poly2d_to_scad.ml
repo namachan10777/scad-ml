@@ -9,6 +9,5 @@ let () =
       Path2.[ s; translate (v2 (-2.) (-2.)) s; translate (v2 2. 2.) s ]
     and outer = Path2.square ~center:true (v2 10. 10.) in
     Poly2.(to_scad @@ make ~holes outer)
-  and oc = open_out "poly2d_to_scad.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "poly2d_to_scad.scad" scad

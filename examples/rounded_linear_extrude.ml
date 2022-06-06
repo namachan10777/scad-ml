@@ -16,6 +16,5 @@ let () =
              Cap.{ top = round @@ bez (`Joint 1.); bot = round @@ circ (`Radius (-0.5)) }
            ~height:10.)
     |> Mesh.to_scad
-  and oc = open_out "rounded_linear_extrude.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "rounded_linear_extrude.scad" scad

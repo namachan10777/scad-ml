@@ -16,6 +16,5 @@ let () =
       |> Scad.color ~alpha:0.5 Color.Silver
     in
     Scad.union [ rounded; pointy ]
-  and oc = open_out "circular_rounding.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "circular_rounding.scad" scad

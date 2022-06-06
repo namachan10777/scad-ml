@@ -19,12 +19,8 @@ let () =
     |> Poly2.make
   in
   let () =
-    let transforms = Path3.to_transforms path
-    and oc = open_out "sweep_path.scad" in
-    (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms poly));
-    close_out oc
+    let transforms = Path3.to_transforms path in
+    Scad.to_file "sweep_path.scad" @@ Mesh.(to_scad @@ sweep ~transforms poly)
   in
-  let transforms = Path3.to_transforms ~euler:true path
-  and oc = open_out "sweep_path_euler.scad" in
-  (Scad.write oc @@ Mesh.(to_scad @@ sweep ~transforms poly));
-  close_out oc
+  let transforms = Path3.to_transforms ~euler:true path in
+  Scad.to_file "sweep_path_euler.scad" @@ Mesh.(to_scad @@ sweep ~transforms poly)

@@ -18,6 +18,5 @@ let () =
         ~height:5.
         bot)
     |> Mesh.to_scad
-  and oc = open_out "rounded_prism_pointy.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "rounded_prism_pointy.scad" scad

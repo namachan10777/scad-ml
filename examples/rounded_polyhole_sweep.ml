@@ -28,6 +28,5 @@ let () =
         (Poly2.make ~holes outer))
     |> Mesh.merge_points
     |> Mesh.to_scad
-  and oc = open_out "rounded_polyhole_sweep.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "rounded_polyhole_sweep.scad" scad

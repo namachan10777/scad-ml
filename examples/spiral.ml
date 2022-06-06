@@ -13,6 +13,5 @@ let () =
   let scad =
     Mesh.sweep ~transforms:(List.init (Int.of_float (1. /. step) + 1) f) square
     |> Mesh.to_scad
-  and oc = open_out "spiral.scad" in
-  Scad.write oc scad;
-  close_out oc
+  in
+  Scad.to_file "spiral.scad" scad
