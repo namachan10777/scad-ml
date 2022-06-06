@@ -1,24 +1,7 @@
-(** Types pertaining to the configuration of OpenSCAD text objects. *)
-
 type h_align =
   | Left
   | Center
   | Right
-
-let h_align_to_string = function
-  | Left   -> "left"
-  | Center -> "center"
-  | Right  -> "right"
-
-type v_align =
-  | Top
-  | Center
-  | Baseline
-
-let v_align_to_string = function
-  | Top      -> "top"
-  | Center   -> "center"
-  | Baseline -> "baseline"
 
 type direction =
   | LeftToRight
@@ -26,11 +9,10 @@ type direction =
   | TopToBottom
   | BottomToTop
 
-let direction_to_string = function
-  | LeftToRight -> "ltr"
-  | RightToLeft -> "rtl"
-  | TopToBottom -> "ttb"
-  | BottomToTop -> "btt"
+type v_align =
+  | Top
+  | Center
+  | Baseline
 
 type t =
   { text : string
@@ -44,3 +26,19 @@ type t =
   ; script : string option
   ; fn : int option
   }
+
+let h_align_to_string = function
+  | Left   -> "left"
+  | Center -> "center"
+  | Right  -> "right"
+
+let v_align_to_string = function
+  | Top      -> "top"
+  | Center   -> "center"
+  | Baseline -> "baseline"
+
+let direction_to_string = function
+  | LeftToRight -> "ltr"
+  | RightToLeft -> "rtl"
+  | TopToBottom -> "ttb"
+  | BottomToTop -> "btt"

@@ -1,7 +1,42 @@
 (** {1 OpenSCAD DSL} *)
 
 module Scad = Scad
-module Text = Text
+
+(** OpenSCAD text configuration types. *)
+module Text : sig
+  (** Horizontal alignment *)
+  type h_align = Text.h_align =
+    | Left
+    | Center
+    | Right
+
+  (** Verticle alignment *)
+  type v_align = Text.v_align =
+    | Top
+    | Center
+    | Baseline
+
+  (** Reading direction *)
+  type direction = Text.direction =
+    | LeftToRight
+    | RightToLeft
+    | TopToBottom
+    | BottomToTop
+end =
+  Text
+
+(** OpenSCAD colour specification type.
+
+   A selection of hardcoded colours are available, along with aribtrary colours
+   by way of with the [RGB of float * float * float] and [Hex of string]
+   constructors.
+
+   - As in OpenSCAD, [RGB (r, g, b)] values are given as floats in the range of
+     [0.] to [1.], rather than the more traditional integers.
+   - [Hex v] values can be given in four formats: ["#rgb"], ["#rgba"],
+     ["#rgba"], and ["#rrggbbaa"]. If alpha is given both in the hex value, and
+     in the [?alpha] parameter to {!Scad.color}, the parameter will take
+     precedence. *)
 module Color = Color
 
 (** {1 Vectors} *)
