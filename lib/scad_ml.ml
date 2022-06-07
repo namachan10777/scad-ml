@@ -2,7 +2,13 @@
 
 module Scad = Scad
 
-(** OpenSCAD text configuration types. *)
+(** {2 Configuration Types}
+
+    These modules are provided at the top-level as convenient namespaces for
+    the configuration types taken as parameters to their corresponding model
+    building functions in {!module:Scad}. *)
+
+(** {!Scad.text} configuration parameter types *)
 module Text : sig
   (** Horizontal alignment *)
   type h_align = Text.h_align =
@@ -10,7 +16,7 @@ module Text : sig
     | Center
     | Right
 
-  (** Verticle alignment *)
+  (** Vertical alignment *)
   type v_align = Text.v_align =
     | Top
     | Center
@@ -25,7 +31,7 @@ module Text : sig
 end =
   Text
 
-(** OpenSCAD colour specification type.
+(** {!Scad.color} specification type
 
    A selection of hardcoded colours are available, along with aribtrary colours
    by way of with the [RGB of float * float * float] and [Hex of string]
@@ -39,7 +45,12 @@ end =
      precedence. *)
 module Color = Color
 
-(** {1 Vectors} *)
+(** {1 Vectors}
+
+    Spatial vectors used to transform {!Scad.t} shapes, and compose into
+    other types ({i e.g.} {!Path3.t}, {!Poly2.t}, and {!Mesh.t}) contained in
+    the modules below, which can in turn used to generate point based shapes to
+    be mapped into {!Scad.t}. *)
 
 (** 3-dimensional vector *)
 type v3 = Vec.v3 =

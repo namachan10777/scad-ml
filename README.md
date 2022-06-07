@@ -15,6 +15,10 @@ and transformation functions are made available.
   (e.g. 2D shapes cannot be moved off of the xy plane, `linear_extrude` can only
   be applied to 2D shapes) and enforcing non-mixing of 2D and 3D shapes during
   boolean operations.
+- Additional modules providing sweeps, roundovers, and more, inspired largely by
+  [BOSL2](https://github.com/revarbat/BOSL2), but also other OpenSCAD libraries such
+  as [dotSCAD](https://github.com/JustinSDK/dotSCAD/tree/master/src), and
+  [PlotFunction](https://github.com/rcolyer/plot-function).
 
 ## Usage
 
@@ -51,14 +55,18 @@ Online documentation is available
 There is a companion ppx, [\[@@deriving
 scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
 transformation functions for user-defined records and abstract types made up of
-the `Scad.t` and `Vec3.t` types provided in this library.
+the `Scad.t`, along with their corresponding vector (`Vec2.t` or `Vec3.t`) types
+(and those composed of them) provided in this library.
 
 ## Authors
 
 - [@namachan10777](https://github.com/namachan10777)
-  - Original author
+  - Original author of core DSL
 - [@geoffder](https://github.com/geoffder)
-  - Overhaul and add many functions
+  - Overhauled DSL with dimensional types
+  - Addional vector transformation modules (*e.g.* MultMatrix, Quaternion)
+  - Modules implementing 2d/3d vector point representations of shapes and
+    utilities operating upon them to enable sweeps, roundovers, etc.
 
 ## License
 

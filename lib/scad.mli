@@ -249,7 +249,6 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> d3 -> d3
     You can find a detailed explanation of how these are formed and interpreted
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
     here}. *)
-
 val multmatrix : MultMatrix.t -> d3 -> d3
 
 (** [quaternion q t]
