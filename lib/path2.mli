@@ -225,9 +225,13 @@ val point_inside
 val translate : Vec2.t -> t -> t
 val rotate : float -> t -> t
 val rotate_about_pt : float -> Vec2.t -> t -> t
+val multmatrix : MultMatrix.t -> t -> Vec3.t list
+val quaternion : Quaternion.t -> t -> Vec3.t list
+val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> Vec3.t list
+val vector_rotate : Vec3.t -> float -> t -> Vec3.t list
+val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> Vec3.t list
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
-val multmatrix : MultMatrix.t -> t -> Vec3.t list
 
 (** {1 Output} *)
 

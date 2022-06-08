@@ -75,7 +75,50 @@ let v2 : float -> float -> v2 = Vec.v2
     Construct a 3d vector from [x], [y], and [z] coordinates. *)
 let v3 : float -> float -> float -> v3 = Vec.v3
 
-module Vec2 = Vec2
+(** 2-dimensional vector type, including basic mathematical/geometrical
+    operations and transformations mirroring those found in {!module:Scad},
+    allowing for points in 2d space, and higher level types composed of them
+    ({i e.g.} {!Path2.t} and {!Poly2.t}) to be manipulated in
+    similar fashion to 2d OpenSCAD shapes ({!Scad.d2}). *)
+module Vec2 = struct
+  include Vec2
+
+  (** {1 2d to 3d transformations} *)
+
+  (** [multmatrix m t]
+
+      Apply affine transformation matrix [m] to the vector [t], taking it into
+      the 3rd dimension. *)
+  let multmatrix m { x; y } = MultMatrix.transform m (v3 x y 0.)
+
+  (** [quaternion q t]
+
+      Rotate [t] with the quaternion [q], taking it into the 3rd dimension. *)
+  let quaternion q { x; y } = Quaternion.rotate_vec3 q (v3 x y 0.)
+
+  (** [quaternion_about_pt q p t]
+
+      Translates [t] along the 3d vector [p] taking it out off the 2d plane,
+      rotating the resulting vector with the quaternion [q], and finally, moving
+      back along the vector [p].  Functionally, rotating about the point in space
+      arrived at by the initial translation along the vector [p]. *)
+  let quaternion_about_pt q p { x; y } = Quaternion.rotate_vec3_about_pt q p (v3 x y 0.)
+
+  (** [vector_rotate ax a t]
+
+      Rotates the vector [t] around the axis [ax] by the angle [a], taking it
+      into the third dimension. *)
+  let vector_rotate ax a { x; y } = Quaternion.(rotate_vec3 (make ax a) (v3 x y 0.))
+
+  (** [vector_rotate_about_pt ax a p t]
+
+      Translates [t] along the 3d vector [p] taking it off the 2d plane,
+      rotating the resulting vector around the axis [ax] by the angle [a], and
+      finally, moving back along the vector [p]. Functionally, rotating about the
+      point in space arrived at by the initial translation along the vector [p]. *)
+  let vector_rotate_about_pt ax a p { x; y } =
+    Quaternion.(rotate_vec3_about_pt (make ax a) p (v3 x y 0.))
+end
 
 (** 3-dimensional vector type, including basic mathematical/geometrical
     operations and transformations mirroring those found in {!module:Scad},
@@ -104,6 +147,19 @@ module Vec3 = struct
       Functionally, rotating about the point in space arrived at by the initial
       translation along the vector [p]. *)
   let quaternion_about_pt = Quaternion.rotate_vec3_about_pt
+
+  (** [vector_rotate ax a t]
+
+      Rotates the vector [t] around the axis [ax] by the angle [a]. *)
+  let vector_rotate ax a = Quaternion.(rotate_vec3 (make ax a))
+
+  (** [vector_rotate_about_pt ax a p t]
+
+      Translates [t] along the vector [p], rotating the resulting vector around
+      the axis [ax] by the angle [a], and finally, moving back along the vector
+      [p]. Functionally, rotating about the point in space arrived at by the
+      initial translation along the vector [p]. *)
+  let vector_rotate_about_pt ax a p = Quaternion.(rotate_vec3_about_pt (make ax a) p)
 end
 
 (** {1 Transformations} *)

@@ -130,6 +130,13 @@ let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)
 let scale s = List.map (Vec2.scale s)
 let mirror ax = List.map (Vec2.mirror ax)
 let multmatrix m = List.map (fun { x; y } -> MultMatrix.transform m (v3 x y 0.))
+let quaternion q = List.map (fun { x; y } -> Quaternion.rotate_vec3 q (v3 x y 0.))
+
+let quaternion_about_pt q p =
+  List.map (fun { x; y } -> Quaternion.rotate_vec3_about_pt q p (v3 x y 0.))
+
+let vector_rotate ax r = quaternion (Quaternion.make ax r)
+let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 
 let circle ?(fn = 30) r =
   let s = 2. *. Float.pi /. Float.of_int fn in
