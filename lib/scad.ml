@@ -152,16 +152,16 @@ let rotate_about_pt (type a b) (r : b) (p : a) (t : (a, b) t) : (a, b) t =
     | D2 _ -> Vec2.negate p
     | D3 _ -> Vec3.negate p
   in
-  translate p t |> rotate r |> translate p'
+  translate p' t |> rotate r |> translate p
 
 let vector_rotate ax r (D3 scad) = d3 @@ VectorRotate (ax, r, scad)
 
 let vector_rotate_about_pt ax r p t =
-  translate p t |> vector_rotate ax r |> translate (Vec3.negate p)
+  translate (Vec3.negate p) t |> vector_rotate ax r |> translate p
 
 let multmatrix mat (D3 scad) = d3 @@ MultMatrix (mat, scad)
 let quaternion q (D3 scad) = d3 @@ MultMatrix (Quaternion.to_multmatrix q, scad)
-let quaternion_about_pt q p t = translate p t |> quaternion q |> translate (Vec3.negate p)
+let quaternion_about_pt q p t = translate (Vec3.negate p) t |> quaternion q |> translate p
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 

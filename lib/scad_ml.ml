@@ -98,7 +98,7 @@ module Vec2 = struct
 
   (** [quaternion_about_pt q p t]
 
-      Translates [t] along the 3d vector [p] taking it out off the 2d plane,
+      Translates [t] along the 3d vector [-p] taking it out off the 2d plane,
       rotating the resulting vector with the quaternion [q], and finally, moving
       back along the vector [p].  Functionally, rotating about the point in space
       arrived at by the initial translation along the vector [p]. *)
@@ -112,7 +112,7 @@ module Vec2 = struct
 
   (** [vector_rotate_about_pt ax a p t]
 
-      Translates [t] along the 3d vector [p] taking it off the 2d plane,
+      Translates [t] along the 3d vector [-p] taking it off the 2d plane,
       rotating the resulting vector around the axis [ax] by the angle [a], and
       finally, moving back along the vector [p]. Functionally, rotating about the
       point in space arrived at by the initial translation along the vector [p]. *)
@@ -142,7 +142,7 @@ module Vec3 = struct
 
   (** [quaternion_about_pt q p t]
 
-      Translates [t] along the vector [p], rotating the resulting vector with
+      Translates [t] along the vector [-p], rotating the resulting vector with
       the quaternion [q], and finally, moving back along the vector [p].
       Functionally, rotating about the point in space arrived at by the initial
       translation along the vector [p]. *)
@@ -155,7 +155,7 @@ module Vec3 = struct
 
   (** [vector_rotate_about_pt ax a p t]
 
-      Translates [t] along the vector [p], rotating the resulting vector around
+      Translates [t] along the vector [-p], rotating the resulting vector around
       the axis [ax] by the angle [a], and finally, moving back along the vector
       [p]. Functionally, rotating about the point in space arrived at by the
       initial translation along the vector [p]. *)

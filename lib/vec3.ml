@@ -156,7 +156,7 @@ let rotate_z theta { x; y; z } =
   v x' y' z
 
 let rotate { x; y; z } t = rotate_x x t |> rotate_y y |> rotate_z z
-let rotate_about_pt r pivot t = add t pivot |> rotate r |> add (negate pivot)
+let rotate_about_pt r pivot t = sub t pivot |> rotate r |> add pivot
 let translate = add
 let scale = mul
 let mirror ax t = sub t (smul ax (2. *. (dot t ax /. dot ax ax)))
