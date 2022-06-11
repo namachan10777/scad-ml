@@ -60,8 +60,7 @@ val rotate : float -> t -> t
 
     Translates [t] along the vector [pivot], rotating the resulting vector
     with [r], and finally, moving back along the vector [pivot]. Functionally,
-    rotating about the point in space arrived at by the initial translation
-    along the vector [pivot]. *)
+    rotating about the point [pivot] (rather than the origin). *)
 val rotate_about_pt : float -> t -> t -> t
 
 (** [translate p t]

@@ -142,10 +142,9 @@ val rotate_vec3 : t -> Vec3.t -> Vec3.t
 
 (** [rotate_vec3_about_pt t p v]
 
-    Translates [v] along the vector [p], rotating the resulting vector with the
+    Translates [v] along the vector [-p], rotating the resulting vector with the
     quaternion [t], and finally, moving back along the vector [p]. Functionally,
-    rotating about the point in space arrived at by the initial translation
-    along the vector [p]. *)
+    rotating about the point [p] (rather than the origin). *)
 val rotate_vec3_about_pt : t -> Vec3.t -> Vec3.t -> Vec3.t
 
 (** [alignment a b]

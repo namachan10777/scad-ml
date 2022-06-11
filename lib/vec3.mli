@@ -49,10 +49,9 @@ val rotate : t -> t -> t
 
 (** [rotate_about_pt r pivot t]
 
-    Translates [t] along the vector [pivot], euler rotating the resulting vector
+    Translates [t] along the vector [-pivot], euler rotating the resulting vector
     with [r], and finally, moving back along the vector [pivot]. Functionally,
-    rotating about the point in space arrived at by the initial translation
-    along the vector [pivot]. *)
+    rotating about the point [pivot], (rather than the origin). *)
 val rotate_about_pt : t -> t -> t -> t
 
 (** [translate p t]

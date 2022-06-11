@@ -189,8 +189,7 @@ val rotate : 'r -> ('s, 'r) t -> ('s, 'r) t
 
     Translates [t] along the vector [p], rotating the resulting shape by [r]
     (euler x -> y -> z for 3d, z only in 2d), and finally, moving back along the
-    vector [p]. Functionally, rotating about the point in space arrived at by the
-    initial translation along the vector [p]. *)
+    vector [p]. Functionally, rotating about the point [p] (rather than the origin). *)
 val rotate_about_pt : 'r -> 's -> ('s, 'r) t -> ('s, 'r) t
 
 (** [mirror ax t]
@@ -239,8 +238,7 @@ val vector_rotate : Vec3.t -> float -> d3 -> d3
 
     Translates [t] along the vector [p], rotating the resulting shape around
     [ax] by angle [r], and finally, moving back along the vector [p].
-    Functionally, rotating about the point in space arrived at by the initial
-    translation along the vector [p]. *)
+    Functionally, rotating about the point [p] (rather than the origin). *)
 val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> d3 -> d3
 
 (** [multmatrix mat t]
@@ -260,8 +258,7 @@ val quaternion : Quaternion.t -> d3 -> d3
 
     Translates [t] along the vector [p], rotating the resulting shape with the
     quaternion [q], and finally, moving back along the vector [p]. Functionally,
-    rotating about the point in space arrived at by the initial translation
-    along the vector [p]. *)
+    rotating about the point [p] (rather than the origin). *)
 val quaternion_about_pt : Quaternion.t -> Vec3.t -> d3 -> d3
 
 (** {1 2d Only Transformations} *)

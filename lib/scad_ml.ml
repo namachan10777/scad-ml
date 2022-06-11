@@ -100,8 +100,8 @@ module Vec2 = struct
 
       Translates [t] along the 3d vector [-p] taking it out off the 2d plane,
       rotating the resulting vector with the quaternion [q], and finally, moving
-      back along the vector [p].  Functionally, rotating about the point in space
-      arrived at by the initial translation along the vector [p]. *)
+      back along the vector [p]. Functionally, rotating about the point [p]
+      (rather than the origin). *)
   let quaternion_about_pt q p { x; y } = Quaternion.rotate_vec3_about_pt q p (v3 x y 0.)
 
   (** [vector_rotate ax a t]
@@ -115,7 +115,7 @@ module Vec2 = struct
       Translates [t] along the 3d vector [-p] taking it off the 2d plane,
       rotating the resulting vector around the axis [ax] by the angle [a], and
       finally, moving back along the vector [p]. Functionally, rotating about the
-      point in space arrived at by the initial translation along the vector [p]. *)
+      point [p] (rather than the origin). *)
   let vector_rotate_about_pt ax a p { x; y } =
     Quaternion.(rotate_vec3_about_pt (make ax a) p (v3 x y 0.))
 end
@@ -144,8 +144,7 @@ module Vec3 = struct
 
       Translates [t] along the vector [-p], rotating the resulting vector with
       the quaternion [q], and finally, moving back along the vector [p].
-      Functionally, rotating about the point in space arrived at by the initial
-      translation along the vector [p]. *)
+      Functionally, rotating about the point [p] (rather than the origin). *)
   let quaternion_about_pt = Quaternion.rotate_vec3_about_pt
 
   (** [vector_rotate ax a t]
@@ -157,8 +156,7 @@ module Vec3 = struct
 
       Translates [t] along the vector [-p], rotating the resulting vector around
       the axis [ax] by the angle [a], and finally, moving back along the vector
-      [p]. Functionally, rotating about the point in space arrived at by the
-      initial translation along the vector [p]. *)
+      [p]. Functionally, rotating about the point [p] (rather than the origin). *)
   let vector_rotate_about_pt ax a p = Quaternion.(rotate_vec3_about_pt (make ax a) p)
 end
 
