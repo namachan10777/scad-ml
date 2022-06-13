@@ -5,7 +5,7 @@ let clamp ~min ~max a = if a < min then min else if a > max then max else a
 let lerp a b u = ((1. -. u) *. a) +. (u *. b)
 
 let lerpn ?(endpoint = true) a b n =
-  let d = Float.of_int @@ if endpoint then n - 1 else n in
+  let d = Float.of_int @@ if endpoint then Int.max 1 (n - 1) else n in
   List.init n (fun i ->
       let u = Float.of_int i /. d in
       lerp a b u )

@@ -55,7 +55,7 @@ let mean' a =
 let lerp a b u = add (smul a (1. -. u)) (smul b u)
 
 let lerpn ?(endpoint = true) a b n =
-  let d = Float.of_int @@ if endpoint then n - 1 else n in
+  let d = Float.of_int @@ if endpoint then Int.max 1 (n - 1) else n in
   List.init n (fun i ->
       let u = Float.of_int i /. d in
       lerp a b u )
