@@ -13,7 +13,7 @@ module type S = sig
   (** [cummulative_length path]
 
       Calculate the cummulative length (distance travelled by each point) along
-    the [path].  *)
+      the [path].  *)
   val cummulative_length : t -> float list
 
   (** [to_continuous path]
@@ -25,8 +25,30 @@ module type S = sig
   (** [resample ~freq path]
 
       Resample [path] with the given [freq]uency (either a flat number of
-    points, or a target point spacing). *)
+      points, or a target point spacing). Note that the only points guaranteed
+      to appear in the output are the start and end points of [path]. For
+      upsampling that preserves input points, see {!subdivide}. *)
   val resample : freq:[< `N of int | `Spacing of float ] -> t -> t
+
+  (** [subdivide ?closed ~freq path]
+
+      Subdivides [path] with given [freq]uency, including each of the original
+      points in the output (unlike {!resample}). This can be a flat number of points
+      provided directly with [`N n], or as a multiple of number of points in
+      [path] with [`Refine factor]. Alternatively, a maximum [`Spacing dist] can
+      be specified instead. The exact point sampling variants will return the
+      number of points specified, at the expense of sampling uniformity. *)
+  val subdivide
+    :  ?closed:bool
+    -> freq:
+         [> `ExactN of int
+         | `ExactRefine of int
+         | `N of int
+         | `Refine of int
+         | `Spacing of float
+         ]
+    -> vec list
+    -> vec list
 
   (** [noncollinear_triple ?eps path]
 
@@ -177,6 +199,60 @@ module Make (V : Vec.S) = struct
     let step = 1. /. Float.of_int (n - 1)
     and f = to_continuous path in
     List.init n (fun i -> f @@ (Float.of_int i *. step))
+
+  let subdivide ?(closed = false) ~freq = function
+    | [] | [ _ ] -> invalid_arg "Cannot subdivide path with fewer than 2 points."
+    | [ _; _ ] when closed -> invalid_arg "Path of length 2 cannot be closed."
+    | hd :: tl as path ->
+      let lerp init a b n =
+        Util.fold_init
+          n
+          (fun i ps -> V.lerp a b (Float.of_int i /. Float.of_int n) :: ps)
+          init
+      and len = List.length path in
+      ( match freq with
+      | `Refine 1 | `ExactRefine 1 -> path
+      | (`ExactN n | `N n) when len = n -> path
+      | `Spacing s ->
+        let f (a, ps) b =
+          let n = Float.(to_int @@ ceil (V.distance a b /. s)) in
+          b, lerp ps a b n
+        in
+        let last, ps = List.fold_left f (hd, []) tl in
+        List.rev @@ if closed then snd @@ f (last, ps) hd else last :: ps
+      | freq ->
+        let exact, n =
+          match freq with
+          | `ExactN n           -> true, n
+          | `N n                -> false, n
+          | `ExactRefine factor -> true, len * factor
+          | `Refine factor      -> false, len * factor
+          | _                   -> failwith "`Spacing is unreachable."
+        in
+        if n < len
+        then invalid_arg "Target number of points must not be less than input length.";
+        let add_ns =
+          let seg_lens = segment_lengths ~closed path in
+          let density = Float.of_int (n - len) /. List.fold_left ( +. ) 0. seg_lens in
+          if exact
+          then (
+            (* To obtain exact number of points / refinement, rounding error is
+                    carried over between segments. Goal is to distribute the
+                    error in a uniform manner. *)
+            let f (err, adds) seg_len =
+              let a = (seg_len *. density) -. err in
+              let a' = Float.round a in
+              a' -. a, Float.to_int a' :: adds
+            in
+            Util.array_of_list_rev @@ snd @@ List.fold_left f (0., []) seg_lens )
+          else
+            Util.array_of_list_map
+              (fun l -> Float.(to_int @@ round @@ (l *. density)))
+              seg_lens
+        in
+        let f ((i, a), ps) b = (i + 1, b), lerp ps a b (add_ns.(i) + 1) in
+        let last, ps = List.fold_left f ((0, hd), []) tl in
+        List.rev @@ if closed then snd @@ f (last, ps) hd else snd last :: ps )
 
   let noncollinear_triple ?(eps = Util.epsilon) = function
     | [] | [ _ ] | [ _; _ ]   -> None
