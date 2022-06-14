@@ -1,0 +1,12 @@
+(documentation)
+
+(alias
+ (name doc)
+ (deps
+  (:img
+   (glob_files *.png))))
+
+; (rule
+;  (alias doc)
+;  (action
+;   (copy "scad_logo.png" "scad_logo.png")))

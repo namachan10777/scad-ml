@@ -41,7 +41,7 @@ let () =
   Scad.to_file "scad_logo.scad" scad_logo
 ```
 
-![OpenSCAD logo](images/scad_logo.png)
+![OpenSCAD logo](assets/scad_logo.png)
 Generated scads can then be viewed with the [OpenSCAD
 viewer](https://openscad.org/downloads.html) as you normally would.
 
