@@ -37,7 +37,7 @@ Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelli
     Scad.to_file "scad_logo.scad" scad_logo
 ]}
 
-{%html: <img src="../../../lib/docs/scad_logo.png" style="width:125mm;" /> %}
+{%html: <img src="../assets/scad_logo.png" style="width:125mm;" /> %}
 
 Generted scads can then be viewed with the {{:https://openscad.org/downloads.html} OpenSCAD viewer}
 as you normally would.

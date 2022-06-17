@@ -1,0 +1,15 @@
+(documentation)
+
+(executable
+ (name copier)
+ (libraries unix))
+
+(rule
+ (alias doc)
+ (deps
+  "copier.exe"
+  (:img
+   (glob_files assets/*.png)
+   (glob_files assets/*.jpg)))
+ (action
+  (run ./copier.exe %{img})))

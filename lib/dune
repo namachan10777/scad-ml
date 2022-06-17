@@ -1,15 +1,4 @@
-(documentation)
-
-(include_subdirs no)
-
 (library
  (name scad_ml)
  (public_name scad_ml)
  (libraries cairo2))
-
-; (install
-;  (files "assets/scad_logo.png")
-;  (section doc))
-
-; (copy_files
-;  (files "assets/scad_logo.png"))
