@@ -16,7 +16,7 @@ homepage: "https://github.com/namachan10777/scad-ml"
 doc: "https://namachan10777.github.io/scad-ml"
 bug-reports: "https://github.com/namachan10777/scad-ml/issues"
 depends: [
-  "dune" {>= "3.2"}
+  "dune" {>= "3.3"}
   "ocaml" {>= "4.08.0"}
   "cairo2" {>= "0.6.2"}
   "odoc" {with-doc}

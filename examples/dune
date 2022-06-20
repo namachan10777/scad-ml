@@ -35,15 +35,15 @@
 (rule
  (alias examples)
  (deps
-  ; (sandbox always)
+  (sandbox always)
   "runner_.exe"
   (:scads
    (glob_files "*[!_].exe")))
- ; (targets
- ;  (dir "things"))
+ (targets
+  (dir "scads"))
  ; (mode
  ;  (promote (until-clean)))
  (action
   (chdir
-   "things"
+   "scads"
    (run ./../runner_.exe %{scads}))))
