@@ -1,7 +1,5 @@
 (executables
  (names
-  runner_
-  exporter_
   rounded_text
   wave_cylinder
   spiral
@@ -28,7 +26,7 @@
   circular_rounding
   rounded_prism_tunnel
   helix_path_points)
- (libraries scad_ml threads))
+ (libraries scad_ml))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)
 ; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.
@@ -37,9 +35,9 @@
  (alias examples)
  (deps
   (sandbox always)
-  "runner_.exe"
+  (:runner "helpers/runner.exe")
   (:scads
-   (glob_files "*[!_].exe")))
+   (glob_files "*.exe")))
  (targets
   (dir "scads"))
  (mode
@@ -47,7 +45,7 @@
  (action
   (chdir
    "scads"
-   (run ./../runner_.exe %{scads}))))
+   (run %{runner} %{scads}))))
 
 ; Export scad examples to stl.
 
@@ -55,6 +53,7 @@
  (alias export_examples)
  (deps
   (sandbox always)
+  (:exporter "helpers/exporter.exe")
   (:scads
    (glob_files "scads/*.scad")))
  (targets
@@ -64,4 +63,4 @@
  (action
   (chdir
    "stls"
-   (run ./../exporter_.exe %{scads}))))
+   (run %{exporter} %{scads}))))
