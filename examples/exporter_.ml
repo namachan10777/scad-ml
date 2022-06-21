@@ -8,6 +8,9 @@ let file_to_string n =
   let rec loop () =
     match Unix.read fd bytes 0 sz with
     | 0 -> ()
+    | r when r = sz ->
+      Buffer.add_bytes b bytes;
+      loop ()
     | r ->
       Buffer.add_bytes b (Bytes.sub bytes 0 r);
       loop ()
