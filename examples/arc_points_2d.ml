@@ -10,5 +10,6 @@ let () =
         |> Scad.translate p )
       arc
     |> Scad.union
+    |> Scad.linear_extrude ~height:1.
   in
   Scad.to_file "arc_points_2d.scad" scad

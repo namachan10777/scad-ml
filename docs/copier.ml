@@ -19,6 +19,6 @@ let copy src dest =
 let () =
   if not @@ Sys.file_exists assets then Sys.mkdir assets 0o777;
   for i = 1 to Array.length Sys.argv - 1 do
-    let name = List.fold_left (fun _ s -> s) "" (String.split_on_char '/' Sys.argv.(i)) in
+    let name = Filename.basename Sys.argv.(i) in
     ignore @@ copy Sys.argv.(i) (Printf.sprintf "%s/%s" assets name)
   done
