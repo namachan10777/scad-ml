@@ -28,7 +28,7 @@
   circular_rounding
   rounded_prism_tunnel
   helix_path_points)
- (libraries scad_ml))
+ (libraries scad_ml threads))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)
 ; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.

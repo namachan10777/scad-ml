@@ -1,4 +1,3 @@
 let () =
-  for i = 1 to Array.length Sys.argv - 1 do
-    ignore @@ Sys.command Sys.argv.(i)
-  done
+  let f i = ignore @@ Sys.command Sys.argv.(i + 1) in
+  List.init (Array.length Sys.argv - 1) (Thread.create f) |> List.iter Thread.join
