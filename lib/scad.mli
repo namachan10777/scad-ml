@@ -459,6 +459,14 @@ val to_string : ('s, 'r) t -> string
     (using {!to_string}). *)
 val to_file : string -> ('s, 'r) t -> unit
 
+exception FailedExport of string * string
+
+(** [export path t]
+
+    Export the scad [t] to a file at the given [path], in a format dictated by
+    the extension of [path]. *)
+val export : string -> ('s, 'r) t -> unit
+
 (** {1 Infix Operators} *)
 
 module Infix : sig

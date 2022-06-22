@@ -247,26 +247,15 @@ let resize (type a b) (new_dims : a) : (a, b) t -> (a, b) t = function
 let offset offset (D2 src) = d2 @@ Offset { src; offset }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
 
-let legal_ext allowed file =
-  let ext =
-    let len = String.length file in
-    String.uncapitalize_ascii @@ String.sub file (len - 3) 3
-  in
-  let rec aux = function
-    | h :: t -> if String.equal ext h then Ok () else aux t
-    | []     -> Error ext
-  in
-  aux allowed
-
 let import_2d ?dxf_layer ?convexity file =
-  match legal_ext [ "dxf"; "svg" ] file with
+  match Util.legal_ext [ ".dxf"; ".svg" ] file with
   | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
   | Error ext ->
     invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
 let import_3d ?convexity file =
-  match legal_ext [ "stl"; "off"; "amf"; "3mf" ] file with
+  match Util.legal_ext [ ".stl"; ".off"; ".amf"; ".3mf" ] file with
   | Ok ()     -> d3 (import ?convexity file)
   | Error ext ->
     invalid_arg
@@ -514,6 +503,22 @@ let to_file path t =
   let oc = open_out path in
   Printf.fprintf oc "%s" (to_string t);
   close_out oc
+
+exception FailedExport = Export.FailedExport
+
+let export (type a b) path (t : (a, b) t) =
+  let space, allowed =
+    match t with
+    | D2 _ -> "2D", [ ".dxf"; ".svg"; ".csg" ]
+    | D3 _ -> "3D", [ ".stl"; ".off"; ".amf"; ".3mf"; ".csg"; ".wrl" ]
+  in
+  match Util.legal_ext allowed path with
+  | Ok ()     ->
+    let temp = Filename.temp_file "out" ".scad" in
+    to_file temp t;
+    Export.export path temp
+  | Error ext ->
+    invalid_arg (Printf.sprintf "%s files are not supported for %s export." ext space)
 
 module Infix = struct
   let ( |>> ) t p = translate p t
