@@ -227,9 +227,3 @@ let helical_fragments ?fn ?(fa = fa) ?(fs = fs) radius =
   | Some n -> Int.max 3 n
   | None   ->
     Float.(to_int @@ max (ceil @@ min (2. *. pi /. fa) (radius *. pi *. 2. /. fs)) 5.)
-
-module StringSet = Set.Make (String)
-
-let legal_ext allowed file =
-  let ext = String.uncapitalize_ascii @@ Filename.extension file in
-  if StringSet.mem ext allowed then Ok () else Error ext

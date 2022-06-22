@@ -253,18 +253,18 @@ let resize (type a b) (new_dims : a) : (a, b) t -> (a, b) t = function
 
 let offset offset (D2 src) = d2 @@ Offset { src; offset }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
-let d2_import_exts = Util.StringSet.of_list [ ".dxf"; ".svg" ]
-let d3_import_exts = Util.StringSet.of_list [ ".stl"; ".off"; ".amf"; ".3mf" ]
+let d2_import_exts = Export.ExtSet.of_list [ ".dxf"; ".svg" ]
+let d3_import_exts = Export.ExtSet.of_list [ ".stl"; ".off"; ".amf"; ".3mf" ]
 
 let import_2d ?dxf_layer ?convexity file =
-  match Util.legal_ext d2_import_exts file with
+  match Export.legal_ext d2_import_exts file with
   | Ok ()     -> d2 @@ import ?dxf_layer ?convexity file
   | Error ext ->
     invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
 let import_3d ?convexity file =
-  match Util.legal_ext d3_import_exts file with
+  match Export.legal_ext d3_import_exts file with
   | Ok ()     -> d3 @@ import ?convexity file
   | Error ext ->
     invalid_arg
@@ -530,18 +530,13 @@ let to_file path t =
 
 exception FailedExport = Export.FailedExport
 
-let d2_export_exts = Util.StringSet.of_list [ ".dxf"; ".svg"; ".csg" ]
-
-let d3_export_exts =
-  Util.StringSet.of_list [ ".stl"; ".off"; ".amf"; ".3mf"; ".csg"; ".wrl" ]
-
 let export (type a b) path (t : (a, b) t) =
   let space, allowed =
     match t with
-    | D2 _ -> "2D", d2_export_exts
-    | D3 _ -> "3D", d3_export_exts
+    | D2 _ -> "2D", Export.d2_exts
+    | D3 _ -> "3D", Export.d3_exts
   in
-  match Util.legal_ext allowed path with
+  match Export.legal_ext allowed path with
   | Ok ()     ->
     let temp = Filename.temp_file "out" ".scad" in
     to_file temp t;
