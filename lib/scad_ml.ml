@@ -217,6 +217,7 @@ module Poly3 = Poly3
 module Mesh = Mesh
 module BallTree3 = BallTree3
 
-(** {1 Float utilities} *)
+(** {1 Utilities} *)
 
 module Math = Math
+module Export = Export

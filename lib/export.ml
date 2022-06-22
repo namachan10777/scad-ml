@@ -19,11 +19,11 @@ let file_to_string n =
   in
   loop ();
   Unix.close fd;
-  String.of_bytes (Buffer.to_bytes b)
+  Buffer.contents b
 
-let export path scad =
+let script out_path scad_path =
   let format =
-    let ext = Filename.extension path in
+    let ext = Filename.extension out_path in
     String.sub ext 1 (String.length ext - 1)
   and err_name = Filename.temp_file "scad_ml_" "_err" in
   let err = Unix.openfile err_name [ O_WRONLY; O_CREAT; O_TRUNC ] 0o777 in
@@ -33,10 +33,10 @@ let export path scad =
       [| openscad
        ; "-q"
        ; "-o"
-       ; path
+       ; out_path
        ; "--export-format"
        ; (if String.equal format "stl" then "binstl" else format)
-       ; Printf.sprintf "%s" scad
+       ; scad_path
       |]
       Unix.stdin
       Unix.stdout
@@ -44,6 +44,6 @@ let export path scad =
   in
   ignore @@ Unix.waitpid [] pid;
   Unix.close err;
-  match file_to_string err_name with
-  | "" -> ()
-  | e  -> raise (FailedExport (path, e))
+  let e = file_to_string err_name in
+  Sys.remove err_name;
+  if String.length e > 0 then raise (FailedExport (out_path, e))
