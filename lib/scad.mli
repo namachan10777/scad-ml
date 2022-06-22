@@ -38,11 +38,12 @@ type d3 = (Vec3.t, Vec3.t) t
 
     - [?fa] is the minimum angle for a fragment. Note that this should be given
       in radians here (as opposed to degrees in the OpenSCAD language).
+      Default is [pi /. 15.] radians (12°).
     - [?fs] is the minimum size/length of a fragment. Even if ?fa is given, and
       very small, this parameter will limit how small the generated fragments
-      can be.
+      can be (default = [2.]).
     - [?fn] will set the absolute number of fragments to be used (causing the
-      previous two parameters to be ignored. *)
+      previous two parameters to be ignored if non-zero). *)
 
 (** {1 3d shape primitives} *)
 
@@ -410,7 +411,7 @@ val linear_extrude
     does not really exist in Z), it is more like it is spun around the Y-axis to
     form the solid, which is then placed so that its axis of rotation lies along
     the Z-axis. For this reason, [t] {b must } lie completely on either the
-    right (recommended) or the left side of the Y-axis. Further explaination and
+    right (recommended) or the left side of the Y-axis. Further explanation and
     examples can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Rotate_Extrude}
     here}. *)
@@ -446,6 +447,30 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     - 3MF ({i Requires version 2019.05 of OpenSCAD }) *)
 val import_3d : ?convexity:int -> string -> d3
 
+(** [surface ?convexity ?center ?invert file]
+
+    Read {{:https://en.wikipedia.org/wiki/Heightmap} heightmap} information
+    from a text (with [.dat] extension) or image ([.png] only) [file] into a 3D
+    shape. When [?center] is true the imported surface is centered on the origin,
+    otherwise it will be placed in the positive quadrant (like {!square}).
+
+    - [.dat] {b format:} a matrix of numbers (delimited by spaces or tabs) that
+      represent the height for a specific point. Rows are mapped to the y-axis,
+      columns to the x-axis. Empty lines and those that begin with [#] are ignored.
+    - [.png] {b format:} alpha channel information of the image is ignored, and
+      the height for each pixel is deterimend by converting the colour value to
+      {{:https://en.wikipedia.org/wiki/Grayscale} grayscale} using the linear
+      luminance for the sRGB colour space.
+      {[let y = 0.2126 *. r +. 0.7152 *. g +. 0.0722 *. b]}
+      The greyscale values are scaled to be in the range of 0 to 100. Setting
+      [invert] to [true] inverts the translation of colour to height values
+      (defaults to [false], and has no effect on text [.dat] files)
+
+    Further explanation and examples can be found
+    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Surface}
+    here}. *)
+val surface : ?convexity:int -> ?center:bool -> ?invert:bool -> string -> d3
+
 (** {1 Output} *)
 
 (** [to_string t]
@@ -459,12 +484,20 @@ val to_string : ('s, 'r) t -> string
     (using {!to_string}). *)
 val to_file : string -> ('s, 'r) t -> unit
 
+(** [FailedExport (path, error)]
+
+    Exception raised on failed export of a scad model, to a file a [path].
+    [error] is the captured stderr output of the OpenSCAD process (usually CGAL
+    errors). *)
 exception FailedExport of string * string
 
 (** [export path t]
 
     Export the scad [t] to a file at the given [path], in a format dictated by
-    the extension of [path]. *)
+    the extension of [path]. Raises [Invalid_argument] if the target format is
+    not supported for the dimensionality of [t]. Compatible extensions:
+    - {b 2D}: [.dxf], [.svg], [.csg]
+    - {b 3D}: [.stl], [.off], [.amf], [.3mf], [.csg], [.wrl] *)
 val export : string -> ('s, 'r) t -> unit
 
 (** {1 Infix Operators} *)

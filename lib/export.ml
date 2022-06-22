@@ -27,7 +27,6 @@ let export path scad =
     String.sub ext 1 (String.length ext - 1)
   and err_name = Filename.temp_file "scad_ml_" "_err" in
   let err = Unix.openfile err_name [ O_WRONLY; O_CREAT; O_TRUNC ] 0o777 in
-  print_endline format;
   let pid =
     Unix.create_process
       openscad
@@ -45,7 +44,6 @@ let export path scad =
   in
   ignore @@ Unix.waitpid [] pid;
   Unix.close err;
-  ( match file_to_string err_name with
+  match file_to_string err_name with
   | "" -> ()
-  | e  -> raise (FailedExport (path, e)) );
-  Sys.remove err_name
+  | e  -> raise (FailedExport (path, e))

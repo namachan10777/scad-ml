@@ -60,7 +60,7 @@ type scad =
       }
   | LinearExtrude of
       { src : scad
-      ; height : float option
+      ; height : float
       ; center : bool
       ; convexity : int
       ; twist : int option
@@ -86,6 +86,12 @@ type scad =
       { file : string
       ; convexity : int
       ; dxf_layer : string option
+      }
+  | Surface of
+      { file : string
+      ; center : bool
+      ; invert : bool
+      ; convexity : int
       }
   | Render of
       { src : scad
@@ -222,7 +228,7 @@ let mirror (type a b) (ax : a) : (a, b) t -> (a, b) t = function
 let projection ?(cut = false) (D3 src) = d2 @@ Projection { src; cut }
 
 let linear_extrude
-    ?height
+    ?(height = 10.)
     ?(center = false)
     ?(convexity = 10)
     ?twist
@@ -231,6 +237,7 @@ let linear_extrude
     ?(fn = 16)
     (D2 src)
   =
+  if height <= 0. then invalid_arg "Extrusion height must be positive.";
   d3 @@ LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
 
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
@@ -249,25 +256,30 @@ let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_lay
 
 let import_2d ?dxf_layer ?convexity file =
   match Util.legal_ext [ ".dxf"; ".svg" ] file with
-  | Ok ()     -> d2 (import ?dxf_layer ?convexity file)
+  | Ok ()     -> d2 @@ import ?dxf_layer ?convexity file
   | Error ext ->
     invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
 let import_3d ?convexity file =
   match Util.legal_ext [ ".stl"; ".off"; ".amf"; ".3mf" ] file with
-  | Ok ()     -> d3 (import ?convexity file)
+  | Ok ()     -> d3 @@ import ?convexity file
   | Error ext ->
     invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 3D import." ext)
+
+let surface ?(convexity = 10) ?(center = false) ?(invert = false) file =
+  match Filename.extension file with
+  | ".dat" | ".png" -> d3 @@ Surface { file; center; invert; convexity }
+  | ext             ->
+    invalid_arg
+    @@ (Printf.sprintf "Input file extension %s is not supported for surface import.") ext
 
 let color ?alpha color = map (fun src -> Color { src; color; alpha })
 let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
 
 let to_string t =
-  let value_map = Util.value_map_opt
-  and deg_of_rad r = 180.0 *. r /. Float.pi
-  and buf_add_list b f = function
+  let buf_add_list b f = function
     | h :: t ->
       let append a =
         Buffer.add_char b ',';
@@ -301,13 +313,14 @@ let to_string t =
     Buffer.add_char b ',';
     Buffer.add_string b (Float.to_string z);
     Buffer.add_char b ']'
-  and maybe_fmt fmt opt = value_map (Printf.sprintf fmt) ~default:"" opt
+  and maybe_fmt fmt opt = Util.value_map_opt (Printf.sprintf fmt) ~default:"" opt
   and string_of_f_ fa fs (fn : int option) =
+    let fa_to_string a = Float.to_string @@ Math.deg_of_rad a in
     Printf.sprintf
-      "%s%s%s"
-      (value_map ~default:"" (fun fa -> Printf.sprintf ", $fa=%f" @@ deg_of_rad fa) fa)
-      (value_map ~default:"" (Printf.sprintf ", $fs=%f") fs)
-      (value_map ~default:"" (Printf.sprintf ", $fn=%i") fn)
+      ", $fa=%s, $fs=%s, $fn=%i"
+      (Util.value_map_opt ~default:"12" fa_to_string fa)
+      (Util.value_map_opt ~default:"2" Float.to_string fs)
+      (Option.value ~default:0 fn)
   in
   let rec arrange_elms indent scads =
     let buf = Buffer.create 100 in
@@ -370,7 +383,7 @@ let to_string t =
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
-        (deg_of_rad r)
+        (Math.deg_of_rad r)
         (Vec3.to_string axis)
         (print (Printf.sprintf "%s\t" indent) scad)
     | MultMatrix (mat, scad) ->
@@ -435,10 +448,11 @@ let to_string t =
     | LinearExtrude
         { src; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
       Printf.sprintf
-        "%slinear_extrude(%scenter=%B, convexity=%d, %sslices=%d, scale=[%f, %f], $fn=%d)\n\
+        "%slinear_extrude(height=%f, center=%B, convexity=%d, %sslices=%d, scale=[%f, \
+         %f], $fn=%d)\n\
          %s"
         indent
-        (maybe_fmt "height=%f, " height)
+        height
         center
         convexity
         (maybe_fmt "twist=%d, " twist)
@@ -451,7 +465,7 @@ let to_string t =
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
-        (maybe_fmt "angle=%f" @@ Option.map deg_of_rad angle)
+        (maybe_fmt "angle=%f" @@ Option.map Math.deg_of_rad angle)
         convexity
         (string_of_f_ fa fs fn)
         (print (Printf.sprintf "%s\t" indent) src)
@@ -483,6 +497,14 @@ let to_string t =
         file
         convexity
         (maybe_fmt ", layer=%s" dxf_layer)
+    | Surface { file; center; invert; convexity } ->
+      Printf.sprintf
+        "%ssurface(\"%s\", center=%B, invert=%B, convexity=%i);\n"
+        indent
+        file
+        center
+        invert
+        convexity
     | Color { src; color; alpha } ->
       Printf.sprintf
         "%scolor(%s%s)\n%s"
