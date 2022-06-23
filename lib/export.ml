@@ -13,9 +13,9 @@ let legal_ext allowed file =
   let ext = String.uncapitalize_ascii @@ Filename.extension file in
   if ExtSet.mem ext allowed then Ok () else Error ext
 
-let file_to_string n =
-  let fd = Unix.openfile n [ O_RDONLY ] 0o777 in
-  let b = Buffer.create sz in
+let file_to_string path =
+  let fd = Unix.openfile path [ O_RDONLY ] 0o777
+  and b = Buffer.create sz in
   let rec loop () =
     match Unix.read fd bytes 0 sz with
     | 0 -> ()

@@ -484,13 +484,6 @@ val to_string : ('s, 'r) t -> string
     (using {!to_string}). *)
 val to_file : string -> ('s, 'r) t -> unit
 
-(** [FailedExport (path, error)]
-
-    Exception raised on failed export of a scad model, to a file a [path].
-    [error] is the captured stderr output of the OpenSCAD process (usually CGAL
-    errors). *)
-exception FailedExport of string * string
-
 (** [export path t]
 
     Export the scad [t] to a file at the given [path], in a format dictated by

@@ -528,8 +528,6 @@ let to_file path t =
   Printf.fprintf oc "%s" (to_string t);
   close_out oc
 
-exception FailedExport = Export.FailedExport
-
 let export (type a b) path (t : (a, b) t) =
   let space, allowed =
     match t with

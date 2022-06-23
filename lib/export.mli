@@ -1,5 +1,10 @@
 (** Exporting [.scad] scripts through the OpenSCAD command line interface. *)
 
+(** [FailedExport (path, error)]
+
+    Exception raised on failed export of a scad model, to a file a [path].
+    [error] is the captured stderr output of the OpenSCAD process (usually CGAL
+    errors). *)
 exception FailedExport of string * string
 
 module ExtSet : Set.S with type elt = string
@@ -23,7 +28,7 @@ val legal_ext : ExtSet.t -> string -> (unit, string) result
     a format dictated by the extension of [out_path]. See documentation for the
     [-o] argument in the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Using_OpenSCAD_in_a_command_line_environment}
-    OpenSCAD cli docs} for available output formats. Raises [FailedExport (out_path,
-    err)] if OpenSCAD fails to export the the script, where [err] is the captured
-    Stderror output (e.g. CGAL failures). *)
+    OpenSCAD CLI docs} for available output formats. Raises
+    [FailedExport (out_path, err)] if OpenSCAD fails to export the the
+    script, where [err] is the captured Stderror output (e.g. CGAL failures). *)
 val script : string -> string -> unit
