@@ -52,3 +52,113 @@ let script out_path scad_path =
   let e = file_to_string err_name in
   Sys.remove err_name;
   if String.length e > 0 then raise (FailedExport (out_path, e))
+
+type camera =
+  | Auto
+  | Gimbal of
+      { translation : Vec3.t
+      ; rotation : Vec3.t
+      ; distance : [ `Auto | `D of float ]
+      }
+  | Eye of
+      { lens : Vec3.t
+      ; center : Vec3.t
+      ; view_all : bool
+      }
+
+let auto = Auto
+
+let gimbal ?(translation = Vec3.zero) ?(rotation = Vec3.zero) distance =
+  Gimbal { translation; rotation; distance }
+
+let eye ?(view_all = false) ?(center = Vec3.zero) lens = Eye { lens; center; view_all }
+
+let camera_to_args = function
+  | Auto -> [| "--autocenter" |]
+  | Gimbal { translation = t; rotation = r; distance = `D d } ->
+    let r = Vec3.deg_of_rad r in
+    [| "--camera"; Printf.sprintf "%f,%f,%f,%f,%f,%f,%f" t.x t.y t.z r.x r.y r.z d |]
+  | Gimbal { translation = t; rotation = r; distance = `Auto } ->
+    let r = Vec3.deg_of_rad r in
+    [| "--camera"
+     ; Printf.sprintf "%f,%f,%f,%f,%f,%f,%f" t.x t.y t.z r.x r.y r.z 0.
+     ; "--viewall"
+    |]
+  | Eye { lens = l; center = c; view_all = false } ->
+    [| "--camera"; Printf.sprintf "%f,%f,%f,%f,%f,%f" l.x l.y l.z c.x c.y c.z |]
+  | Eye { lens = l; center = c; view_all = true } ->
+    [| "--camera"
+     ; Printf.sprintf "%f,%f,%f,%f,%f,%f" l.x l.y l.z c.x c.y c.z
+     ; "--viewall"
+    |]
+
+type colorscheme =
+  | Cornfield
+  | Metallic
+  | Sunset
+  | Starnight
+  | BeforeDawn
+  | Nature
+  | DeepOcean
+  | Solarized
+  | Tomorrow
+  | TomorrowNight
+  | Monotone
+
+let colorscheme_to_string = function
+  | Cornfield     -> "Cornfield"
+  | Metallic      -> "Metallic"
+  | Sunset        -> "Sunset"
+  | Starnight     -> "Starnight"
+  | BeforeDawn    -> "BeforeDawn"
+  | Nature        -> "Nature"
+  | DeepOcean     -> "DeepOcean"
+  | Solarized     -> "Solarized"
+  | Tomorrow      -> "Tomorrow"
+  | TomorrowNight -> "Tomorrow Night"
+  | Monotone      -> "Monotone"
+
+type projection =
+  | Perspective
+  | Orthogonal
+
+let projection_to_string = function
+  | Perspective -> "perspective"
+  | Orthogonal  -> "orthogonal"
+
+let snapshot
+    ?(render = false)
+    ?(colorscheme = Cornfield)
+    ?(projection = Perspective)
+    ?size:(sz_x, sz_y = 500, 500)
+    ?(camera = Auto)
+    out_path
+    scad_path
+  =
+  let err_name = Filename.temp_file "scad_ml_" "_err" in
+  let err = Unix.openfile err_name [ O_WRONLY; O_CREAT; O_TRUNC ] 0o777 in
+  let args =
+    let base =
+      [| openscad
+       ; "-q"
+       ; "-o"
+       ; out_path
+       ; "--export-format"
+       ; "png"
+       ; "--colorscheme"
+       ; colorscheme_to_string colorscheme
+       ; "--projection"
+       ; projection_to_string projection
+       ; "--imgsize"
+       ; Printf.sprintf "%i,%i" sz_x sz_y
+       ; scad_path
+      |]
+    and render = if render then [| "--render" |] else [||] in
+    Array.concat [ base; render; camera_to_args camera ]
+  in
+  let pid = Unix.create_process openscad args Unix.stdin Unix.stdout err in
+  ignore @@ Unix.waitpid [] pid;
+  Unix.close err;
+  let e = file_to_string err_name in
+  Sys.remove err_name;
+  if String.length e > 0 then raise (FailedExport (out_path, e))
