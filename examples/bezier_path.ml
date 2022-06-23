@@ -8,7 +8,7 @@ let () =
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = List.map Vec2.to_vec3 @@ Bezier2.(curve ~fn:50 (of_path control_pts)) in
-    Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
+    Mesh.(to_scad @@ path_extrude ~euler:false ~path square)
   in
   let scad = Scad.union (line :: marks) in
   Scad.to_file "bezier_path.scad" scad

@@ -8,7 +8,7 @@ let () =
     List.map (fun { x; y } -> Scad.translate (v3 x y 0.) s) control_pts
   and line =
     let path = Path3.of_path2 CubicSpline.(interpolate_path (fit control_pts) 100) in
-    Mesh.(to_scad @@ sweep ~transforms:(Path3.to_transforms ~euler:false path) square)
+    Mesh.(to_scad @@ path_extrude ~path square)
   in
   let scad = Scad.union (line :: marks) in
   Scad.to_file "spline.scad" scad

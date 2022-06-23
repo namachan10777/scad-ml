@@ -18,9 +18,7 @@ let () =
     |> Path2.of_tups
     |> Poly2.make
   in
-  let () =
-    let transforms = Path3.to_transforms path in
-    Scad.to_file "sweep_path.scad" @@ Mesh.(to_scad @@ sweep ~transforms poly)
-  in
-  let transforms = Path3.to_transforms ~euler:true path in
-  Scad.to_file "sweep_path_euler.scad" @@ Mesh.(to_scad @@ sweep ~transforms poly)
+  Scad.to_file "sweep_path.scad" Mesh.(to_scad @@ path_extrude ~path poly);
+  Scad.to_file
+    "sweep_path_euler.scad"
+    Mesh.(to_scad @@ path_extrude ~euler:true ~path poly)

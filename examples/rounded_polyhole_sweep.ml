@@ -1,11 +1,9 @@
 open Scad_ml
 
 let () =
-  let transforms =
-    let bez =
-      Bezier3.of_path Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
-    in
-    Path3.to_transforms ~euler:false (Bezier3.curve ~fn:20 bez)
+  let path =
+    Bezier3.curve ~fn:20
+    @@ Bezier3.of_path Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
   in
   let scad =
     let holes =
@@ -18,8 +16,8 @@ let () =
       |> Path2.roundover
     in
     Mesh.(
-      sweep
-        ~transforms
+      path_extrude
+        ~path
         ~spec:
           Cap.(
             capped

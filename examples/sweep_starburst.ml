@@ -14,13 +14,10 @@ let () =
       List.map (fun s -> Vec3.rotate (v3 0. 0. Float.(pi /. 4. *. i)) s |> p) out
     in
     p (v3 0. 0. d) :: p (v3 0. 0. (-.d)) :: List.concat_map f (List.init 8 Float.of_int)
-  and flat = Scad.polygon poly.outer |> Scad.linear_extrude ~height:1. in
+  and flat = Scad.linear_extrude ~height:1. (Scad.polygon poly.outer) in
   let build euler =
     let scad =
-      let f path =
-        let transforms = Path3.to_transforms ~euler path in
-        Mesh.to_scad @@ Mesh.sweep ~transforms poly
-      in
+      let f path = Mesh.(to_scad @@ path_extrude ~euler ~path poly) in
       Scad.union @@ (flat :: List.map f paths)
     and name =
       Printf.sprintf "sweep_starburst_%s.scad" (if euler then "euler" else "default")
