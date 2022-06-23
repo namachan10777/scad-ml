@@ -493,6 +493,19 @@ val to_file : string -> ('s, 'r) t -> unit
     - {b 3D}: [.stl], [.off], [.amf], [.3mf], [.csg], [.wrl] *)
 val export : string -> ('s, 'r) t -> unit
 
+(** [snapshot ?render ?colorscheme ?projection ?size ?camera path t]
+
+    *)
+val snapshot
+  :  ?render:bool
+  -> ?colorscheme:Export.colorscheme
+  -> ?projection:Export.projection
+  -> ?size:int * int
+  -> ?camera:Export.camera
+  -> string
+  -> ('s, 'r) t
+  -> unit
+
 (** {1 Infix Operators} *)
 
 module Infix : sig
