@@ -76,7 +76,7 @@ val eye : ?view_all:bool -> ?center:Vec.v3 -> Vec.v3 -> camera
     script located at [in_path] using the OpenSCAD CLI. By default, the [camera]
     is positioned automatically to point at the centre of the object, and far
     enough away such for it to all be in frame. See {!camera} and its {!gimbal}
-    and {!eye} contructors for details on manual control. If export fails, an
+    and {!eye} constructors for details on manual control. If export fails, an
     error containing captured Stderr output from OpenSCAD is returned (usually
     CGAL errors).
 
@@ -94,7 +94,7 @@ val snapshot
   -> string
   -> (unit, string) result
 
-(** {1 Extension checking helpers} *)
+(** {1 File extension helpers} *)
 
 module ExtSet : Set.S with type elt = string
 

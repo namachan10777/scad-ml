@@ -496,7 +496,18 @@ val export : string -> ('s, 'r) t -> (unit, string) result
 
 (** [snapshot ?render ?colorscheme ?projection ?size ?camera path t]
 
-    *)
+    Save an image ({b PNG} only at this time) of [size] pixels
+    (default = [(500, 500)]) to [path] of the scad [t] using the OpenSCAD
+    CLI. By default, the [camera] is positioned automatically to point at the
+    centre of the object, and far enough away such for it to all be in frame. See
+    {!Export.camera} and its {!Export.gimbal} and {!Export.eye} constructors for
+    details on manual control. If export fails, an error containing captured
+    Stderr output from OpenSCAD is returned (usually CGAL errors).
+
+    - if [render] is [true], the object will be rendered before the snapshot is
+      taken, otherwise preview mode is used (default = [false]).
+    - [projection] sets the view style as in the GUI (default = [Perspective])
+    - [colorscheme] selects the OpenSCAD colour palette (default = [Cornfield]) *)
 val snapshot
   :  ?render:bool
   -> ?colorscheme:Export.colorscheme
