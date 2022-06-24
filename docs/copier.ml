@@ -1,6 +1,5 @@
 let sz = 8192
 let bytes = Bytes.create sz
-let assets = "../_doc/_html/assets"
 
 let copy src dest =
   let src = Unix.openfile src [ O_RDONLY ] 0
@@ -17,8 +16,9 @@ let copy src dest =
   Unix.close dest
 
 let () =
+  let assets = Sys.argv.(1) in
   if not @@ Sys.file_exists assets then Sys.mkdir assets 0o777;
-  for i = 1 to Array.length Sys.argv - 1 do
+  for i = 2 to Array.length Sys.argv - 1 do
     let name = Filename.basename Sys.argv.(i) in
     ignore @@ copy Sys.argv.(i) (Printf.sprintf "%s/%s" assets name)
   done

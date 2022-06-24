@@ -12,4 +12,4 @@
    (glob_files assets/*.png)
    (glob_files assets/*.jpg)))
  (action
-  (run %{copier} %{img})))
+  (run %{copier} "../_doc/_html/assets" %{img})))

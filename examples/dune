@@ -90,4 +90,4 @@
   (:img
    (glob_files pngs/*.png)))
  (action
-  (run %{copier} %{img})))
+  (run %{copier} "../_doc/_html/assets" %{img})))
