@@ -487,11 +487,12 @@ val to_file : string -> ('s, 'r) t -> unit
 (** [export path t]
 
     Export the scad [t] to a file at the given [path], in a format dictated by
-    the extension of [path]. Raises [Invalid_argument] if the target format is
-    not supported for the dimensionality of [t]. Compatible extensions:
+    the extension of [path]. If export through OpenSCAD fails, an error
+    containing captured Stderr output from OpenSCAD is returned (usually CGAL
+    errors). Compatible extensions:
     - {b 2D}: [.dxf], [.svg], [.csg]
     - {b 3D}: [.stl], [.off], [.amf], [.3mf], [.csg], [.wrl] *)
-val export : string -> ('s, 'r) t -> unit
+val export : string -> ('s, 'r) t -> (unit, string) result
 
 (** [snapshot ?render ?colorscheme ?projection ?size ?camera path t]
 
@@ -504,7 +505,7 @@ val snapshot
   -> ?camera:Export.camera
   -> string
   -> ('s, 'r) t
-  -> unit
+  -> (unit, string) result
 
 (** {1 Infix Operators} *)
 

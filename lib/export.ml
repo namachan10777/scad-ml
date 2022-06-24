@@ -1,5 +1,3 @@
-exception FailedExport of string * string
-
 let openscad = if Sys.unix then "openscad" else "openscad.com"
 let sz = 8192
 let bytes = Bytes.create sz
@@ -51,7 +49,7 @@ let script out_path scad_path =
   Unix.close err;
   let e = file_to_string err_name in
   Sys.remove err_name;
-  if String.length e > 0 then raise (FailedExport (out_path, e))
+  if String.length e > 0 then Error e else Ok ()
 
 type camera =
   | Auto
@@ -161,4 +159,4 @@ let snapshot
   Unix.close err;
   let e = file_to_string err_name in
   Sys.remove err_name;
-  if String.length e > 0 then raise (FailedExport (out_path, e))
+  if String.length e > 0 then Error e else Ok ()

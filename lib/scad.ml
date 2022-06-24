@@ -536,18 +536,16 @@ let export (type a b) path (t : (a, b) t) =
   in
   match Export.legal_ext allowed path with
   | Ok ()     ->
-    let temp = Filename.temp_file "out" ".scad" in
+    let temp = Filename.temp_file "scad_export_" ".scad" in
     to_file temp t;
-    Export.script path temp;
-    Sys.remove temp
+    Export.script path temp
   | Error ext ->
     invalid_arg (Printf.sprintf "%s files are not supported for %s export." ext space)
 
 let snapshot ?render ?colorscheme ?projection ?size ?camera out_path t =
   let temp = Filename.temp_file "out" ".scad" in
   to_file temp t;
-  Export.snapshot ?render ?colorscheme ?projection ?size ?camera out_path temp;
-  Sys.remove temp
+  Export.snapshot ?render ?colorscheme ?projection ?size ?camera out_path temp
 
 module Infix = struct
   let ( |>> ) t p = translate p t

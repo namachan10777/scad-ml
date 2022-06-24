@@ -1,12 +1,5 @@
 (** Exporting [.scad] scripts through the OpenSCAD command line interface. *)
 
-(** [FailedExport (path, error)]
-
-    Exception raised on failed export of a scad model, to a file a [path].
-    [error] is the captured stderr output of the OpenSCAD process (usually CGAL
-    errors). *)
-exception FailedExport of string * string
-
 (** {1 2D/3D formats} *)
 
 (** [script out_path in_path]
@@ -15,10 +8,10 @@ exception FailedExport of string * string
     a format dictated by the extension of [out_path]. See documentation for the
     [-o] argument in the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/Using_OpenSCAD_in_a_command_line_environment}
-    OpenSCAD CLI docs} for available output formats. Raises
-    [FailedExport (out_path, err)] if OpenSCAD fails to export the the
-    script, where [err] is the captured Stderror output (e.g. CGAL failures). *)
-val script : string -> string -> unit
+    OpenSCAD CLI docs} for available output formats. If export fails, an error
+    containing captured Stderr output from OpenSCAD is returned (usually CGAL
+    errors). *)
+val script : string -> string -> (unit, string) result
 
 (** {1 Images (PNG)} *)
 
@@ -45,25 +38,52 @@ type projection =
 type camera =
   | Auto (** Automatically positon to view all of the object, and point at it's centre. *)
   | Gimbal of
-      { translation : Vec3.t (** positional shift vector *)
-      ; rotation : Vec3.t (** euler rotation vector for orientation *)
+      { translation : Vec3.t (** origin shift vector *)
+      ; rotation : Vec3.t (** euler rotation vector (about translated origin) *)
       ; distance : [ `Auto | `D of float ]
-            (** distance from origin, or automatically distanced such that all
-                  of the object is visible *)
+            (** vertical distance of camera above shifted origin before rotation
+                   (auto moves far enough away to bring object fully into frame) *)
       }
   | Eye of
       { lens : Vec3.t (** lens position vector *)
-      ; center : Vec3.t (** center position vector (which lens pointed towards) *)
-      ; view_all : bool (** override distance to ensure all object is visible *)
+      ; center : Vec3.t (** center position vector (which lens points towards) *)
+      ; view_all : bool (** override vector distance to ensure all object is visible *)
       }
 
+(** Position camera such that object is centred and fully in view. *)
 val auto : camera
+
+(** [gimbal ?translation ?rotation d]
+
+    Position and orient the camera as in the OpenSCAD GUI with [translation], and
+    euler [rotation] vectors a (defaulting to {!Vec3.zero}). The focal point is
+    moved from the origin by [translation], then the camera is positioned the
+    distance [d] (manually, or far enough back to get the whole object into
+    frame) straight upward in z before applying the euler [rotation]. *)
 val gimbal : ?translation:Vec.v3 -> ?rotation:Vec.v3 -> [ `Auto | `D of float ] -> camera
+
+(** [eye ?view_all ?center lens]
+
+    Position the camera at [lens], and point it at [center]. If [view_all] is
+    [true], then the camera will be moved along the difference vector to bring
+    the whole object into the frame. *)
 val eye : ?view_all:bool -> ?center:Vec.v3 -> Vec.v3 -> camera
 
 (** [snapshot ?render ?colorscheme ?projection ?size ?camera out_path in_path]
 
-    *)
+    Save an image ({b PNG} only at this time) of [size] pixels
+    (default = [(500, 500)]) to [out_path] of the object defined by the [.scad]
+    script located at [in_path] using the OpenSCAD CLI. By default, the [camera]
+    is positioned automatically to point at the centre of the object, and far
+    enough away such for it to all be in frame. See {!camera} and its {!gimbal}
+    and {!eye} contructors for details on manual control. If export fails, an
+    error containing captured Stderr output from OpenSCAD is returned (usually
+    CGAL errors).
+
+    - if [render] is [true], the object will be rendered before the snapshot is
+      taken, otherwise preview mode is used (default = [false]).
+    - [projection] sets the view style as in the GUI (default = [Perspective])
+    - [colorscheme] selects the OpenSCAD colour palette (default = [Cornfield]) *)
 val snapshot
   :  ?render:bool
   -> ?colorscheme:colorscheme
@@ -72,7 +92,7 @@ val snapshot
   -> ?camera:camera
   -> string
   -> string
-  -> unit
+  -> (unit, string) result
 
 (** {1 Extension checking helpers} *)
 
