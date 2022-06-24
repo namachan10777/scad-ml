@@ -7,9 +7,9 @@
 (rule
  (alias doc)
  (deps
-  "copier.exe"
+  (:copier "copier.exe")
   (:img
    (glob_files assets/*.png)
    (glob_files assets/*.jpg)))
  (action
-  (run ./copier.exe %{img})))
+  (run %{copier} %{img})))

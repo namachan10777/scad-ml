@@ -64,3 +64,30 @@
   (chdir
    "stls"
    (run %{exporter} %{scads}))))
+
+; Export scad examples to png.
+
+(rule
+ (alias snap_examples)
+ (deps
+  (sandbox always)
+  (:exporter "helpers/snapper.exe")
+  (:scads
+   (glob_files "scads/*.scad")))
+ (targets
+  (dir "pngs"))
+ (mode
+  (promote (until-clean)))
+ (action
+  (chdir
+   "pngs"
+   (run %{exporter} %{scads}))))
+
+(rule
+ (alias doc)
+ (deps
+  (:copier "../docs/copier.exe")
+  (:img
+   (glob_files pngs/*.png)))
+ (action
+  (run %{copier} %{img})))
