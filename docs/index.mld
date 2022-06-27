@@ -46,6 +46,10 @@ as you normally would.
 
 {!modules: Scad_ml}
 
+{1:examples Examples}
+
+{{!page-"rounded_polyhole_sweep"} {b Rounded sweep with holes}}
+
 {1:ppx \[@@deriving scad\]}
 
 There is a companion ppx, {{:https://github.com/geoffder/ppx_deriving_scad} \[@@deriving scad\]}
