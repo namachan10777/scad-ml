@@ -8,4 +8,4 @@ let () =
     |> Mesh.of_ragged
     |> Mesh.to_scad
   in
-  Scad.to_file "ragged_tri_array_mesh.scad" scad
+  print_string @@ Scad.to_string scad

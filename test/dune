@@ -9,7 +9,8 @@
   square
   triangle_polygon
   vertical_text
-  rendered_sphere)
+  rendered_sphere
+  ragged_tri_array_mesh)
  (public_names
   circle
   hello
@@ -20,7 +21,8 @@
   square
   triangle_polygon
   vertical_text
-  rendered_sphere)
+  rendered_sphere
+  ragged_tri_array_mesh)
  (libraries scad_ml))
 
 (cram
@@ -34,4 +36,5 @@
   %{bin:square}
   %{bin:triangle_polygon}
   %{bin:vertical_text}
-  %{bin:rendered_sphere}))
+  %{bin:rendered_sphere}
+  %{bin:ragged_tri_array_mesh}))

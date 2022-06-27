@@ -14,7 +14,6 @@
   poly_linear_extrude
   arc_points_2d
   arc_points_3d
-  ragged_tri_array_mesh
   polar_rose
   sweep_path
   offset_poly
