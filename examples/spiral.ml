@@ -1,3 +1,4 @@
+(** {0 Flat spiral} *)
 open Scad_ml
 
 let () =

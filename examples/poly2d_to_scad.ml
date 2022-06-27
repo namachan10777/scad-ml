@@ -1,3 +1,4 @@
+(** {0 Poly2d shape contsruction} *)
 open Scad_ml
 
 let () =

@@ -1,3 +1,4 @@
+(** {0 Cublic Spline} *)
 open Scad_ml
 
 let () =

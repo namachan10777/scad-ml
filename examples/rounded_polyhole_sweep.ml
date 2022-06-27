@@ -1,3 +1,4 @@
+(** {0 Rounded sweep with holes} *)
 open Scad_ml
 
 let () =

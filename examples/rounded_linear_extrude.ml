@@ -1,3 +1,4 @@
+(** {0 Rounded linear extrusion} *)
 open Scad_ml
 
 let () =

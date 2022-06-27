@@ -1,3 +1,4 @@
+(** {0 Rounded text extrusion} *)
 open Scad_ml
 
 let () =

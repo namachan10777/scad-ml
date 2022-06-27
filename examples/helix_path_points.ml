@@ -1,3 +1,4 @@
+(** {0 Helical Path} *)
 open Scad_ml
 
 let () =

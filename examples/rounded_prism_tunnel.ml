@@ -1,3 +1,4 @@
+(** {0 Rounded Prism Tunnel} *)
 open Scad_ml
 
 let () =

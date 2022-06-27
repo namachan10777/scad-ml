@@ -1,3 +1,4 @@
+(** {0 Polygons with holes} *)
 open Scad_ml
 
 let () =

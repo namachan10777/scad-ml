@@ -48,7 +48,8 @@ as you normally would.
 
 {1:examples Examples}
 
-{{!page-"rounded_polyhole_sweep"} {b Rounded sweep with holes}}
+- {{!page-"rounded_polyhole_sweep"} {b Rounded sweep with holes}}
+- {{!page-"polar_rose"} {b Rose polar plot}}
 
 {1:ppx \[@@deriving scad\]}
 

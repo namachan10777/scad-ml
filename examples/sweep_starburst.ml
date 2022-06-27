@@ -1,3 +1,4 @@
+(** {0 Path transfomations (standard vs euler)} *)
 open Scad_ml
 
 let () =

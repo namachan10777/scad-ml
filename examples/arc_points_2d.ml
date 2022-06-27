@@ -1,3 +1,4 @@
+(** {0 Arcing path (2d)} *)
 open Scad_ml
 
 let () =

@@ -1,3 +1,4 @@
+(** {0 Linear Rounded Prism} *)
 open Scad_ml
 
 let () =

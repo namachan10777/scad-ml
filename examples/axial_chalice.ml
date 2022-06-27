@@ -1,3 +1,4 @@
+(** {0 Axial Chalice} *)
 open Scad_ml
 
 let () =

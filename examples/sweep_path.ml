@@ -1,3 +1,4 @@
+(** {0 Path extrusions (standard and euler)} *)
 open Scad_ml
 
 let () =

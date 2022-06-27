@@ -1,3 +1,4 @@
+(** {0 Path resampling} *)
 open Scad_ml
 
 let () =

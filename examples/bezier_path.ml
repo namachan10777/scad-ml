@@ -1,3 +1,4 @@
+(** {0 Bezier path} *)
 open Scad_ml
 
 let () =

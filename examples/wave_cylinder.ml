@@ -1,3 +1,4 @@
+(** {0 Wavey Cylinder Sweep} *)
 open Scad_ml
 
 let () =

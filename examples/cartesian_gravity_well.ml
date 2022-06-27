@@ -1,3 +1,4 @@
+(** {0 Cartesian Gravity Well} *)
 open Scad_ml
 
 let () =

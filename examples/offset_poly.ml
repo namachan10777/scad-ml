@@ -1,3 +1,4 @@
+(** {0 Polygon Offset} *)
 open Scad_ml
 
 let () =

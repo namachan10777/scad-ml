@@ -1,3 +1,4 @@
+(** {0 Circular Rounding} *)
 open Scad_ml
 
 let () =
