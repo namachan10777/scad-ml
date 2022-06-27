@@ -41,8 +41,7 @@
    (glob_files "*.exe")))
  (targets
   (dir "scads"))
- (mode
-  (promote (until-clean)))
+ (mode (promote))
  (action
   (chdir
    "scads"
@@ -59,8 +58,7 @@
    (glob_files "scads/*.scad")))
  (targets
   (dir "stls"))
- (mode
-  (promote (until-clean)))
+ (mode (promote))
  (action
   (chdir
    "stls"
@@ -77,8 +75,7 @@
    (glob_files "scads/*.scad")))
  (targets
   (dir "pngs"))
- (mode
-  (promote (until-clean)))
+ (mode (promote))
  (action
   (chdir
    "pngs"
@@ -102,16 +99,8 @@
    (glob_files "*.ml")))
  (targets
   (dir "docs"))
- ; (mode
- ;  (promote
- ;   (until-clean)
- ;   (into "../docs/examples")))
- (mode
-  (promote (until-clean)))
+ (mode (promote))
  (action
   (chdir
    "docs"
    (run %{doccer} %{ml}))))
-
-; (action
-;  (run %{doccer} %{ml})))
