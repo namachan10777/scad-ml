@@ -39,13 +39,10 @@ let digest src =
     | line                  ->
       let trimmed = String.trim line in
       let line_state =
-        (* if String.starts_with ~prefix:"let" trimmed  *)
-        if Option.is_none state
-           && String.(
-                starts_with ~prefix:"let" trimmed || starts_with ~prefix:"open" trimmed)
-        then Some Code
-        else if String.starts_with ~prefix:"(**" trimmed
+        if String.starts_with ~prefix:"(**" trimmed
         then Some Doc
+        else if Option.is_none state && not (String.equal "" trimmed)
+        then Some Code
         else None
       in
       let state' =
