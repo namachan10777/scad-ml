@@ -2,7 +2,8 @@
 open Scad_ml
 
 (** Define a function that takes a radius [r] and angle [a], and returns a z
-    coordinate. *)
+    coordinate. This rose function is ported from the examples given in
+    the {{:https://github.com/rcolyer/plot-function} plot function} OpenSCAD library. *)
 let rose ~r ~a =
   let open Float in
   let x =
