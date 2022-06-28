@@ -25,10 +25,6 @@
   helix_path_points)
  (libraries scad_ml))
 
-; TODO: (?) make a tool that turns ml files (here, executables since odoc ignores them conveniently)
-; into mld markup with code wrapped in blocks (and whatever doc comments interspersed). That way I don't
-; have to worry about code not matching the versions pased into the docs.
-
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)
 ; This pattern enables automatic scad re-generation on changes with `dune build -w @run`.
 
@@ -41,7 +37,7 @@
    (glob_files "*.exe")))
  (targets
   (dir "scads"))
- (mode (promote))
+ (mode promote)
  (action
   (chdir
    "scads"
@@ -58,7 +54,7 @@
    (glob_files "scads/*.scad")))
  (targets
   (dir "stls"))
- (mode (promote))
+ (mode promote)
  (action
   (chdir
    "stls"
@@ -75,7 +71,7 @@
    (glob_files "scads/*.scad")))
  (targets
   (dir "pngs"))
- (mode (promote))
+ (mode promote)
  (action
   (chdir
    "pngs"
@@ -99,7 +95,7 @@
    (glob_files "*.ml")))
  (targets
   (dir "docs"))
- (mode (promote))
+ (mode promote)
  (action
   (chdir
    "docs"
