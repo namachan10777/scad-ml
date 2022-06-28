@@ -2,7 +2,9 @@
 open Scad_ml
 
 (** Create a bezier spline function which passes through all of points in
-    [control], and interpolate [20] points along it to create our [path]. *)
+    [control] using {{!Scad_ml.Bezier3.of_path} [Bezier3.of_path]}, and
+   interpolate [20] points along it to create our [path] with
+   {{!Scad_ml.Bezier3.curve} [Bezier3.curve]}. *)
 let path =
   let control = Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ] in
   Bezier3.curve ~fn:20 @@ Bezier3.of_path control
@@ -26,10 +28,11 @@ let () = Scad.to_file "rounded_polyhole_poly.scad" (Poly2.to_scad poly)
     style="width:150mm;"/> %}
     *)
 
-(** [Mesh.sweep] derived functions take a [~spec] parameter that specfies what
-    to do with the end faces of the extruded mesh. By default, both caps are the
-    same as the input polygon, but in this example, we will be rounding them
-    over.
+(** {{!Scad_ml.Mesh.sweep} [Mesh.sweep]} derived functions take a [~spec]
+   parameter that specifies what to do with the end faces of the extruded mesh.
+   By default, both caps are flat and identical to the input polygon
+   ({{!Scad_ml.Mesh.Cap.flat_caps} [Cap.flat_caps]}), but in this example, we
+   will be rounding them over.
 
     To build our [spec], we'll use the [capped] constructor which takes
     specification types for how we would like to treat the bottom and top faces

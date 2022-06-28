@@ -8,9 +8,9 @@ Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelli
   OpenSCAD).
 - The dimensional system (2D or 3D) each shape inhabits is tracked by the type
   system. This is used to restrict the operations that can be legally applied
-  (e.g. 2D shapes cannot be moved off of the xy plane, [linear_extrude] can only
-  be applied to 2D shapes) and enforcing non-mixing of 2D and 3D shapes during
-  boolean operations.
+  (e.g. 2D shapes cannot be moved off of the xy plane,
+  {{!Scad_ml.Scad.linear_extrude} [linear_extrude]} can only be applied to 2D shapes)
+  and enforcing non-mixing of 2D and 3D shapes during boolean operations.
 - Additional modules providing sweeps, roundovers, and more, inspired largely by
   {{:https://github.com/revarbat/BOSL2} BOSL2}, but also other OpenSCAD libraries such
   as {{:https://github.com/JustinSDK/dotSCAD/tree/master/src} dotSCAD}, and
@@ -55,6 +55,6 @@ as you normally would.
 
 There is a companion ppx, {{:https://github.com/geoffder/ppx_deriving_scad} \[@@deriving scad\]}
 for generating transformation functions for user-defined records and abstract
-types made up of the {!Scad_ml.Scad.t}, along with their corresponding vector
-({!Scad_ml.Vec2.t} or {!Scad_ml.Vec3.t}) types (and those composed of them)
-provided in this library.
+types made up of the {{!Scad_ml.Scad.t} [Scad.t]}, along with their
+corresponding vector ({{!Scad_ml.Vec2.t} [Vec2.t]} or {{!Scad_ml.Vec3.t} [Vec3.t]})
+types (and those composed of them) provided in this library.
