@@ -230,77 +230,88 @@ let sweep'
     and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
     bot_lid, top_lid, Mesh0.join [ bot; mid; top ]
 
-let sweep ?check_valid ?winding ?(spec = flat_caps) ~transforms Poly2.{ outer; holes } =
+let sweep
+    ?check_valid
+    ?(merge = true)
+    ?winding
+    ?(spec = flat_caps)
+    ~transforms
+    Poly2.{ outer; holes }
+  =
   let sweep = sweep' ?check_valid ~transforms in
-  match spec, holes with
-  | `Caps { top; bot }, []    ->
-    let top = poly_to_path_spec top
-    and bot = poly_to_path_spec bot in
-    let _, _, poly = sweep ?winding ~top ~bot outer in
-    poly
-  | `Looped, holes            ->
-    let f ~winding path =
-      let path = Mesh0.enforce_winding winding path in
-      List.map (fun m -> Path2.multmatrix m path) transforms
-      |> Mesh0.of_rows ~row_wrap:`Loop
-    in
-    Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
-  | `Caps { top; bot }, holes ->
-    let n_holes = List.length holes in
-    let hole_spec outer_offsets = function
-      | `Same      -> fun _ -> `Round outer_offsets
-      | `Flip      ->
-        let flipped = flip_d outer_offsets in
-        fun _ -> `Round flipped
-      | `Spec offs -> fun _ -> `Round offs
-      | `Mix specs ->
-        let specs = Array.of_list specs in
-        if Array.length specs = n_holes
-        then
-          fun i ->
-          match Array.get specs i with
-          | `Same      -> `Round outer_offsets
-          | `Flip      -> `Round (flip_d outer_offsets)
-          | `Spec offs -> `Round offs
-        else invalid_arg "Mixed hole specs must match the number of holes."
-    in
-    let unpack_spec = function
-      | `Flat                         -> `Flat, (fun _ -> `Flat), None
-      | `Empty                        -> `Empty, (fun _ -> `Empty), None
-      | `Round { outer; holes; mode } -> `Round outer, hole_spec outer holes, Some mode
-    in
-    let top, top_holes, top_mode = unpack_spec top
-    and bot, bot_holes, bot_mode = unpack_spec bot in
-    let _, tunnel_bots, tunnel_tops, tunnels =
-      let f (i, bots, tops, tuns) hole =
-        let bot, top, tunnel =
-          sweep
-            ~winding:`CW
-            ~sealed:false
-            ?top_mode
-            ?bot_mode
-            ~top:(top_holes i)
-            ~bot:(bot_holes i)
-            hole
-        in
-        i + 1, bot :: bots, top :: tops, tunnel :: tuns
+  let mesh =
+    match spec, holes with
+    | `Caps { top; bot }, []    ->
+      let top = poly_to_path_spec top
+      and bot = poly_to_path_spec bot in
+      let _, _, poly = sweep ?winding ~top ~bot outer in
+      poly
+    | `Looped, holes            ->
+      let f ~winding path =
+        let path = Mesh0.enforce_winding winding path in
+        List.map (fun m -> Path2.multmatrix m path) transforms
+        |> Mesh0.of_rows ~row_wrap:`Loop
       in
-      List.fold_left f (0, [], [], []) holes
-    in
-    let validate =
-      match check_valid with
-      | Some `No -> false
-      | _        -> true
-    and outer_bot, outer_top, outer =
-      sweep ~winding:`CCW ~sealed:false ?top_mode ?bot_mode ~top ~bot outer
-    in
-    let bot_lid =
-      Mesh0.of_poly3 ~rev:true (Poly3.make ~validate ~holes:tunnel_bots outer_bot)
-    and top_lid = Mesh0.of_poly3 (Poly3.make ~validate ~holes:tunnel_tops outer_top) in
-    Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
+      Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
+    | `Caps { top; bot }, holes ->
+      let n_holes = List.length holes in
+      let hole_spec outer_offsets = function
+        | `Same      -> fun _ -> `Round outer_offsets
+        | `Flip      ->
+          let flipped = flip_d outer_offsets in
+          fun _ -> `Round flipped
+        | `Spec offs -> fun _ -> `Round offs
+        | `Mix specs ->
+          let specs = Array.of_list specs in
+          if Array.length specs = n_holes
+          then
+            fun i ->
+            match Array.get specs i with
+            | `Same      -> `Round outer_offsets
+            | `Flip      -> `Round (flip_d outer_offsets)
+            | `Spec offs -> `Round offs
+          else invalid_arg "Mixed hole specs must match the number of holes."
+      in
+      let unpack_spec = function
+        | `Flat                         -> `Flat, (fun _ -> `Flat), None
+        | `Empty                        -> `Empty, (fun _ -> `Empty), None
+        | `Round { outer; holes; mode } -> `Round outer, hole_spec outer holes, Some mode
+      in
+      let top, top_holes, top_mode = unpack_spec top
+      and bot, bot_holes, bot_mode = unpack_spec bot in
+      let _, tunnel_bots, tunnel_tops, tunnels =
+        let f (i, bots, tops, tuns) hole =
+          let bot, top, tunnel =
+            sweep
+              ~winding:`CW
+              ~sealed:false
+              ?top_mode
+              ?bot_mode
+              ~top:(top_holes i)
+              ~bot:(bot_holes i)
+              hole
+          in
+          i + 1, bot :: bots, top :: tops, tunnel :: tuns
+        in
+        List.fold_left f (0, [], [], []) holes
+      in
+      let validate =
+        match check_valid with
+        | Some `No -> false
+        | _        -> true
+      and outer_bot, outer_top, outer =
+        sweep ~winding:`CCW ~sealed:false ?top_mode ?bot_mode ~top ~bot outer
+      in
+      let bot_lid =
+        Mesh0.of_poly3 ~rev:true (Poly3.make ~validate ~holes:tunnel_bots outer_bot)
+      and top_lid = Mesh0.of_poly3 (Poly3.make ~validate ~holes:tunnel_tops outer_top) in
+      Mesh0.join (bot_lid :: top_lid :: outer :: tunnels)
+  in
+  if merge then Mesh0.merge_points mesh else mesh
 
 let linear_extrude
     ?check_valid
+    ?merge
     ?winding
     ?fa
     ?slices
@@ -325,10 +336,11 @@ let linear_extrude
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
     |> Path3.to_transforms ?scale ?twist
   in
-  sweep ?check_valid ?winding ~spec:(`Caps caps) ~transforms shape
+  sweep ?check_valid ?merge ?winding ~spec:(`Caps caps) ~transforms shape
 
 let helix_extrude
     ?check_valid
+    ?merge
     ?fn
     ?fa
     ?fs
@@ -364,8 +376,8 @@ let helix_extrude
     in
     List.mapi f path
   in
-  sweep ?check_valid ~winding ~spec:(`Caps caps) ~transforms shape
+  sweep ?check_valid ?merge ~winding ~spec:(`Caps caps) ~transforms shape
 
-let path_extrude ?check_valid ?winding ?spec ?euler ?scale ?twist ~path =
+let path_extrude ?check_valid ?merge ?winding ?spec ?euler ?scale ?twist ~path =
   let transforms = Path3.to_transforms ?euler ?scale ?twist path in
-  sweep ?check_valid ?winding ?spec ~transforms
+  sweep ?check_valid ?merge ?winding ?spec ~transforms

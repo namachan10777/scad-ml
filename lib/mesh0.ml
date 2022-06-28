@@ -1,12 +1,3 @@
-(* TODO:
-  - Think about the best way to integrate in roundExtrude. Since that module is
-    quite long, including private implementation functions, but depends on on
-    the Mesh.t type, it may be best to borrow from the JaneStreet Module0 style.
-  - e.g. Mesh0 has the type, of_rows, of_ragged, as needed by roundExtrude,
-    then Mesh includes Mesh0 and RoundExtrude, and fills in the rest.
-  - if this works out well, then adopting this pattern elsewhere in the library
-    would help to remove some of the messiness from the top level Scad_ml module.
-*)
 module IntTbl = Hashtbl.Make (struct
   type t = int
 

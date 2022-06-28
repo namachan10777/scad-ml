@@ -228,7 +228,10 @@ module Cap : sig
 
       Construct a roundover {!type:poly_spec}. [mode] specifies the kind offset
       (see {!val:Path2.offset}) performed on the paths on each "vertical" step of
-      the roundover.  *)
+      the roundover. Roundover behaviour for inner paths are specified with
+      [holes]. This defaults to [`Flip], as for the more common positive
+      roundovers (flaring inward), using [`Same] polarity would lead to
+      "pinching off" of the holes. *)
   val round : ?mode:offset_mode -> ?holes:holes -> offsets -> [> `Round of poly ]
 
   (** [looped]
@@ -254,15 +257,19 @@ module Cap : sig
   val open_caps : t
 end
 
-(** [sweep ?check_valid ?winding ?fn ?fs ?fa ?spec ~transforms poly]
+(** [sweep ?check_valid ?winding ?merge ?fn ?fs ?fa ?spec ~transforms poly]
 
     Sweep a 2d polygon into a 3d mesh by applying a sequence of [transforms] to
-   the original shape. The [winding] parameter can be used to set automatic
-   enforcement of polygon winding direction, which will impact the winding of
-   the generated faces of the mesh. What is done with the endcaps can be
-   specified with [spec]. By default the ends of the extrusion are sealed with
-   flat faces, but they can instead be looped to eachother, left empty, or
-   rounded over.
+    the original shape. The [winding] parameter can be used to set automatic
+    enforcement of polygon winding direction, which will impact the winding of
+    the generated faces of the mesh. What is done with the endcaps can be
+    specified with [spec]. By default the ends of the extrusion are sealed with
+    flat faces, but they can instead be looped to eachother, left empty, or
+    rounded over. If [merge] is [true] (as is default), {!merge_points} is
+    applied to the resulting mesh, as duplicate points are introduced when end
+    caps are joined to the outer and inner meshes. If the duplicate points aren't
+    a problem for you (they aren't {i necessarily}), this can be turned off to
+    save some compute.
 
    Relevant when roundovers are on:
     - [check_valid] determines whether validity checks are performed during
@@ -271,13 +278,14 @@ end
     points in the {!Path2.offset} roundover, if [`Radius] mode is being used. *)
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?spec:Cap.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> t
 
-(** [linear_extrude ?check_valid ?winding ?fa ?slices ?scale ?twist
+(** [linear_extrude ?check_valid ?merge ?winding ?fa ?slices ?scale ?twist
     ?center ?caps ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
@@ -287,6 +295,7 @@ val sweep
     cannot be looped) *)
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fa:float
   -> ?slices:int
@@ -298,13 +307,14 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [path_extrude ?check_valid ?winding ?spec ?euler ?scale ?twist ~path poly]
+(** [path_extrude ?check_valid ?merge ?winding ?spec ?euler ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
     convenience function that composes transform generation using
     {!Path3.to_transforms} with {!Mesh.sweep}. *)
 val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?spec:Cap.t
   -> ?euler:bool
@@ -314,7 +324,7 @@ val path_extrude
   -> Poly2.t
   -> t
 
-(** [helix_extrude ?check_valid ?fn ?fs ?fa ?scale ?twist
+(** [helix_extrude ?check_valid ?merge ?fn ?fs ?fa ?scale ?twist
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
     Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
@@ -322,6 +332,7 @@ val path_extrude
     using transforms that take the helical rotation into account. *)
 val helix_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
