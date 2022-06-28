@@ -1,5 +1,5 @@
 type state =
-  | Let
+  | Code
   | Doc
 
 let digest src =
@@ -39,35 +39,38 @@ let digest src =
     | line                  ->
       let trimmed = String.trim line in
       let line_state =
-        if String.starts_with ~prefix:"let" trimmed
-        then Some Let
+        (* if String.starts_with ~prefix:"let" trimmed  *)
+        if Option.is_none state
+           && String.(
+                starts_with ~prefix:"let" trimmed || starts_with ~prefix:"open" trimmed)
+        then Some Code
         else if String.starts_with ~prefix:"(**" trimmed
         then Some Doc
         else None
       in
       let state' =
         match state, line_state with
-        | Some Let, Some Doc ->
+        | Some Code, Some Doc ->
           dump_block true;
           doc_line trimmed
         | Some Doc, _ | None, Some Doc ->
           let state' = doc_line trimmed in
           if Option.is_none state' then dump_block false;
           state'
-        | Some Let, (None | Some Let) | None, Some Let ->
+        | Some Code, (None | Some Code) | None, Some Code ->
           Buffer.add_char block '\n';
           Buffer.add_string block line;
-          Some Let
+          Some Code
         | None, None -> None
       in
       loop state'
     | exception End_of_file ->
       ( match state with
-      | Some Let ->
+      | Some Code ->
         Buffer.add_char block '\n';
         dump_block true
-      | Some Doc -> dump_block false
-      | None     -> () );
+      | Some Doc  -> dump_block false
+      | None      -> () );
       Buffer.output_buffer oc out
   in
   loop None;
