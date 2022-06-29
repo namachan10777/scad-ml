@@ -34,6 +34,14 @@ type projection =
   | Perspective
   | Orthogonal
 
+(** View options (as in OpenSCAD GUI) *)
+type view =
+  | Axes
+  | Crosshairs
+  | Edges
+  | Scales
+  | Wireframe
+
 (** Camera position and orientation configuration *)
 type camera =
   | Auto (** Automatically positon to view all of the object, and point at it's centre. *)
@@ -69,7 +77,7 @@ val gimbal : ?translation:Vec.v3 -> ?rotation:Vec.v3 -> [ `Auto | `D of float ] 
     the whole object into the frame. *)
 val eye : ?view_all:bool -> ?center:Vec.v3 -> Vec.v3 -> camera
 
-(** [snapshot ?render ?colorscheme ?projection ?size ?camera out_path in_path]
+(** [snapshot ?render ?colorscheme ?view ?projection ?size ?camera out_path in_path]
 
     Save an image ({b PNG} only at this time) of [size] pixels
     (default = [(500, 500)]) to [out_path] of the object defined by the [.scad]
@@ -82,11 +90,13 @@ val eye : ?view_all:bool -> ?center:Vec.v3 -> Vec.v3 -> camera
 
     - if [render] is [true], the object will be rendered before the snapshot is
       taken, otherwise preview mode is used (default = [false]).
+    - [view] toggles on various viewport elements such as axes and scale ticks
     - [projection] sets the view style as in the GUI (default = [Perspective])
     - [colorscheme] selects the OpenSCAD colour palette (default = [Cornfield]) *)
 val snapshot
   :  ?render:bool
   -> ?colorscheme:colorscheme
+  -> ?view:view list
   -> ?projection:projection
   -> ?size:int * int
   -> ?camera:camera

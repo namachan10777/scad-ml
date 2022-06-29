@@ -51,6 +51,30 @@ let script out_path scad_path =
   Sys.remove err_name;
   if String.length e > 0 then Error e else Ok ()
 
+type colorscheme =
+  | Cornfield
+  | Metallic
+  | Sunset
+  | Starnight
+  | BeforeDawn
+  | Nature
+  | DeepOcean
+  | Solarized
+  | Tomorrow
+  | TomorrowNight
+  | Monotone
+
+type view =
+  | Axes
+  | Crosshairs
+  | Edges
+  | Scales
+  | Wireframe
+
+type projection =
+  | Perspective
+  | Orthogonal
+
 type camera =
   | Auto
   | Gimbal of
@@ -90,19 +114,6 @@ let camera_to_args = function
      ; "--viewall"
     |]
 
-type colorscheme =
-  | Cornfield
-  | Metallic
-  | Sunset
-  | Starnight
-  | BeforeDawn
-  | Nature
-  | DeepOcean
-  | Solarized
-  | Tomorrow
-  | TomorrowNight
-  | Monotone
-
 let colorscheme_to_string = function
   | Cornfield     -> "Cornfield"
   | Metallic      -> "Metallic"
@@ -116,9 +127,18 @@ let colorscheme_to_string = function
   | TomorrowNight -> "Tomorrow Night"
   | Monotone      -> "Monotone"
 
-type projection =
-  | Perspective
-  | Orthogonal
+let view_to_string = function
+  | Axes       -> "axes"
+  | Crosshairs -> "crosshairs"
+  | Edges      -> "edges"
+  | Scales     -> "scales"
+  | Wireframe  -> "wireframe"
+
+let view_list_to_args = function
+  | []       -> [||]
+  | hd :: tl ->
+    let f acc a = Printf.sprintf "%s,%s" acc (view_to_string a) in
+    [| "--view"; List.fold_left f (view_to_string hd) tl |]
 
 let projection_to_string = function
   | Perspective -> "perspective"
@@ -127,6 +147,7 @@ let projection_to_string = function
 let snapshot
     ?(render = false)
     ?(colorscheme = Cornfield)
+    ?(view = [])
     ?(projection = Perspective)
     ?size:(sz_x, sz_y = 500, 500)
     ?(camera = Auto)
@@ -152,7 +173,7 @@ let snapshot
        ; scad_path
       |]
     and render = if render then [| "--render" |] else [||] in
-    Array.concat [ base; render; camera_to_args camera ]
+    Array.concat [ base; render; view_list_to_args view; camera_to_args camera ]
   in
   let pid = Unix.create_process openscad args Unix.stdin Unix.stdout err in
   ignore @@ Unix.waitpid [] pid;
