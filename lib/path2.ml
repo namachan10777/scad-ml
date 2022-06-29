@@ -154,4 +154,7 @@ let square ?(center = false) { x; y } =
     Vec2.[ v x' (-.y'); v (-.x') (-.y'); v (-.x') y'; v x' y' ] )
   else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
 
+let show_points f t =
+  Scad.union (List.mapi (fun i p -> Scad.translate (Vec3.of_vec2 p) (f i)) t)
+
 let to_scad ?convexity t = Scad.polygon ?convexity t

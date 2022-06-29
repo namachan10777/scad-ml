@@ -226,3 +226,7 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
 val multmatrix : MultMatrix.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
+
+(** {1 Debugging helpers} *)
+
+val show_points : (int -> Scad.d3) -> t -> Scad.d3

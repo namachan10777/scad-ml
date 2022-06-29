@@ -233,6 +233,10 @@ val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> Vec3.t list
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
 
+(** {1 Debugging helpers} *)
+
+val show_points : (int -> Scad.d3) -> t -> Scad.d3
+
 (** {1 Output} *)
 
 (** [to_scad ?convexity t]
