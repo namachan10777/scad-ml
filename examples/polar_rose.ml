@@ -25,5 +25,8 @@ let mesh = Mesh.polar_plot ~r_step:0.4 ~max_r:22. rose
 (** Convert our mesh into an OpenSCAD polyhedron and output to file. *)
 let () = Scad.to_file "polar_rose.scad" (Mesh.to_scad mesh)
 
-(** {%html: <img src="../assets/polar_rose.png"
-    style="width:150mm;"/> %} *)
+(** {%html:
+    <p style="text-align:center;">
+    <img src="../assets/polar_rose.png" style="width:150mm;"/>
+    </p> %}
+    *)
