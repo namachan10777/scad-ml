@@ -39,12 +39,47 @@ Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelli
 
 {%html: <img src="../assets/scad_logo.png" style="width:125mm;" /> %}
 
-Generted scads can then be viewed with the {{:https://openscad.org/downloads.html} OpenSCAD viewer}
-as you normally would.
+Generted [.scad] scripts can then be viewed with the
+{{:https://openscad.org/downloads.html} OpenSCAD viewer} as you normally would, or
+directly exporting {{!Scad_ml.Scad.t} [Scad.t]} into other model formats or PNGs with
+{{!Scad_ml.Scad.export} [Scad.export]} and {{!Scad_ml.Scad.snapshot} [Scad.snapshot]}
+respectively.
 
 {1:api API}
 
-{!modules: Scad_ml}
+{!module-Scad_ml}
+
+{2 Core DSL}
+- {!modules: Scad_ml.Scad}
+- {!modules: Scad_ml.Text}
+- {!modules: Scad_ml.Color}
+
+{2 Vectors and transformations}
+- {!modules: Scad_ml.Vec2}
+- {!modules: Scad_ml.Vec3}
+- {!modules: Scad_ml.RotMatrix}
+- {!modules: Scad_ml.MultMatrix}
+- {!modules: Scad_ml.Quaternion}
+- {!modules: Scad_ml.Plane}
+
+{2 2d paths and polygons}
+- {!modules: Scad_ml.Path2}
+- {!modules: Scad_ml.Bezier2}
+- {!modules: Scad_ml.CubicSpline}
+- {!modules: Scad_ml.Poly2}
+- {!modules: Scad_ml.PolyText}
+
+{2 3d paths, coplanar polygons, and meshes}
+- {!modules: Scad_ml.Path3}
+- {!modules: Scad_ml.Bezier3}
+- {!modules: Scad_ml.Poly3}
+- {!modules: Scad_ml.Mesh}
+
+{2 Utilities}
+- {!modules: Scad_ml.Math}
+- {!modules: Scad_ml.Export}
+- {!modules: Scad_ml.BallTree2}
+- {!modules: Scad_ml.BallTree3}
 
 {1:examples Examples}
 

@@ -207,7 +207,6 @@ module Bezier2 = Bezier2
 module CubicSpline = CubicSpline
 module Poly2 = Poly2
 module PolyText = PolyText
-module BallTree2 = BallTree2
 
 (** {1 3-dimensional paths, coplanar polygons, and meshes} *)
 
@@ -215,9 +214,10 @@ module Path3 = Path3
 module Bezier3 = Bezier3
 module Poly3 = Poly3
 module Mesh = Mesh
-module BallTree3 = BallTree3
 
 (** {1 Utilities} *)
 
 module Math = Math
 module Export = Export
+module BallTree2 = BallTree2
+module BallTree3 = BallTree3
