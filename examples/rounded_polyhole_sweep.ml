@@ -43,6 +43,8 @@ let poly =
   in
   Poly2.make ~holes outer
 
+(** 2d shapes defined with {{!Scad_ml.Poly2.t} [Poly2.t]} can be translated into
+    OpenSCAD polygons by way of {{!Scad_ml.Poly2.to_scad} [Poly2.to_scad]}. *)
 let () = Scad.to_file "chamfered_square_with_holes.scad" (Poly2.to_scad poly)
 
 (** {%html:
@@ -54,12 +56,12 @@ let () = Scad.to_file "chamfered_square_with_holes.scad" (Poly2.to_scad poly)
 (** {{!Scad_ml.Mesh.sweep} [Mesh.sweep]} derived functions take a [~spec]
    parameter that specifies what to do with the end faces of the extruded mesh.
    By default, both caps are flat and identical to the input polygon
-   ({{!Scad_ml.Mesh.Cap.flat_caps} [Cap.flat_caps]}), but in this example, we
+   ({{!Scad_ml.Mesh.Cap.flat_caps} [Mesh.Cap.flat_caps]}), but in this example, we
    will be rounding them over.
 
-    To build our [spec], we'll use the [capped] constructor which takes
-    specification types for how we would like to treat the bottom and top faces
-    of our extrusion.
+    To build our [spec], we'll use the {{!Scad_ml.Mesh.Cap.capped} [Mesh.Cap.capped]}
+    constructor which takes specification types for how we would like to treat the
+    bottom and top faces of our extrusion.
 
     Here we apply a negative (outward flaring) chamfer to the bottom face,
     setting [holes] to [`Same], so that the circular holes in [poly] are also
@@ -74,10 +76,11 @@ let spec =
       ~top:(round @@ circ (`Radius 0.5)))
 
 (** Extrude [poly] along [path], with rounding over the end caps according to
-    [spec]. *)
-let mesh = Mesh.(merge_points @@ path_extrude ~path ~spec poly)
+    [spec] using {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]}. *)
+let mesh = Mesh.path_extrude ~path ~spec poly
 
-(** Convert our mesh into an OpenSCAD polyhedron and output to file. *)
+(** Convert our mesh into an OpenSCAD polyhedron and output to file with
+   {{!Scad_ml.Mesh.to_scad} [Mesh.to_scad]}. *)
 let () = Scad.to_file "rounded_polyhole_sweep.scad" (Mesh.to_scad mesh)
 
 (** {%html:
