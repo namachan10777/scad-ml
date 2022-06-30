@@ -48,8 +48,22 @@ as you normally would.
 
 {1:examples Examples}
 
-- {{!page-"rounded_polyhole_sweep"} {b Rounded sweep with holes}}
+{2 Paths and Sweeps}
+- {{!page-"spline"} {b Cubic spline}}
+- {{!page-"arc_points"} {b Arcing paths}}
+- {{!page-"helices"} {b Helical paths and extrusions}}
+- {{!page-"resampled_path"} {b Path resampling and scaling/twisting sweeps}}
+- {{!page-"spiral"} {b Flat spiral with bespoke sweep transforms}}
+- {{!page-"wave_cylinder"} {b Wavey hollow cylinder with bespoke sweep transforms}}
+
+{2 Rounded Extrusions}
+- {{!page-"rounded_polyhole_sweep"} {b Rounded sweep along bezier spline with holes}}
+- {{!page-"rounded_prism_tunnel"} {b Slanted prism with hole}}
+
+{2 Function Plotting}
 - {{!page-"polar_rose"} {b Rose polar plot}}
+- {{!page-"cartesian_gravity_well"} {b Cartesian gravity well}}
+- {{!page-"axial_chalice"} {b Axial chalice}}
 
 {1:ppx \[@@deriving scad\]}
 

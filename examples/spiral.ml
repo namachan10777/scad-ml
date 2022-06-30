@@ -16,3 +16,9 @@ let () =
     |> Mesh.to_scad
   in
   Scad.to_file "spiral.scad" scad
+
+(** {%html:
+    <p style="text-align:center;">
+    <img src="../assets/spiral.png" style="width:150mm;"/>
+    </p> %}
+    *)

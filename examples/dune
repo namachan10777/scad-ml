@@ -3,16 +3,12 @@
   rounded_text
   wave_cylinder
   spiral
-  rounded_linear_extrude
   rounded_polyhole_sweep
-  helix_extrude
-  bezier_path
+  helices
   cartesian_gravity_well
   spline
-  poly2d_to_scad
   rounded_prism_pointy
-  arc_points_2d
-  arc_points_3d
+  arc_points
   polar_rose
   sweep_path
   offset_poly
@@ -21,8 +17,7 @@
   resampled_path
   sweep_starburst
   circular_rounding
-  rounded_prism_tunnel
-  helix_path_points)
+  rounded_prism_tunnel)
  (libraries scad_ml))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)
