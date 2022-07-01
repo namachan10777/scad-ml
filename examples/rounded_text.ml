@@ -1,30 +1,19 @@
 (** {0 Rounded text extrusion} *)
 open Scad_ml
 
-let () =
-  let scad =
-    let hello = PolyText.text ~center:true ~fn:5 ~size:5. ~font:"Roboto" "Hello World!"
-    and f poly =
-      let mesh =
-        Mesh.(
-          linear_extrude
-            ~check_valid:(`Quality 1)
-            ~caps:
-              Cap.
-                { top = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.01)
-                ; bot = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.01)
-                }
-              (* ~caps: *)
-              (*   Spec. *)
-              (*     { top = round @@ chamf ~height:0.1 () *)
-              (*     ; bot = round @@ chamf ~height:0.1 () *)
-              (*     } *)
-            ~height:0.5
-            poly)
-      in
-      (* Scad.union [ Mesh.to_scad mesh; Mesh.show_points (fun _ -> Scad.sphere 0.05) mesh ] *)
-      Mesh.to_scad mesh
-    in
-    Scad.union @@ List.map f hello
-  in
-  Scad.to_file "rounded_text.scad" scad
+let hello = PolyText.text ~center:true ~fn:3 ~size:5. ~font:"Roboto" "Hello World!"
+
+let caps =
+  Mesh.Cap.
+    { top = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.03)
+    ; bot = round ~mode:Delta @@ circ ~fn:5 (`Cut 0.03)
+    }
+
+let extruder poly = Mesh.(to_scad @@ linear_extrude ~caps ~height:0.5 poly)
+let () = List.map extruder hello |> Scad.union |> Scad.to_file "rounded_text.scad"
+
+(** {%html:
+    <p style="text-align:center;">
+    <img src="../assets/rounded_text.png" style="width:150mm;"/>
+    </p> %}
+    *)

@@ -11,12 +11,11 @@
   arc_points
   polar_rose
   sweep_path
-  offset_poly
+  offset_and_rounding
   axial_chalice
   polyholes
   resampled_path
   sweep_starburst
-  circular_rounding
   rounded_prism_tunnel)
  (libraries scad_ml))
 

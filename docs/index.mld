@@ -9,7 +9,7 @@ Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelli
 - The dimensional system (2D or 3D) each shape inhabits is tracked by the type
   system. This is used to restrict the operations that can be legally applied
   (e.g. 2D shapes cannot be moved off of the xy plane,
-  {{!Scad_ml.Scad.linear_extrude} [linear_extrude]} can only be applied to 2D shapes)
+  {{!Scad_ml.Scad.linear_extrude} [Scad.linear_extrude]} can only be applied to 2D shapes)
   and enforcing non-mixing of 2D and 3D shapes during boolean operations.
 - Additional modules providing sweeps, roundovers, and more, inspired largely by
   {{:https://github.com/revarbat/BOSL2} BOSL2}, but also other OpenSCAD libraries such
@@ -39,7 +39,7 @@ Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelli
 
 {%html: <img src="../assets/scad_logo.png" style="width:125mm;" /> %}
 
-Generted [.scad] scripts can then be viewed with the
+Generated [.scad] scripts can then be viewed with the
 {{:https://openscad.org/downloads.html} OpenSCAD viewer} as you normally would, or
 directly exporting {{!Scad_ml.Scad.t} [Scad.t]} into other model formats or PNGs with
 {{!Scad_ml.Scad.export} [Scad.export]} and {{!Scad_ml.Scad.snapshot} [Scad.snapshot]}
@@ -47,10 +47,10 @@ respectively.
 
 {1:api API}
 
-{!module-Scad_ml}
+{!module-Scad_ml} -- top level library interface
 
 {2 Core DSL}
-- {{!Scad_ml.Scad} [Scad]} -- Build well-typed dimension aware OpenSCAD models
+- {{!Scad_ml.Scad} [Scad]} -- well-typed dimension aware OpenSCAD models
 - {{!Scad_ml.Text} [Text]} -- {{!Scad_ml.Scad.text} [Scad.text]} configuration types
 - {{!Scad_ml.Color} [Color]} -- {{!Scad_ml.Scad.color} [Scad.color]} configuration type
 
@@ -85,6 +85,8 @@ respectively.
 {1:examples Examples}
 
 {2 Paths and Sweeps}
+- {{!page-"offset_and_rounding"} {b Offset and roundovers}}
+- {{!page-"sweep_starburst"} {b Default vs euler path transformation reference}}
 - {{!page-"spline"} {b Cubic spline}}
 - {{!page-"arc_points"} {b Arcing paths}}
 - {{!page-"helices"} {b Helical paths and extrusions}}
@@ -95,6 +97,7 @@ respectively.
 {2 Rounded Extrusions}
 - {{!page-"rounded_polyhole_sweep"} {b Rounded sweep along bezier spline with holes}}
 - {{!page-"rounded_prism_tunnel"} {b Slanted prism with hole}}
+- {{!page-"rounded_text"} {b Rounded extrusion of cairo imported polygonal font}}
 
 {2 Function Plotting}
 - {{!page-"polar_rose"} {b Rose polar plot}}
