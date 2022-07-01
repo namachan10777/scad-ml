@@ -217,7 +217,8 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
     then
       for i = 0 to len - 2 do
         for j = i + 1 to len - 1 do
-          if Vec3.approx ~eps pts.(i) pts.(j) then IntTbl.add drop j i
+          if (not (IntTbl.mem drop j)) && Vec3.approx ~eps pts.(i) pts.(j)
+          then IntTbl.add drop j i
         done
       done
     else (
