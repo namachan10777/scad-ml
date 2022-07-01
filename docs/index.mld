@@ -1,4 +1,4 @@
-(** {0 Scad_ml}
+{0 Scad_ml}
 
 Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelling language.
 
@@ -108,4 +108,3 @@ for generating transformation functions for user-defined records and abstract
 types made up of the {{!Scad_ml.Scad.t} [Scad.t]}, along with their
 corresponding vector ({{!Scad_ml.Vec2.t} [Vec2.t]} or {{!Scad_ml.Vec3.t} [Vec3.t]})
 types (and those composed of them) provided in this library.
- *)
