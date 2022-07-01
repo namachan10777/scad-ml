@@ -1,4 +1,4 @@
-{0 Scad_ml}
+(** {0 Scad_ml}
 
 Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelling language.
 
@@ -50,36 +50,37 @@ respectively.
 {!module-Scad_ml}
 
 {2 Core DSL}
-- {!modules: Scad_ml.Scad}
-- {!modules: Scad_ml.Text}
-- {!modules: Scad_ml.Color}
+- {{!Scad_ml.Scad} [Scad]} -- Build well-typed dimension aware OpenSCAD models
+- {{!Scad_ml.Text} [Text]} -- {{!Scad_ml.Scad.text} [Scad.text]} configuration types
+- {{!Scad_ml.Color} [Color]} -- {{!Scad_ml.Scad.color} [Scad.color]} configuration type
 
 {2 Vectors and transformations}
-- {!modules: Scad_ml.Vec2}
-- {!modules: Scad_ml.Vec3}
-- {!modules: Scad_ml.RotMatrix}
-- {!modules: Scad_ml.MultMatrix}
-- {!modules: Scad_ml.Quaternion}
-- {!modules: Scad_ml.Plane}
+- {{!Scad_ml.Vec2} [Vec2]} -- 2d vector operations
+- {{!Scad_ml.Vec3} [Vec3]} -- 3d vector operations
+- {{!Scad_ml.RotMatrix} [RotMatrix]} -- rotation matrices
+- {{!Scad_ml.MultMatrix} [MultMatrix]} -- affine transformation matrices
+- {{!Scad_ml.Quaternion} [Quaternion]} --
+ {{:https://en.wikipedia.org/wiki/Quaternion} quaternion} manipulation andl application
+- {{!Scad_ml.Plane} [Plane]} -- normalized cartesian plane operations
 
 {2 2d paths and polygons}
-- {!modules: Scad_ml.Path2}
-- {!modules: Scad_ml.Bezier2}
-- {!modules: Scad_ml.CubicSpline}
-- {!modules: Scad_ml.Poly2}
-- {!modules: Scad_ml.PolyText}
+- {{!Scad_ml.Path2} [Path2]} -- generation and manipulation of 2d paths
+- {{!Scad_ml.Bezier2} [Bezier2]} -- 2d bezier curves, patches, and splines
+- {{!Scad_ml.CubicSpline} [CubicSpline]} -- cubic spline interpolation of 2d paths
+- {{!Scad_ml.Poly2} [Poly2]} -- 2d polygons (outer, and zero or more inner paths)
+- {{!Scad_ml.PolyText} [PolyText]} -- point representations of text (via cairo)
 
 {2 3d paths, coplanar polygons, and meshes}
-- {!modules: Scad_ml.Path3}
-- {!modules: Scad_ml.Bezier3}
-- {!modules: Scad_ml.Poly3}
-- {!modules: Scad_ml.Mesh}
+- {{!Scad_ml.Path3} [Path3]} -- generation and manipulation of 3d paths
+- {{!Scad_ml.Bezier3} [Bezier3]} -- 3d bezier curves, patches, and splines
+- {{!Scad_ml.Poly3} [Poly3]} -- planar 3d polygons (outer, and zero or more inner paths)
+- {{!Scad_ml.Mesh} [Mesh]} -- points and faces 3d mesh representation (polyhedrons)
 
 {2 Utilities}
-- {!modules: Scad_ml.Math}
-- {!modules: Scad_ml.Export}
-- {!modules: Scad_ml.BallTree2}
-- {!modules: Scad_ml.BallTree3}
+- {{!Scad_ml.Math} [Math]} -- float and 2d matrix operations
+- {{!Scad_ml.Export} [Export]} -- exporting [.scad] scripts via OpenSCAD CLI
+- {{!Scad_ml.BallTree2} [BallTree2]} -- 2d vector space partitioning search tree
+- {{!Scad_ml.BallTree3} [BallTree3]} -- 3d vector space partitioning search tree
 
 {1:examples Examples}
 
@@ -107,3 +108,4 @@ for generating transformation functions for user-defined records and abstract
 types made up of the {{!Scad_ml.Scad.t} [Scad.t]}, along with their
 corresponding vector ({{!Scad_ml.Vec2.t} [Vec2.t]} or {{!Scad_ml.Vec3.t} [Vec3.t]})
 types (and those composed of them) provided in this library.
+ *)
