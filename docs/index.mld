@@ -1,6 +1,6 @@
 {0 Scad_ml}
 
-Scad_ml is a OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelling language.
+Scad_ml is an OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelling language.
 
 {1 Notable difference from the OpenSCAD language}
 
@@ -86,7 +86,7 @@ respectively.
 
 {2 Paths and Sweeps}
 - {{!page-"offset_and_rounding"} {b Offset and roundovers}}
-- {{!page-"sweep_starburst"} {b Default vs euler path transformation reference}}
+- {{!page-"default_vs_euler_sweeps"} {b Default vs euler path transformation reference}}
 - {{!page-"spline"} {b Cubic spline}}
 - {{!page-"arc_points"} {b Arcing paths}}
 - {{!page-"helices"} {b Helical paths and extrusions}}

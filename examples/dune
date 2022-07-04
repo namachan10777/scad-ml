@@ -10,12 +10,11 @@
   rounded_prism_pointy
   arc_points
   polar_rose
-  sweep_path
   offset_and_rounding
   axial_chalice
   polyholes
   resampled_path
-  sweep_starburst
+  default_vs_euler_sweeps
   rounded_prism_tunnel)
  (libraries scad_ml))
 
