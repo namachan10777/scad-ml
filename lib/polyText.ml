@@ -41,11 +41,11 @@ let text ?fn ?(center = false) ?slant ?weight ?(size = 10.) ~font txt =
       | []          -> acc
       | outer :: tl ->
         let rec aux polys outer holes = function
-          | []                    -> Poly2.make ~holes outer :: polys
+          | []                    -> Poly2.make ~holes (List.rev outer) :: polys
           | (pt :: _ as hd) :: tl ->
             ( match Path2.point_inside outer pt with
             | `Inside -> aux polys outer (hd :: holes) tl
-            | _       -> aux (Poly2.make ~holes outer :: polys) hd [] tl )
+            | _       -> aux (Poly2.make ~holes (List.rev outer) :: polys) hd [] tl )
           | _                     -> aux polys outer holes tl
         in
         aux acc outer [] tl
