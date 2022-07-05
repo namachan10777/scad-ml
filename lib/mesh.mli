@@ -399,7 +399,7 @@ module Prism : sig
 
   (** [spec ?k ?k_bot ?k_top ?k_sides ?joint_bot ?joint_top ?joint_sides ()]
 
-       Contruct a {!type:spec} with joint distances set to [0.] by default (no
+       Construct a {!type:spec} with joint distances set to [0.] by default (no
        rounding), and a default curvature smoothess [k = 0.5]. *)
   val spec
     :  ?k:float

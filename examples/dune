@@ -7,15 +7,14 @@
   helices
   cartesian_gravity_well
   spline
-  rounded_prism_pointy
+  rounded_prisms
   arc_points
   polar_rose
   offset_and_rounding
   axial_chalice
   polyholes
   resampled_path
-  default_vs_euler_sweeps
-  rounded_prism_tunnel)
+  default_vs_euler_sweeps)
  (libraries scad_ml))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)

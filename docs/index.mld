@@ -96,7 +96,7 @@ respectively.
 
 {2 Rounded Extrusions}
 - {{!page-"rounded_polyhole_sweep"} {b Rounded sweep along bezier spline with holes}}
-- {{!page-"rounded_prism_tunnel"} {b Slanted prism with hole}}
+- {{!page-"rounded_prisms"} {b Continuous curvature rounded prisms}}
 - {{!page-"rounded_text"} {b Rounded extrusion of cairo imported polygonal font}}
 
 {2 Function Plotting}
