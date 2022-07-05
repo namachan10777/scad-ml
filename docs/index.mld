@@ -2,7 +2,7 @@
 
 Scad_ml is an OCaml DSL for the {{:https://openscad.org/} OpenSCAD} solid modelling language.
 
-{1 Notable difference from the OpenSCAD language}
+{1 Notable differences from the OpenSCAD language}
 
 - Angles are represented in radians (and converted to degrees when compiling to
   OpenSCAD).
