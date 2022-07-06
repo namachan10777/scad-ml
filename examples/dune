@@ -1,8 +1,7 @@
 (executables
  (names
   rounded_text
-  wave_cylinder
-  spiral
+  bespoke_sweeps
   rounded_polyhole_sweep
   helices
   cartesian_gravity_well

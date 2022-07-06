@@ -87,12 +87,11 @@ respectively.
 {2 Paths and Sweeps}
 - {{!page-"offset_and_rounding"} {b Offset and roundovers}}
 - {{!page-"default_vs_euler_sweeps"} {b Default vs euler path transformation reference}}
+- {{!page-"bespoke_sweeps"} {b Bespoke sweep transforms (with direct multmatrix generation)}}
 - {{!page-"spline"} {b Cubic spline}}
 - {{!page-"arc_points"} {b Arcing paths}}
 - {{!page-"helices"} {b Helical paths and extrusions}}
 - {{!page-"resampled_path"} {b Path resampling and scaling/twisting sweeps}}
-- {{!page-"spiral"} {b Flat spiral with bespoke sweep transforms}}
-- {{!page-"wave_cylinder"} {b Wavey hollow cylinder with bespoke sweep transforms}}
 
 {2 Rounded Extrusions}
 - {{!page-"rounded_polyhole_sweep"} {b Rounded sweep along bezier spline with holes}}
