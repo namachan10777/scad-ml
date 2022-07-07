@@ -64,7 +64,7 @@ val get_coef_exn : t -> int -> coef
 
     Calculate cubic spline coefficients with the [boundary] condition (defaults
     to [`Natural]) for the 2-dimensional control points [ps]. *)
-val fit : ?boundary:boundary -> Path2.t -> t
+val fit : ?boundary:boundary -> Vec2.t list -> t
 
 (** {1 Extrapolation} *)
 
@@ -79,13 +79,13 @@ val extrapolate : t -> float -> float option
 (** [extrapolate_path t xs]
 
     Use [t] to extrapolate [xs] into a 2-dimensional cubic spline path. *)
-val extrapolate_path : t -> float list -> Path2.t
+val extrapolate_path : t -> float list -> Vec2.t list
 
 (** [interpolate_path t n]
 
     Use [t] to interpolate 2-dimensional cubic spline path with [n] evently
     spaced points. *)
-val interpolate_path : t -> int -> Path2.t
+val interpolate_path : fn:int -> t -> Vec2.t list
 
 (** {1 Utility} *)
 

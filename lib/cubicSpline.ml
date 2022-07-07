@@ -205,14 +205,14 @@ let extrapolate { len; xmins; xmaxs; coefs } x =
 let extrapolate_path t xs =
   List.filter_map (fun x -> Option.map (fun y -> v2 x y) (extrapolate t x)) xs
 
-let interpolate_path t n =
+let interpolate_path ~fn t =
   let xmin = t.xmins.(0)
   and xmax = t.xmaxs.(t.len - 1) in
-  let step = (xmax -. xmin) /. Float.of_int (n - 1) in
+  let step = (xmax -. xmin) /. Float.of_int (fn - 1) in
   let f i pts =
     let x = xmin +. (Float.of_int i *. step) in
     match extrapolate t x with
     | Some y -> v2 x y :: pts
     | None   -> pts
   in
-  List.rev @@ Util.fold_init n f []
+  List.rev @@ Util.fold_init fn f []
