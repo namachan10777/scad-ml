@@ -70,7 +70,7 @@ val circle : ?fn:int -> float -> t
     = [false]). *)
 val square : ?center:bool -> Vec2.t -> t
 
-(** {1 Drawing Arcs} *)
+(** {1 Drawing Arcs and Splines} *)
 
 (** [arc ?rev ?fn ?wedge ~centre ~radius ~start a]
 
@@ -117,6 +117,14 @@ val arc_about_centre
 
    - See {!arc} for notes on [rev], [fn], and [wedge]. *)
 val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec2.t -> t
+
+(** [cubic_spline ?boundary ~fn ps]
+
+    Calculate cubic spline coefficients with the [boundary] condition (defaults
+    to [`Natural]) for the 2-dimensional control points [ps], and immediately
+    interpolate a path of [fn] points along it. See the {!CubicSpline} module
+    for more details. *)
+val cubic_spline : ?boundary:CubicSpline.boundary -> fn:int -> t -> t
 
 (** {1 Roundovers}
 
