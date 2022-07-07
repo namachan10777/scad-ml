@@ -19,7 +19,7 @@ let () =
     *)
 
 (** Each of the arc drawing functions takes a [wedge] parameter that will
-    include the centre point of the arc at the end of the path. *)
+    include the centre point of the arc at the end of the path when [true]. *)
 let () =
   let arc =
     Path2.arc_about_centre
