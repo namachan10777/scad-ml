@@ -1,7 +1,8 @@
 (** {0 Path transfomations (default vs euler)} *)
 open Scad_ml
 
-(** Elbow shape for easily discernible orientation *)
+(** We'll use a simple elbow shape for our sweeps so that its orientation is
+   easily discernible along the path. *)
 let poly =
   [ -10., -1.; -10., 6.; -7., 6.; -7., 1.; 7., 1.; 7., 6.; 10., 6.; 10., -1. ]
   |> Path2.of_tups

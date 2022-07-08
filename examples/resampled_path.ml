@@ -16,9 +16,9 @@ let resampled = Path3.subdivide ~freq:(`Spacing 0.5) path
     how fine our [~freq] parameter has gotten us. *)
 let () =
   let old_marks =
-    let f _ = Scad.(color ~alpha:0.1 Color.Magenta @@ sphere 0.5) in
+    let f _ = Scad.(color ~alpha:0.2 Color.Magenta @@ sphere ~fn:36 0.4) in
     Path3.show_points f path
-  and new_marks = Path3.show_points (fun _ -> Scad.sphere 0.2) resampled in
+  and new_marks = Path3.show_points (fun _ -> Scad.sphere ~fn:36 0.2) resampled in
   Scad.to_file "resampled_path.scad" (Scad.union [ old_marks; new_marks ])
 
 (** {%html:
