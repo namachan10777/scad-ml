@@ -1,10 +1,14 @@
 (** {0 Cartesian Gravity Well} *)
 open Scad_ml
 
+(** Define a function from [x] and [y] coordinates to [z] height of the xy
+    plane. *)
 let gravity_well ~x ~y =
   let z = 50. -. (50. /. Float.sqrt ((x *. x) +. (y *. y))) in
   if z < 1. then 1. else z
 
+(** Evaluate [gravity_well], producing a mesh with the resulting height at each
+    point of the grid defined by the xy bound and step parameters. *)
 let mesh =
   Mesh.cartesian_plot
     ~min_x:(-10.)

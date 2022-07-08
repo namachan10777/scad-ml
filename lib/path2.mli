@@ -120,7 +120,7 @@ val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec
 
 (** [cubic_spline ?boundary ~fn ps]
 
-    Calculate cubic spline coefficients with the [boundary] condition (defaults
+    Calculate a cubic spline with the given [boundary] condition (defaults
     to [`Natural]) for the 2-dimensional control points [ps], and immediately
     interpolate a path of [fn] points along it. See the {!CubicSpline} module
     for more details. *)
