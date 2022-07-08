@@ -211,8 +211,7 @@ let prepend_opt opt l =
 let helix_arc_length ~height ~r twist =
   twist *. Float.(sqrt ((r *. r) +. pow (height /. twist) 2.))
 
-(* TODO: Add support for fa and fs where applicable and update this accordingly?
-https://github.com/openscad/openscad/blob/dd7f6c0256ccfbd1e6efa6c06b9a12ef3565c29c/src/GeometryEvaluator.cc#L1075
+(* Based on:
 https://github.com/openscad/openscad/blob/5e1a7cddd26de6fcfee753ee1d0fde5c90f785cd/src/calc.cc#L72 *)
 let helical_slices ?fn ?(fa = fa) twist =
   let twist = Float.abs twist in
