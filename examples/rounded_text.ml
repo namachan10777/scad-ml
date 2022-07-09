@@ -6,7 +6,7 @@ open Scad_ml
     as flexible and feature rich as {{!Scad_ml.Scad.text} [Scad.text]}
     (OpenSCADs text shape function), but this gives up point representations
     that be can work with directly. *)
-let hello = PolyText.text ~center:true ~fn:2 ~size:5. ~font:"Ubuntu" "Hello World!"
+let hello = PolyText.text ~center:true ~fn:5 ~size:5. ~font:"Ubuntu" "Hello!"
 
 (** Circular roundovers with [fn] steps, specified by a distance to be [`Cut]
     off of the corners. You can expect some finickiness with applying
@@ -15,7 +15,7 @@ let hello = PolyText.text ~center:true ~fn:2 ~size:5. ~font:"Ubuntu" "Hello Worl
     close together, leading to illegal paths when further roundover operations
     are applied. *)
 let caps =
-  let spec = Mesh.Cap.(round ~mode:Delta @@ circ ~fn:5 (`Cut 0.029)) in
+  let spec = Mesh.Cap.(round ~mode:Delta @@ circ ~fn:5 (`Cut 0.028)) in
   Mesh.Cap.{ top = spec; bot = spec }
 
 (** Map over the character polys in [hello] with a rounded extrusion funcion
