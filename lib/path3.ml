@@ -18,9 +18,8 @@ let bbox = function
     List.fold_left f Vec3.{ min = hd; max = hd } tl
 
 let circle ?fn ?(plane = Plane.xy) r = Path2.lift plane (Path2.circle ?fn r)
-
-let square ?center ?(plane = Plane.xy) dims =
-  List.map (Plane.lift plane) (Path2.square ?center dims)
+let square ?center ?(plane = Plane.xy) dims = Path2.lift plane (Path2.square ?center dims)
+let star ?(plane = Plane.xy) ~r1 ~r2 n = Path2.lift plane (Path2.star ~r1 ~r2 n)
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   let r2 = Option.value ~default:r1 r2 in

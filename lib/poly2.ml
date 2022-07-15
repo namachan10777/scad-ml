@@ -112,6 +112,7 @@ let wedge ?fn ~centre ~radius ~start angle =
   { outer = Path2.arc ?fn ~wedge:true ~centre ~radius ~start angle; holes = [] }
 
 let square ?center dims = make (Path2.square ?center dims)
+let star ~r1 ~r2 n = make (Path2.star ~r1 ~r2 n)
 
 let ring ?fn ~thickness r =
   if thickness < r

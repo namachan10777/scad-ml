@@ -69,16 +69,22 @@ val project : Plane.t -> t -> Path2.t
 
 (** [circle ?fn ?plane radius]
 
-    Create a circular path of radius [r] with [fn] points (default = [30]) onto
+    Draw a circular path of radius [r] with [fn] points (default = [30]) onto
     [plane] (default = {!Plane.xy}). *)
 val circle : ?fn:int -> ?plane:Plane.t -> float -> t
 
 (** [square ?center ?plane dims]
 
-    Create a rectangular path with xy [dims] (e.g. width and height) onto
+    Draw a rectangular path with xy [dims] (e.g. width and height) onto
     [plane] (default = {!Plane.xy}). If [center] is [true] then the path will be
     centred around the origin (default = [false]). *)
 val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
+
+(** [star ?plane ~r1 ~r2 n]
+
+    Draw an [n] pointed star with inner radius [r1] and outer radius [r2] onto
+    [plane] (default = {!Plane.xy}). *)
+val star : ?plane:Plane.t -> r1:float -> r2:float -> int -> t
 
 (** {1 Drawing Arcs} *)
 

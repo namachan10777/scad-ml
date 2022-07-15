@@ -25,20 +25,17 @@ let make ?(validate = true) ?(holes = []) outer =
 let add_holes ?validate ~holes t =
   make ?validate ~holes:(List.rev_append t.holes holes) t.outer
 
-let circle ?fn ?plane r = { outer = Path3.circle ?fn ?plane r; holes = [] }
+let circle ?fn ?plane r = of_poly2 ?plane @@ Poly2.circle ?fn r
 
 let wedge ?fn ?plane ~centre ~radius ~start angle =
-  { outer = Path3.arc ?fn ?plane ~wedge:true ~centre ~radius ~start angle; holes = [] }
+  make @@ Path3.arc ?fn ?plane ~wedge:true ~centre ~radius ~start angle
 
-let square ?center ?plane dims = { outer = Path3.square ?center ?plane dims; holes = [] }
+let square ?center ?plane dims = of_poly2 ?plane @@ Poly2.square ?center dims
+let star ?plane ~r1 ~r2 n = of_poly2 ?plane @@ Poly2.star ~r1 ~r2 n
+let ring ?fn ?plane ~thickness r = of_poly2 ?plane @@ Poly2.ring ?fn ~thickness r
 
-let ring ?fn ?(plane = Plane.xy) ~thickness r =
-  let Poly2.{ outer; holes } = Poly2.ring ?fn ~thickness r in
-  { outer = Path2.lift plane outer; holes = List.map (Path2.lift plane) holes }
-
-let box ?center ?(plane = Plane.xy) ~thickness dims =
-  let Poly2.{ outer; holes } = Poly2.box ?center ~thickness dims in
-  { outer = Path2.lift plane outer; holes = List.map (Path2.lift plane) holes }
+let box ?center ?plane ~thickness dims =
+  of_poly2 ?plane @@ Poly2.box ?center ~thickness dims
 
 let bbox { outer; _ } = Path3.bbox outer
 let centroid ?eps { outer; _ } = Path3.centroid ?eps outer

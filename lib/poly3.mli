@@ -73,6 +73,12 @@ val wedge
     (default = {!val:Plane.xy}). *)
 val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
+(** [star ?plane ~r1 ~r2 n]
+
+    Draw an [n] pointed star with inner radius [r1] and outer radius [r2] onto
+    [plane] (default = {!Plane.xy}). *)
+val star : ?plane:Plane.t -> r1:float -> r2:float -> int -> t
+
 (** [ring ?fn ?plane ~thickness r]
 
     Create a circular empty ring of outer radius [r], with the given radial

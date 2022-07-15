@@ -154,6 +154,18 @@ let square ?(center = false) { x; y } =
     Vec2.[ v x' (-.y'); v (-.x') (-.y'); v (-.x') y'; v x' y' ] )
   else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
 
+let star ~r1 ~r2 n =
+  if n < 2 then invalid_arg "Cannot draw star path with less than 2 points.";
+  let step = Float.(2. *. pi /. of_int n)
+  and start_a = Float.pi /. -2.
+  and pt r a = Float.(v2 (r *. cos a) (r *. sin a)) in
+  let f i acc =
+    let i = Float.of_int i in
+    let a = start_a +. (step *. i) in
+    pt r2 (a +. (step /. 2.)) :: pt r1 a :: acc
+  in
+  Util.fold_init n f []
+
 let cubic_spline ?boundary ~fn ps = CubicSpline.(interpolate_path ~fn (fit ?boundary ps))
 
 let show_points f t =
