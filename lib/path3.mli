@@ -79,6 +79,12 @@ val circle : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> float -> t
     centred around the origin (default = [false]). *)
 val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
+(** [ellipse ?fn ?fa ?fs ?plane radii]
+
+    Draw an ellipse with xy [radii] onto [plane] (default = {!Plane.xy}). The
+    greater of the two radii is used for fragment/resolution calculation. *)
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> Vec2.t -> t
+
 (** [star ?plane ~r1 ~r2 n]
 
     Draw an [n] pointed star with inner radius [r1] and outer radius [r2] onto

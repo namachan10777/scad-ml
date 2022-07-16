@@ -75,24 +75,31 @@ val wedge
     (default = {!val:Plane.xy}). *)
 val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
 
+(** [ellipse ?fn ?fa ?fs ?plane radii]
+
+    Draw an ellipse with xy [radii] onto [plane] (default = {!Plane.xy}). The
+    greater of the two radii is used for fragment/resolution calculation. *)
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> Vec2.t -> t
+
 (** [star ?plane ~r1 ~r2 n]
 
     Draw an [n] pointed star with inner radius [r1] and outer radius [r2] onto
     [plane] (default = {!Plane.xy}). *)
 val star : ?plane:Plane.t -> r1:float -> r2:float -> int -> t
 
-(** [ring ?fn ?fa ?fs ?plane ~thickness r]
+(** [ring ?fn ?fa ?fs ?plane ~thickness radii]
 
-    Create a circular empty ring of outer radius [r], with the given radial
-    [thickness] (difference between outer and inner radii). The polygon is drawn
-    on the provided [plane] (default = {!val:Plane.xy}). *)
+    Draw an empty elliptical ring of outer xy [radii], with the given radial
+    [thickness] (difference between outer and inner radii) on the provided
+    [plane] (default = {!val:Plane.xy}). For a circular ring, use equal x and y
+    radii. *)
 val ring
   :  ?fn:int
   -> ?fa:float
   -> ?fs:float
   -> ?plane:Plane.t
-  -> thickness:float
-  -> float
+  -> thickness:Vec2.t
+  -> Vec2.t
   -> t
 
 (** [box ?center ?plane ~thickness dims]

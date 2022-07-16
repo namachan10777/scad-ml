@@ -21,6 +21,10 @@ let circle ?fn ?fa ?fs ?(plane = Plane.xy) r =
   Path2.lift plane (Path2.circle ?fn ?fa ?fs r)
 
 let square ?center ?(plane = Plane.xy) dims = Path2.lift plane (Path2.square ?center dims)
+
+let ellipse ?fn ?fa ?fs ?(plane = Plane.xy) radii =
+  Path2.lift plane (Path2.ellipse ?fn ?fa ?fs radii)
+
 let star ?(plane = Plane.xy) ~r1 ~r2 n = Path2.lift plane (Path2.star ~r1 ~r2 n)
 
 let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =

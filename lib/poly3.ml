@@ -31,6 +31,7 @@ let wedge ?fn ?fa ?fs ?plane ~centre ~radius ~start angle =
   make @@ Path3.arc ?fn ?fa ?fs ?plane ~wedge:true ~centre ~radius ~start angle
 
 let square ?center ?plane dims = of_poly2 ?plane @@ Poly2.square ?center dims
+let ellipse ?fn ?fa ?fs ?plane radii = of_poly2 ?plane @@ Poly2.ellipse ?fn ?fa ?fs radii
 let star ?plane ~r1 ~r2 n = of_poly2 ?plane @@ Poly2.star ~r1 ~r2 n
 
 let ring ?fn ?fa ?fs ?plane ~thickness r =

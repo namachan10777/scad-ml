@@ -70,6 +70,12 @@ val circle : ?fn:int -> ?fa:float -> ?fs:float -> float -> t
     = [false]). *)
 val square : ?center:bool -> Vec2.t -> t
 
+(** [ellipse ?fn ?fa ?fs radii]
+
+    Draw an ellipse with xy [radii]. The greater of the two radii is used for
+    fragment/resolution calculation. *)
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> Vec2.t -> t
+
 (** [star ~r1 ~r2 n]
 
     Draw an [n] pointed star with inner radius [r1] and outer radius [r2]. *)

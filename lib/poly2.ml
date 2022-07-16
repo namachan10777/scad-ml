@@ -112,14 +112,15 @@ let wedge ?fn ?fa ?fs ~centre ~radius ~start angle =
   make @@ Path2.arc ?fn ?fa ?fs ~wedge:true ~centre ~radius ~start angle
 
 let square ?center dims = make (Path2.square ?center dims)
+let ellipse ?fn ?fa ?fs radii = make @@ Path2.ellipse ?fn ?fa ?fs radii
 let star ~r1 ~r2 n = make (Path2.star ~r1 ~r2 n)
 
-let ring ?fn ?fa ?fs ~thickness r =
-  if thickness < r
+let ring ?fn ?fa ?fs ~thickness radii =
+  if thickness.x < radii.x && thickness.y < radii.y
   then
     make
-      ~holes:[ List.rev @@ Path2.circle ?fn (r -. thickness) ]
-      (Path2.circle ?fn ?fa ?fs r)
+      ~holes:[ List.rev @@ Path2.ellipse ?fn ?fa ?fs (Vec2.sub radii thickness) ]
+      (Path2.ellipse ?fn ?fa ?fs radii)
   else invalid_arg "Ring thickness must be less than the outer radius."
 
 let box ?center ~thickness dims =

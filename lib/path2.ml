@@ -140,9 +140,9 @@ let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 
 let circle ?fn ?fa ?fs r =
   let fn = Util.helical_fragments ?fn ?fa ?fs r in
-  let s = 2. *. Float.pi /. Float.of_int fn in
+  let step = 2. *. Float.pi /. Float.of_int fn in
   let f i =
-    let a = s *. Float.of_int i in
+    let a = step *. Float.of_int i in
     v2 (r *. Float.cos a) (r *. Float.sin a)
   in
   List.init fn f
@@ -154,6 +154,15 @@ let square ?(center = false) { x; y } =
     and y' = y /. 2. in
     Vec2.[ v x' (-.y'); v (-.x') (-.y'); v (-.x') y'; v x' y' ] )
   else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
+
+let ellipse ?fn ?fa ?fs { x; y } =
+  let fn = Util.helical_fragments ?fn ?fa ?fs (Float.max x y) in
+  let step = 2. *. Float.pi /. Float.of_int fn in
+  let f i =
+    let a = step *. Float.of_int i in
+    v2 (x *. Float.cos a) (y *. Float.sin a)
+  in
+  List.init fn f
 
 let star ~r1 ~r2 n =
   if n < 2 then invalid_arg "Cannot draw star path with less than 2 points.";

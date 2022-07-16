@@ -95,16 +95,23 @@ val wedge
     = [false]). *)
 val square : ?center:bool -> Vec2.t -> t
 
+(** [ellipse ?fn ?fa ?fs radii]
+
+    Draw an ellipse with xy [radii]. The greater of the two radii is used for
+    fragment/resolution calculation. *)
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> Vec2.t -> t
+
 (** [star ~r1 ~r2 n]
 
     Draw an [n] pointed star with inner radius [r1] and outer radius [r2]. *)
 val star : r1:float -> r2:float -> int -> t
 
-(** [ring ?fn ?fa ?fs ~thickness r]
+(** [ring ?fn ?fa ?fs ~thickness radii]
 
-    Create a circular empty ring of outer radius [r], with the given radial
-    [thickness] (difference between outer and inner radii). *)
-val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:float -> float -> t
+    Draw an empty elliptical ring of outer xy [radii], with the given radial
+    [thickness] (difference between outer and inner radii). For a circular
+    ring, use equal x and y radii. *)
+val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:Vec2.t -> Vec2.t -> t
 
 (** [box ?center ~thickness dims]
 
