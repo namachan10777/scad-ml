@@ -25,14 +25,16 @@ let make ?(validate = true) ?(holes = []) outer =
 let add_holes ?validate ~holes t =
   make ?validate ~holes:(List.rev_append t.holes holes) t.outer
 
-let circle ?fn ?plane r = of_poly2 ?plane @@ Poly2.circle ?fn r
+let circle ?fn ?fa ?fs ?plane r = of_poly2 ?plane @@ Poly2.circle ?fn ?fa ?fs r
 
-let wedge ?fn ?plane ~centre ~radius ~start angle =
-  make @@ Path3.arc ?fn ?plane ~wedge:true ~centre ~radius ~start angle
+let wedge ?fn ?fa ?fs ?plane ~centre ~radius ~start angle =
+  make @@ Path3.arc ?fn ?fa ?fs ?plane ~wedge:true ~centre ~radius ~start angle
 
 let square ?center ?plane dims = of_poly2 ?plane @@ Poly2.square ?center dims
 let star ?plane ~r1 ~r2 n = of_poly2 ?plane @@ Poly2.star ~r1 ~r2 n
-let ring ?fn ?plane ~thickness r = of_poly2 ?plane @@ Poly2.ring ?fn ~thickness r
+
+let ring ?fn ?fa ?fs ?plane ~thickness r =
+  of_poly2 ?plane @@ Poly2.ring ?fn ?fa ?fs ~thickness r
 
 let box ?center ?plane ~thickness dims =
   of_poly2 ?plane @@ Poly2.box ?center ~thickness dims

@@ -67,11 +67,10 @@ val project : Plane.t -> t -> Path2.t
 
 (** {1 Basic Shapes} *)
 
-(** [circle ?fn ?plane radius]
+(** [circle ?fn ?fa ?fs ?plane radius]
 
-    Draw a circular path of radius [r] with [fn] points (default = [30]) onto
-    [plane] (default = {!Plane.xy}). *)
-val circle : ?fn:int -> ?plane:Plane.t -> float -> t
+    Draw a circular path of radius [r] onto [plane] (default = {!Plane.xy}). *)
+val circle : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> float -> t
 
 (** [square ?center ?plane dims]
 
@@ -88,12 +87,14 @@ val star : ?plane:Plane.t -> r1:float -> r2:float -> int -> t
 
 (** {1 Drawing Arcs} *)
 
-(** [arc ?rev ?fn ?plane ?wedge ~centre ~radius ~start a]
+(** [arc ?rev ?fn ?fa ?fs ?plane ?wedge ~centre ~radius ~start a]
 
     Draw an arc onto a 3d [plane] (default = {!Plane.xy}). See {!Path2.arc}. *)
 val arc
   :  ?rev:bool
   -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
   -> ?plane:Plane.t
   -> ?wedge:bool
   -> centre:Vec3.t
@@ -102,13 +103,15 @@ val arc
   -> float
   -> t
 
-(** [arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2]
+(** [arc_about_centre ?rev ?fn ?fa ?fs ?dir ?wedge ~centre p1 p2]
 
     Draw an arc between [p1] and [p2], about [centre], on the 3d plane occupied
     by the three points. See {!Path2.arc_about_centre}. *)
 val arc_about_centre
   :  ?rev:bool
   -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
   -> ?dir:[ `CW | `CCW ]
   -> ?wedge:bool
   -> centre:Vec3.t
@@ -116,10 +119,19 @@ val arc_about_centre
   -> Vec3.t
   -> t
 
-(** [arc_through ?rev ?fn  ?wedge p1 p2 p3]
+(** [arc_through ?rev ?fn ?fa ?fs ?wedge p1 p2 p3]
 
-    Draw an arc through the points [p1], [p2], and [p3]. See {!Path2.arc_through}.  *)
-val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec3.t -> Vec3.t -> Vec3.t -> t
+    Draw an arc through the points [p1], [p2], and [p3]. See {!Path2.arc_through}. *)
+val arc_through
+  :  ?rev:bool
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?wedge:bool
+  -> Vec3.t
+  -> Vec3.t
+  -> Vec3.t
+  -> t
 
 (** [helix ?fn ?fa ?fs ?left ~n_turns ~pitch ?r2 r1]
 

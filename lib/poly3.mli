@@ -45,19 +45,21 @@ val to_poly2 : ?validate:bool -> ?plane:Plane.t -> t -> Poly2.t
 
 (** {1 Basic Shapes} *)
 
-(** [circle ?fn ?plane r]
+(** [circle ?fn ?fa ?fs ?plane r]
 
-    Create a circle of radius [r] with [fn] points (default = [30]), on the
-    optionally provided [plane] (default = {!val:Plane.xy}). *)
-val circle : ?fn:int -> ?plane:Plane.t -> float -> t
+    Create a circle of radius [r], on the optionally provided [plane]
+    (default = {!val:Plane.xy}). *)
+val circle : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> float -> t
 
-(** [wedge ?fn ?plane ~centre ~radius ~start a]
+(** [wedge ?fn ?fa ?fs ?plane ~centre ~radius ~start a]
 
     Create an arcing path (as in {!val:Path3.arc}), with the [centre] point
     included to close the path, forming a wedge. The polygon is drawn on the
     provided [plane] (default = {!val:Plane.xy}). *)
 val wedge
   :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
   -> ?plane:Plane.t
   -> centre:Vec3.t
   -> radius:float
@@ -79,13 +81,19 @@ val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
     [plane] (default = {!Plane.xy}). *)
 val star : ?plane:Plane.t -> r1:float -> r2:float -> int -> t
 
-(** [ring ?fn ?plane ~thickness r]
+(** [ring ?fn ?fa ?fs ?plane ~thickness r]
 
     Create a circular empty ring of outer radius [r], with the given radial
-    [thickness] (difference between outer and inner radii). Outer and inner
-    paths are drawn with [fn] points (default = [30]). The polygon is drawn on
-    the provided [plane] (default = {!val:Plane.xy}). *)
-val ring : ?fn:int -> ?plane:Plane.t -> thickness:float -> float -> t
+    [thickness] (difference between outer and inner radii). The polygon is drawn
+    on the provided [plane] (default = {!val:Plane.xy}). *)
+val ring
+  :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?plane:Plane.t
+  -> thickness:float
+  -> float
+  -> t
 
 (** [box ?center ?plane ~thickness dims]
 

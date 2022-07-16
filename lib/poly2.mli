@@ -69,16 +69,24 @@ val is_simple : ?eps:float -> t -> bool
 
 (** {1 Basic Shapes} *)
 
-(** [circle ?fn r]
+(** [circle ?fn ?fa ?fs r]
 
-    Create a circle of radius [r] with [fn] points (default = [30]). *)
-val circle : ?fn:int -> float -> t
+    Create a circle of radius [r]. *)
+val circle : ?fn:int -> ?fa:float -> ?fs:float -> float -> t
 
-(** [wedge ?fn ~centre ~radius ~start a]
+(** [wedge ?fn ?fa ?fs ~centre ~radius ~start a]
 
     Create an arcing path (as in {!val:Path2.arc}), with the [centre] point
     included to close the path, forming a wedge. *)
-val wedge : ?fn:int -> centre:Vec2.t -> radius:float -> start:float -> float -> t
+val wedge
+  :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> centre:Vec2.t
+  -> radius:float
+  -> start:float
+  -> float
+  -> t
 
 (** [square ?center dims]
 
@@ -92,12 +100,11 @@ val square : ?center:bool -> Vec2.t -> t
     Draw an [n] pointed star with inner radius [r1] and outer radius [r2]. *)
 val star : r1:float -> r2:float -> int -> t
 
-(** [ring ?fn ~thickness r]
+(** [ring ?fn ?fa ?fs ~thickness r]
 
     Create a circular empty ring of outer radius [r], with the given radial
-    [thickness] (difference between outer and inner radii). Outer and inner
-    paths are drawn with [fn] points (default = [30]). *)
-val ring : ?fn:int -> thickness:float -> float -> t
+    [thickness] (difference between outer and inner radii). *)
+val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:float -> float -> t
 
 (** [box ?center ~thickness dims]
 

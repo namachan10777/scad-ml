@@ -107,6 +107,8 @@ module type Arc = sig
   val arc_about_centre
     :  ?rev:bool
     -> ?fn:int
+    -> ?fa:float
+    -> ?fs:float
     -> ?dir:[ `CW | `CCW ]
     -> ?wedge:bool
     -> centre:vec

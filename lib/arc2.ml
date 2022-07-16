@@ -2,13 +2,16 @@ open Vec
 
 let arc
     ?(rev = false)
-    ?(fn = 16)
+    ?fn
+    ?fa
+    ?fs
     ?(wedge = false)
     ~centre:(c : Vec2.t)
     ~radius
     ~start
     angle
   =
+  let fn = Util.helical_fragments ?fn ?fa ?fs radius in
   let a_step = angle /. Float.of_int fn *. if rev then 1. else -1. in
   let f _ (acc, a) =
     let p = v2 ((Float.cos a *. radius) +. c.x) ((Float.sin a *. radius) +. c.y) in
@@ -16,7 +19,7 @@ let arc
   and init = if wedge then [ c ] else [] in
   fst @@ Util.fold_init (fn + 1) f (init, if rev then start else start +. angle)
 
-let arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2 =
+let arc_about_centre ?rev ?fn ?fa ?fs ?dir ?wedge ~centre p1 p2 =
   let radius = Vec2.distance centre p1
   and start =
     let { x; y } = Vec2.sub p1 centre in
@@ -32,9 +35,9 @@ let arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2 =
     | -1., Some `CW | 1., Some `CCW -> ((2. *. Float.pi) -. a) *. Float.neg d
     | _                             -> d *. a
   in
-  arc ?rev ?fn ?wedge ~centre ~radius ~start angle
+  arc ?rev ?fn ?fa ?fs ?wedge ~centre ~radius ~start angle
 
-let arc_through ?rev ?fn ?wedge p1 p2 p3 =
+let arc_through ?rev ?fn ?fa ?fs ?wedge p1 p2 p3 =
   if Vec2.collinear p1 p2 p3 then invalid_arg "Arc points must form a valid triangle.";
   let centre =
     let d =
@@ -45,4 +48,4 @@ let arc_through ?rev ?fn ?wedge p1 p2 p3 =
     and ny = (m1 *. (p2.x -. p3.x)) +. (m2 *. (p1.x -. p3.x)) in
     v2 (nx /. d) (ny /. d)
   and dir = if Float.equal (Vec2.clockwise_sign p1 p2 p3) 1. then `CW else `CCW in
-  arc_about_centre ?rev ?fn ?wedge ~dir ~centre p1 p3
+  arc_about_centre ?rev ?fn ?fa ?fs ?wedge ~dir ~centre p1 p3

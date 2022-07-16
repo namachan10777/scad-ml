@@ -58,10 +58,10 @@ val lift : Plane.t -> t -> Vec3.t list
 
 (** {1 Basic Shapes} *)
 
-(** [circle ?fn r]
+(** [circle ?fn ?fa ?fs r]
 
-    Create a circular path of radius [r] with [fn] points (default = [30]). *)
-val circle : ?fn:int -> float -> t
+    Create a circular path of radius [r]. *)
+val circle : ?fn:int -> ?fa:float -> ?fs:float -> float -> t
 
 (** [square ?center dims]
 
@@ -77,17 +77,17 @@ val star : r1:float -> r2:float -> int -> t
 
 (** {1 Drawing Arcs and Splines} *)
 
-(** [arc ?rev ?fn ?wedge ~centre ~radius ~start a]
+(** [arc ?rev ?fn ?fa ?fs ?wedge ~centre ~radius ~start a]
 
     Draw an arc of [a] radians with [radius] around the point [centre], beginning with the
     angle [start]. If [wedge] is [true], [centre] will be included as the last
-    point of the returned path (default = [false]).
-
-    - If [rev] is [true], the arc will end at [start], rather than begin there.
-    - [fn] sets the number of points used to draw the arc (default = [16]) *)
+    point of the returned path (default = [false]). If [rev] is [true], the arc
+    will end at [start], rather than begin there. *)
 val arc
   :  ?rev:bool
   -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
   -> ?wedge:bool
   -> centre:Vec2.t
   -> radius:float
@@ -95,7 +95,7 @@ val arc
   -> float
   -> t
 
-(** [arc_about_centre ?rev ?fn ?dir ?wedge ~centre p1 p2]
+(** [arc_about_centre ?rev ?fn ?fa ?fs ?dir ?wedge ~centre p1 p2]
 
     Draw an arc between the points [p1] and [p2], about [centre]. [dir] can be
    provided to enforce clockwise or counter-clockwise winding direction. By
@@ -103,10 +103,12 @@ val arc
    and [p2] do not form a valid triangle (they're collinear), an
    [Invalid_argument] exception will be raised if [dir] is not provided.
 
-    - See {!arc} for notes on [rev], [fn], and [wedge]. *)
+    - See {!arc} for notes on [rev] and [wedge]. *)
 val arc_about_centre
   :  ?rev:bool
   -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
   -> ?dir:[ `CW | `CCW ]
   -> ?wedge:bool
   -> centre:Vec2.t
@@ -114,14 +116,23 @@ val arc_about_centre
   -> Vec2.t
   -> t
 
-(** [arc_through ?rev ?fn  ?wedge p1 p2 p3]
+(** [arc_through ?rev ?fn ?fa ?fs ?wedge p1 p2 p3]
 
     Draw an arc through the points [p1], [p2], and [p3]. If the points do not
    form a valid triangle (they're collinear), an [Invalid_argument] exception
    will be raised.
 
-   - See {!arc} for notes on [rev], [fn], and [wedge]. *)
-val arc_through : ?rev:bool -> ?fn:int -> ?wedge:bool -> Vec2.t -> Vec2.t -> Vec2.t -> t
+   - See {!arc} for notes on [rev], and [wedge]. *)
+val arc_through
+  :  ?rev:bool
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?wedge:bool
+  -> Vec2.t
+  -> Vec2.t
+  -> Vec2.t
+  -> t
 
 (** [cubic_spline ?boundary ~fn ps]
 

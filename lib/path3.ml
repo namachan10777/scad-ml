@@ -17,7 +17,9 @@ let bbox = function
     in
     List.fold_left f Vec3.{ min = hd; max = hd } tl
 
-let circle ?fn ?(plane = Plane.xy) r = Path2.lift plane (Path2.circle ?fn r)
+let circle ?fn ?fa ?fs ?(plane = Plane.xy) r =
+  Path2.lift plane (Path2.circle ?fn ?fa ?fs r)
+
 let square ?center ?(plane = Plane.xy) dims = Path2.lift plane (Path2.square ?center dims)
 let star ?(plane = Plane.xy) ~r1 ~r2 n = Path2.lift plane (Path2.star ~r1 ~r2 n)
 

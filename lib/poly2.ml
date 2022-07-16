@@ -104,19 +104,22 @@ let make ?(validate = true) ?(holes = []) outer =
 let add_holes ?validate ~holes t =
   make ?validate ~holes:(List.rev_append t.holes holes) t.outer
 
-let circle ?fn r = make @@ Path2.circle ?fn r
+let circle ?fn ?fa ?fs r = make @@ Path2.circle ?fn ?fa ?fs r
 
-let wedge ?fn ~centre ~radius ~start angle =
+let wedge ?fn ?fa ?fs ~centre ~radius ~start angle =
   if Math.approx 0. angle || Float.abs angle >= 2. *. Float.pi
   then invalid_arg "Wedge angle must not be 0, or greater than +/- 2π.";
-  { outer = Path2.arc ?fn ~wedge:true ~centre ~radius ~start angle; holes = [] }
+  make @@ Path2.arc ?fn ?fa ?fs ~wedge:true ~centre ~radius ~start angle
 
 let square ?center dims = make (Path2.square ?center dims)
 let star ~r1 ~r2 n = make (Path2.star ~r1 ~r2 n)
 
-let ring ?fn ~thickness r =
+let ring ?fn ?fa ?fs ~thickness r =
   if thickness < r
-  then make ~holes:[ List.rev @@ Path2.circle ?fn (r -. thickness) ] (Path2.circle ?fn r)
+  then
+    make
+      ~holes:[ List.rev @@ Path2.circle ?fn (r -. thickness) ]
+      (Path2.circle ?fn ?fa ?fs r)
   else invalid_arg "Ring thickness must be less than the outer radius."
 
 let box ?center ~thickness dims =

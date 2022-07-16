@@ -138,7 +138,8 @@ let quaternion_about_pt q p =
 let vector_rotate ax r = quaternion (Quaternion.make ax r)
 let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 
-let circle ?(fn = 30) r =
+let circle ?fn ?fa ?fs r =
+  let fn = Util.helical_fragments ?fn ?fa ?fs r in
   let s = 2. *. Float.pi /. Float.of_int fn in
   let f i =
     let a = s *. Float.of_int i in
