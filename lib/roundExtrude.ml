@@ -182,11 +182,11 @@ let sweep'
       if top then 1., false, top_mode else -1., true, bot_mode
     in
     let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
-      let spec, fn, fs, fa =
+      let mode, fn, fs, fa =
         match offset_mode with
-        | Radius { fn; fs; fa } -> `Radius (d -. last_d), fn, fs, fa
-        | Delta                 -> `Delta (d -. last_d), None, None, None
-        | Chamfer               -> `Chamfer (d -. last_d), None, None, None
+        | Radius { fn; fs; fa } -> `Radius, fn, fs, fa
+        | Delta                 -> `Delta, None, None, None
+        | Chamfer               -> `Chamfer, None, None, None
       and z = z *. z_dir in
       let n, ps, fs =
         Offset.offset_with_faces
@@ -196,7 +196,8 @@ let sweep'
           ?fa
           ~flip_faces
           ~start_idx
-          spec
+          ~mode
+          (d -. last_d)
           last_shape
       in
       lift ~z m ps :: pts, fs :: faces, start_idx + last_len, ps, n, d

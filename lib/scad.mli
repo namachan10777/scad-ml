@@ -264,22 +264,24 @@ val quaternion_about_pt : Quaternion.t -> Vec3.t -> d3 -> d3
 
 (** {1 2d Only Transformations} *)
 
-(** [offset offset t]
+(** [offset ?mode d t]
 
-    Generates a new 2D interior or exterior outline from an existing outline [t].
-    - [`Delta d] will create a new outline whose sides are a fixed distance [d]
+    Generates a new 2D interior or exterior outline shifted a distance [d] from
+    the original 2d shape [t]. The [mode] governs how [d] is used to create the
+    new corners.
+    - [`Delta] will create a new outline whose sides are a fixed distance [d]
       (+ve out, -ve in) from the original outline.
-    - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
+    - [`Chamfer] fixed distance offset by [d] as with delta, but with corners
       chamfered.
-    - [`Radius r] creates a new outline as if a circle of some radius [r] is
-      rotated around the exterior ([r > 0]) or interior ([r < 0]) original
+    - [`Radius] creates a new outline as if a circle of some radius [d] is
+      rotated around the exterior ([d > 0]) or interior ([d < 0]) original
       outline.
 
     Helpful diagrams of what each of these offset styles and chamfering look
     like can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#offset}
     here}. *)
-val offset : [ `Delta of float | `Radius of float | `Chamfer of float ] -> d2 -> d2
+val offset : ?mode:[ `Delta | `Radius | `Chamfer ] -> float -> d2 -> d2
 
 (** {1 Boolean Combination}
 

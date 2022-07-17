@@ -35,7 +35,7 @@ type scad =
       }
   | Text of Text.t
   | Color of
-      { src : scad
+      { scad : scad
       ; color : Color.t
       ; alpha : float option
       }
@@ -55,11 +55,11 @@ type scad =
       }
   | Mirror of Vec3.t * scad
   | Projection of
-      { src : scad
+      { scad : scad
       ; cut : bool
       }
   | LinearExtrude of
-      { src : scad
+      { scad : scad
       ; height : float
       ; center : bool
       ; convexity : int
@@ -69,7 +69,7 @@ type scad =
       ; fn : int
       }
   | RotateExtrude of
-      { src : scad
+      { scad : scad
       ; angle : float option
       ; convexity : int
       ; fa : float option
@@ -79,8 +79,9 @@ type scad =
   | Scale of Vec3.t * scad
   | Resize of Vec3.t * scad
   | Offset of
-      { src : scad
-      ; offset : [ `Radius of float | `Delta of float | `Chamfer of float ]
+      { scad : scad
+      ; mode : [ `Radius | `Delta | `Chamfer ]
+      ; d : float
       }
   | Import of
       { file : string
@@ -94,7 +95,7 @@ type scad =
       ; convexity : int
       }
   | Render of
-      { src : scad
+      { scad : scad
       ; convexity : int
       }
 
@@ -225,7 +226,7 @@ let mirror (type a b) (ax : a) : (a, b) t -> (a, b) t = function
   | D2 scad -> d2 @@ Mirror (Vec3.of_vec2 ax, scad)
   | D3 scad -> d3 @@ Mirror (ax, scad)
 
-let projection ?(cut = false) (D3 src) = d2 @@ Projection { src; cut }
+let projection ?(cut = false) (D3 scad) = d2 @@ Projection { scad; cut }
 
 let linear_extrude
     ?(height = 10.)
@@ -235,13 +236,13 @@ let linear_extrude
     ?(slices = 20)
     ?(scale = Vec2.v 1. 1.)
     ?(fn = 16)
-    (D2 src)
+    (D2 scad)
   =
   if height <= 0. then invalid_arg "Extrusion height must be positive.";
-  d3 @@ LinearExtrude { src; height; center; convexity; twist; slices; scale; fn }
+  d3 @@ LinearExtrude { scad; height; center; convexity; twist; slices; scale; fn }
 
-let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 src) =
-  d3 @@ RotateExtrude { src; angle; convexity; fa; fs; fn }
+let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
+  d3 @@ RotateExtrude { scad; angle; convexity; fa; fs; fn }
 
 let scale (type a b) (factors : a) : (a, b) t -> (a, b) t = function
   | D2 scad -> d2 @@ Scale (Vec3.of_vec2 factors, scad)
@@ -251,7 +252,7 @@ let resize (type a b) (new_dims : a) : (a, b) t -> (a, b) t = function
   | D2 scad -> d2 @@ Resize (Vec3.of_vec2 new_dims, scad)
   | D3 scad -> d3 @@ Resize (new_dims, scad)
 
-let offset offset (D2 src) = d2 @@ Offset { src; offset }
+let offset ?(mode = `Delta) d (D2 scad) = d2 @@ Offset { scad; mode; d }
 let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_layer }
 let d2_import_exts = Export.ExtSet.of_list [ ".dxf"; ".svg" ]
 let d3_import_exts = Export.ExtSet.of_list [ ".stl"; ".off"; ".amf"; ".3mf" ]
@@ -277,8 +278,8 @@ let surface ?(convexity = 10) ?(center = false) ?(invert = false) file =
     invalid_arg
     @@ (Printf.sprintf "Input file extension %s is not supported for surface import.") ext
 
-let color ?alpha color = map (fun src -> Color { src; color; alpha })
-let render ?(convexity = 10) = map (fun src -> Render { src; convexity })
+let color ?alpha color = map (fun scad -> Color { scad; color; alpha })
+let render ?(convexity = 10) = map (fun scad -> Render { scad; convexity })
 
 let to_string t =
   let buf_add_list b f = function
@@ -440,15 +441,15 @@ let to_string t =
         y
         z
         (print (Printf.sprintf "%s\t" indent) scad)
-    | Projection { src; cut } ->
+    | Projection { scad; cut } ->
       Printf.sprintf
         "%sprojection(cut=%B){\n%s%s}\n"
         indent
         cut
-        (print (Printf.sprintf "%s\t" indent) src)
+        (print (Printf.sprintf "%s\t" indent) scad)
         indent
     | LinearExtrude
-        { src; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
+        { scad; height; center; convexity; twist; slices; scale = { x; y }; fn } ->
       Printf.sprintf
         "%slinear_extrude(height=%f, center=%B, convexity=%d, %sslices=%d, scale=[%f, \
          %f], $fn=%d)\n\
@@ -462,15 +463,15 @@ let to_string t =
         x
         y
         fn
-        (print (Printf.sprintf "%s\t" indent) src)
-    | RotateExtrude { src; angle; convexity; fa; fs; fn } ->
+        (print (Printf.sprintf "%s\t" indent) scad)
+    | RotateExtrude { scad; angle; convexity; fa; fs; fn } ->
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
         (maybe_fmt "angle=%f" @@ Option.map Math.deg_of_rad angle)
         convexity
         (string_of_f_ fa fs fn)
-        (print (Printf.sprintf "%s\t" indent) src)
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Scale (p, scad) ->
       Printf.sprintf
         "%sscale(%s)\n%s"
@@ -483,15 +484,15 @@ let to_string t =
         indent
         (Vec3.to_string p)
         (print (Printf.sprintf "%s\t" indent) scad)
-    | Offset { src; offset } ->
+    | Offset { scad; mode; d } ->
       Printf.sprintf
         "%soffset(%s)\n%s"
         indent
-        ( match offset with
-        | `Radius r  -> Printf.sprintf "r = %f" r
-        | `Delta d   -> Printf.sprintf "delta = %f" d
-        | `Chamfer d -> Printf.sprintf "delta = %f, chamfer=true" d )
-        (print (Printf.sprintf "%s\t" indent) src)
+        ( match mode with
+        | `Radius  -> Printf.sprintf "r = %f" d
+        | `Delta   -> Printf.sprintf "delta = %f" d
+        | `Chamfer -> Printf.sprintf "delta = %f, chamfer=true" d )
+        (print (Printf.sprintf "%s\t" indent) scad)
     | Import { file; convexity; dxf_layer } ->
       Printf.sprintf
         "%simport(\"%s\", convexity=%i%s);\n"
@@ -507,19 +508,19 @@ let to_string t =
         center
         invert
         convexity
-    | Color { src; color; alpha } ->
+    | Color { scad; color; alpha } ->
       Printf.sprintf
         "%scolor(%s%s)\n%s"
         indent
         (Color.to_string color)
         (maybe_fmt ", alpha=%f" alpha)
-        (print (Printf.sprintf "%s\t" indent) src)
-    | Render { src; convexity } ->
+        (print (Printf.sprintf "%s\t" indent) scad)
+    | Render { scad; convexity } ->
       Printf.sprintf
         "%srender(convexity=%i)\n%s"
         indent
         convexity
-        (print (Printf.sprintf "%s\t" indent) src)
+        (print (Printf.sprintf "%s\t" indent) scad)
   in
   print "" (unpack t)
 

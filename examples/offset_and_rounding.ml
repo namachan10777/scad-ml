@@ -17,7 +17,7 @@ let pointy =
     {{!Scad_ml.Scad.offset} [Scad.offset]}, so they share the same semantics.
     For this example, we apply an negative (inward) circular offset. *)
 let () =
-  Poly2.offset (`Radius (-0.5)) poly
+  Poly2.offset ~mode:`Radius (-0.5) poly
   |> Poly2.to_scad
   |> Scad.linear_extrude ~height:1.
   |> (fun rounded -> Scad.union [ rounded; pointy ])

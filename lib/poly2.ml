@@ -142,8 +142,8 @@ let area ?signed { outer; holes } =
 
 let map f { outer; holes } = { outer = f outer; holes = List.map f holes }
 
-let offset ?fn ?fs ?fa ?check_valid mode =
-  map (Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid mode)
+let offset ?fn ?fs ?fa ?check_valid ?mode d =
+  map (Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid ?mode d)
 
 let translate p = map (Path2.translate p)
 let rotate r = map (Path2.rotate r)

@@ -103,14 +103,18 @@ let good_segments ~quality ~closed ~d path shifted_segs =
   in
   Array.init (Array.length shifted_segs) f
 
-let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = `Quality 1) offset path =
+let offset'
+    ?fn
+    ?fs
+    ?fa
+    ?(closed = true)
+    ?(check_valid = `Quality 1)
+    ?(mode = `Delta)
+    d
+    path
+  =
   let path = Array.of_list path in
-  let mode, d =
-    let flip = if closed then clockwise_sign' path *. -1. else 1. in
-    match offset with
-    | `Delta d   -> `Delta, flip *. d
-    | `Chamfer d -> `Chamfer, flip *. d
-    | `Radius r  -> `Radius, flip *. r
+  let d = if closed then clockwise_sign' path *. -1. *. d else d
   and len = Array.length path in
   let shifted_segs =
     (* last looping segment ignored later if not closed *)
@@ -214,8 +218,8 @@ let offset' ?fn ?fs ?fa ?(closed = true) ?(check_valid = `Quality 1) offset path
   in
   good, new_corners, point_counts
 
-let offset ?fn ?fs ?fa ?closed ?check_valid offset path =
-  let _, points, _ = offset' ?fn ?fs ?fa ?closed ?check_valid offset path in
+let offset ?fn ?fs ?fa ?closed ?check_valid ?mode d path =
+  let _, points, _ = offset' ?fn ?fs ?fa ?closed ?check_valid ?mode d path in
   points
 
 let offset_with_faces
@@ -226,10 +230,11 @@ let offset_with_faces
     ?check_valid
     ?(flip_faces = false)
     ?(start_idx = 0)
-    offset
+    ?mode
+    d
     path
   =
-  let good, points, counts = offset' ?fn ?fs ?fa ~closed ?check_valid offset path in
+  let good, points, counts = offset' ?fn ?fs ?fa ~closed ?check_valid ?mode d path in
   let len = Array.length good in
   (* Expand the point count list with zeros where points from the original path
       were lost (essentially a lookup of how many points are on the offset path

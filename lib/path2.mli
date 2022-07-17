@@ -159,15 +159,16 @@ val cubic_spline : ?boundary:CubicSpline.boundary -> fn:int -> t -> t
     {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding}
     module. *)
 
-(** [offset ?fn ?fs ?fa ?closed ?check_valid spec path]
+(** [offset ?fn ?fs ?fa ?closed ?check_valid ?mode d path]
 
-    Offset a 2d [path] (treated as [closed] by default) by the [spec]ified amount.
-    - [`Delta d] will create a new outline whose sides are a fixed distance [d]
-      (+ve out, -ve in) from the original outline.
-    - [`Chamfer d] fixed distance offset by [d] as with delta, but with corners
+    Offset a 2d [path] (treated as [closed] by default) by the specified
+    distance [d].The [mode] governs how [d] is used to create the new corners.
+    - [`Delta] will create a new outline whose sides are a fixed distance [d]
+      (+ve out, -ve in) from the original outline (this is the default behaviour).
+    - [`Chamfer] fixed distance offset by [d] as with delta, but with corners
       chamfered.
-    - [`Radius r] creates a new outline as if a circle of some radius [r] is
-      rotated around the exterior ([r > 0]) or interior ([r < 0]) original
+    - [`Radius] creates a new outline as if a circle of some radius [d] is
+      rotated around the exterior ([d > 0]) or interior ([d < 0]) original
       outline. [fn], [fs], and [fa] parameters govern the number of points that
       will be used for these arcs (they are ignored for delta and chamfer modes).
     - The [check_valid] default of [`Quality 1] will check the validity of
@@ -181,7 +182,8 @@ val offset
   -> ?fa:float
   -> ?closed:bool
   -> ?check_valid:[ `Quality of int | `No ]
-  -> [< `Chamfer of float | `Delta of float | `Radius of float ]
+  -> ?mode:[< `Chamfer | `Delta | `Radius > `Delta ]
+  -> float
   -> t
   -> t
 
