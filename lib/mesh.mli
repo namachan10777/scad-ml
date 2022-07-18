@@ -10,12 +10,21 @@ type t = Mesh0.t = private
 
 (** Describes desired row wrapping behaviour in {!of_rows}, which creates a
     mesh from rows of points. *)
-type row_wrap =
+type endcaps =
   [ `Loop (** last/top row wrapped to the first/bottom *)
   | `Both (** both bottom and top rows are closed with flat faces *)
   | `None (** neither top or bottom rows are closed with a face *)
   | `Top (** a face is generated to close the top row with itself *)
   | `Bot (** a face is generated to close the bottom row with itself *)
+  ]
+
+type style =
+  [ `Default
+  | `Alt
+  | `MinEdge
+  | `Quincunx
+  | `Convex
+  | `Concave
   ]
 
 (** [empty]
@@ -29,19 +38,19 @@ val empty : t
     described by indices into [points]. *)
 val make : points:Vec3.t list -> faces:int list list -> t
 
-(** [of_rows ?row_wrap ?col_wrap rows]
+(** [of_rows ?endcaps ?col_wrap rows]
 
     Create a {!type:t} representing a polyhedron from a list of layers
-    (counter_clockwise loops of 3d points). [row_wrap] defaults to [`Both], which
+    (counter_clockwise loops of 3d points). [endcaps] defaults to [`Both], which
     specifies that faces should be generated to close off the bottom and top
-   layers of the generated shape. If it is instead set to [`Loop], the open
-   faces of the first and last layers will be closed with one another. For more
-   advanced usages, one or both of the caps can be left open, so the resulting
-   meshes can be closed off by some other means. [col_wrap] sets whether faces
-    should be generated to loop between the ends of each row. If [rows] is empty, a
-   {!empty} is returned.  Throws [Invalid_argument] if [rows] contains only
-   one row, or if it is not rectangular (any row differs in length). *)
-val of_rows : ?row_wrap:row_wrap -> ?col_wrap:bool -> Vec3.t list list -> t
+    layers of the generated shape. If it is instead set to [`Loop], the open
+    faces of the first and last layers will be closed with one another. For more
+    advanced usages, one or both of the endcaps can be left open, so the resulting
+    meshes can be closed off by some other means. [col_wrap] sets whether faces
+     should be generated to loop between the ends of each row. If [rows] is empty, a
+    {!empty} is returned.  Throws [Invalid_argument] if [rows] contains only
+    one row, or if it is not rectangular (any row differs in length). *)
+val of_rows : ?endcaps:endcaps -> ?col_wrap:bool -> ?style:style -> Vec3.t list list -> t
 
 (** [of_ragged ?looped ?reverse rows]
 

@@ -11,12 +11,21 @@ type t =
   ; faces : int list list
   }
 
-type row_wrap =
+type endcaps =
   [ `Loop
   | `Both
   | `None
   | `Top
   | `Bot
+  ]
+
+type style =
+  [ `Default
+  | `Alt
+  | `MinEdge
+  | `Quincunx
+  | `Convex
+  | `Concave
   ]
 
 let empty = { n_points = 0; points = []; faces = [] }
@@ -25,9 +34,9 @@ let points t = t.points
 let faces t = t.faces
 let make ~points ~faces = { n_points = List.length points; points; faces }
 
-let of_rows ?(row_wrap = `Both) ?(col_wrap = true) layers =
+let of_rows ?(endcaps = `Both) ?(col_wrap = true) ?(style = `Default) layers =
   let looped =
-    match row_wrap with
+    match endcaps with
     | `Loop -> true
     | _     -> false
   in
@@ -36,13 +45,40 @@ let of_rows ?(row_wrap = `Both) ?(col_wrap = true) layers =
   | [ _ ]    -> invalid_arg "Only one layer provided."
   | hd :: tl ->
     let n_layers = List.length layers
-    and n_facets = List.length hd
-    and points = List.concat layers in
+    and n_facets = List.length hd in
+    let n_rows = n_layers - if looped then 0 else 1
+    and n_cols = n_facets - if col_wrap then 0 else 1 in
     if not (List.for_all (fun l -> List.length l = n_facets) tl)
     then invalid_arg "Inconsistent layer length.";
+    let idxs c r =
+      let i1 = (r mod n_layers * n_facets) + (c mod n_facets)
+      and i2 = ((r + 1) mod n_layers * n_facets) + (c mod n_facets)
+      and i3 = ((r + 1) mod n_layers * n_facets) + ((c + 1) mod n_facets)
+      and i4 = (r mod n_layers * n_facets) + ((c + 1) mod n_facets) in
+      i1, i2, i3, i4
+    in
+    let points =
+      let points = List.concat layers in
+      match style with
+      | `Quincunx ->
+        let ps' = Array.of_list points in
+        let rec loop acc r c =
+          let acc =
+            let i1, i2, i3, i4 = idxs c r in
+            Vec3.mean' [| ps'.(i1); ps'.(i2); ps'.(i3); ps'.(i4) |] :: acc
+          in
+          if c = n_cols - 1
+          then if r = n_rows - 1 then acc else loop acc (r + 1) 0
+          else loop acc r (c + 1)
+        in
+        List.rev_append (loop [] 0 0) points
+      | _         -> points
+    in
+    (* TODO:
+https://github.com/revarbat/BOSL2/blob/f88bf2368dffddb3e10dbea3f2e40fe71f9bb903/vnf.scad#L171
+   Re-write faces generation with bosl2s style options. (pre-req for skin implementation)
+       *)
     let faces =
-      let last_seg = n_layers - if looped then 1 else 2
-      and last_face = n_facets - if col_wrap then 1 else 2 in
       let rec loop acc seg face =
         let acc =
           let s0 = seg mod n_layers
@@ -55,15 +91,15 @@ let of_rows ?(row_wrap = `Both) ?(col_wrap = true) layers =
           ]
           :: acc
         in
-        if face = last_face
-        then if seg = last_seg then acc else loop acc (seg + 1) 0
+        if face = n_cols - 1
+        then if seg = n_rows - 1 then acc else loop acc (seg + 1) 0
         else loop acc seg (face + 1)
       in
       let faces = loop [] 0 0
       and top_offset = n_facets * (n_layers - 1) in
       let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
       and top_cap = List.init n_facets (fun i -> i + top_offset) in
-      match row_wrap with
+      match endcaps with
       | `Both         -> top_cap :: bottom_cap :: faces
       | `None | `Loop -> faces
       | `Top          -> top_cap :: faces

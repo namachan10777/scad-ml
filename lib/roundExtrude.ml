@@ -226,7 +226,7 @@ let sweep'
       let f (acc, _last) m = lift m shape :: acc, m in
       List.fold_left f (f ([], hd) hd) tl
     in
-    let mid = Mesh0.of_rows ~row_wrap:`None (List.rev mid)
+    let mid = Mesh0.of_rows ~endcaps:`None (List.rev mid)
     and bot_lid, bot = cap ~top:false ~close:close_bot ~m:hd bot_offsets
     and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
     bot_lid, top_lid, Mesh0.join [ bot; mid; top ]
@@ -251,7 +251,7 @@ let sweep
       let f ~winding path =
         let path = Mesh0.enforce_winding winding path in
         List.map (fun m -> Path2.multmatrix m path) transforms
-        |> Mesh0.of_rows ~row_wrap:`Loop
+        |> Mesh0.of_rows ~endcaps:`Loop
       in
       Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
     | `Caps { top; bot }, holes ->
