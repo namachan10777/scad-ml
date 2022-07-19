@@ -1,5 +1,10 @@
 (** Generation, and manipulation of 3-dimensional meshes (points and faces)
-    that can be mapped into {!Scad.d3} as polyhedrons. *)
+    that can be mapped into {!Scad.d3} as polyhedrons.
+
+    This data type (and its constructors / transformers) is largely a port
+    of the {{:https://github.com/revarbat/BOSL2/blob/master/vnf.scad} vnf
+    structure module} of
+    the {{:https://github.com/revarbat/BOSL2/} BOSL2 OpenSCAD library}. *)
 
 (** Points and faces 3-dimensional mesh. *)
 type t = Mesh0.t = private
@@ -38,7 +43,7 @@ val empty : t
     described by indices into [points]. *)
 val make : points:Vec3.t list -> faces:int list list -> t
 
-(** [of_rows ?endcaps ?col_wrap rows]
+(** [of_rows ?rev ?endcaps ?col_wrap ?style rows]
 
     Create a {!type:t} representing a polyhedron from a list of layers
     (counter_clockwise loops of 3d points). [endcaps] defaults to [`Both], which
@@ -46,11 +51,30 @@ val make : points:Vec3.t list -> faces:int list list -> t
     layers of the generated shape. If it is instead set to [`Loop], the open
     faces of the first and last layers will be closed with one another. For more
     advanced usages, one or both of the endcaps can be left open, so the resulting
-    meshes can be closed off by some other means. [col_wrap] sets whether faces
-     should be generated to loop between the ends of each row. If [rows] is empty, a
-    {!empty} is returned.  Throws [Invalid_argument] if [rows] contains only
-    one row, or if it is not rectangular (any row differs in length). *)
-val of_rows : ?endcaps:endcaps -> ?col_wrap:bool -> ?style:style -> Vec3.t list list -> t
+    meshes can be closed off by some other means.
+    - [col_wrap] sets whether faces should be generated to loop between the ends
+      of each row.
+    - If [rev] is [true], faces winding direction will be reversed (default = [false])
+    - [style] governs how the quadrilaterals formed by the rows and columns of
+      points are divided into triangles:
+    {ul
+        {- [`Default] is an arbitrary systematic subdivision in the same direction}
+        {- [`Alt] is the uniform subdivision in the other (alternate direction)}
+        {- [`MinEdge] picks the shorter edge to subdivide the quadrilateral, so
+           the division may not be uniform across the shape}
+        {- [`Quincunx] adds a vertex in the middle of each quadrilateral and
+           creates four triangles}
+        {- [`Convex] and [`Concave] choose the locally convex/concave subdivision}}
+    - If [rows] is empty, a {!empty} is returned. Throws [Invalid_argument] if
+    [rows] contains only one row, or if it is not rectangular (any row differs in
+    length). *)
+val of_rows
+  :  ?rev:bool
+  -> ?endcaps:endcaps
+  -> ?col_wrap:bool
+  -> ?style:style
+  -> Vec3.t list list
+  -> t
 
 (** [of_ragged ?looped ?reverse rows]
 
@@ -180,7 +204,7 @@ module Cap : sig
 
   (** Top-level configuration type for {!Mesh.sweep}, allowing for the end-caps
    to be specified using the types above, or to simply loop the first and last
-   layers of the mesh together (see: {!type:row_wrap} [`Loop] as used by
+   layers of the mesh together (see: {!type:endcaps} [`Loop] as used by
    {!of_rows}). *)
   type t =
     [ `Looped

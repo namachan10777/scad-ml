@@ -34,7 +34,13 @@ let points t = t.points
 let faces t = t.faces
 let make ~points ~faces = { n_points = List.length points; points; faces }
 
-let of_rows ?(endcaps = `Both) ?(col_wrap = true) ?(style = `Default) layers =
+let of_rows
+    ?(rev = false)
+    ?(endcaps = `Both)
+    ?(col_wrap = true)
+    ?(style = `Default)
+    layers
+  =
   let looped =
     match endcaps with
     | `Loop -> true
@@ -50,7 +56,7 @@ let of_rows ?(endcaps = `Both) ?(col_wrap = true) ?(style = `Default) layers =
     and n_cols = n_facets - if col_wrap then 0 else 1 in
     if not (List.for_all (fun l -> List.length l = n_facets) tl)
     then invalid_arg "Inconsistent layer length.";
-    let idxs c r =
+    let idxs r c =
       let i1 = (r mod n_layers * n_facets) + (c mod n_facets)
       and i2 = ((r + 1) mod n_layers * n_facets) + (c mod n_facets)
       and i3 = ((r + 1) mod n_layers * n_facets) + ((c + 1) mod n_facets)
@@ -64,48 +70,94 @@ let of_rows ?(endcaps = `Both) ?(col_wrap = true) ?(style = `Default) layers =
         let ps' = Array.of_list points in
         let rec loop acc r c =
           let acc =
-            let i1, i2, i3, i4 = idxs c r in
+            let i1, i2, i3, i4 = idxs r c in
             Vec3.mean' [| ps'.(i1); ps'.(i2); ps'.(i3); ps'.(i4) |] :: acc
           in
           if c = n_cols - 1
           then if r = n_rows - 1 then acc else loop acc (r + 1) 0
           else loop acc r (c + 1)
         in
-        List.rev_append (loop [] 0 0) points
+        List.append points (List.rev @@ loop [] 0 0)
       | _         -> points
     in
-    (* TODO:
-https://github.com/revarbat/BOSL2/blob/f88bf2368dffddb3e10dbea3f2e40fe71f9bb903/vnf.scad#L171
-   Re-write faces generation with bosl2s style options. (pre-req for skin implementation)
-       *)
     let faces =
+      let ps = Array.of_list points in
+      let add_face a b c acc =
+        (* drop degenerate faces *)
+        if Vec3.(
+             distance ps.(a) ps.(b) > Util.epsilon
+             && distance ps.(b) ps.(c) > Util.epsilon
+             && distance ps.(c) ps.(a) > Util.epsilon)
+        then if rev then [ c; b; a ] :: acc else [ a; b; c ] :: acc
+        else acc
+      in
+      let add_faces default acc i1 i2 i3 i4 =
+        if default
+        then add_face i1 i3 i2 acc |> add_face i1 i4 i3
+        else add_face i1 i4 i2 acc |> add_face i2 i4 i3
+      in
+      let f =
+        match style with
+        | `Quincunx                   ->
+          let n = n_layers * n_facets in
+          fun acc r c ->
+            let i1, i2, i3, i4 = idxs r c
+            and i5 = n + (r * n_cols) + c in
+            add_face i1 i5 i2 acc
+            |> add_face i2 i5 i3
+            |> add_face i3 i5 i4
+            |> add_face i4 i5 i1
+        | `Alt                        ->
+          fun acc r c ->
+            let i1, i2, i3, i4 = idxs r c in
+            add_faces false acc i1 i2 i3 i4
+        | `MinEdge                    ->
+          fun acc r c ->
+            let i1, i2, i3, i4 = idxs r c in
+            let default = Vec3.(distance ps.(i4) ps.(i2) <= distance ps.(i1) ps.(i3)) in
+            add_faces default acc i1 i2 i3 i4
+        | (`Convex | `Concave) as con ->
+          (* find normal for 3 of the points, is the other point above or below? *)
+          let side =
+            match con with
+            | `Convex -> Fun.id
+            | _       -> not
+          in
+          fun acc r c ->
+            let i1, i2, i3, i4 = idxs r c in
+            let n =
+              Vec3.(cross (sub ps.(i2) ps.(i1)) (sub ps.(i3) ps.(i1)))
+              |> if rev then Vec3.negate else Fun.id
+            in
+            if Math.approx n.z 0.
+            then add_face i1 i4 i3 acc
+            else add_faces (side Vec3.(dot n ps.(i4) > dot n ps.(i1))) acc i1 i2 i3 i4
+        | `Default                    ->
+          fun acc r c ->
+            let i1, i2, i3, i4 = idxs r c in
+            add_faces true acc i1 i2 i3 i4
+      in
       let rec loop acc seg face =
-        let acc =
-          let s0 = seg mod n_layers
-          and s1 = (seg + 1) mod n_layers
-          and f1 = (face + 1) mod n_facets in
-          [ (s0 * n_facets) + face
-          ; (s0 * n_facets) + f1
-          ; (s1 * n_facets) + f1
-          ; (s1 * n_facets) + face
-          ]
-          :: acc
-        in
+        let acc = f acc seg face in
         if face = n_cols - 1
         then if seg = n_rows - 1 then acc else loop acc (seg + 1) 0
         else loop acc seg (face + 1)
       in
       let faces = loop [] 0 0
-      and top_offset = n_facets * (n_layers - 1) in
-      let bottom_cap = List.init n_facets (fun i -> n_facets - 1 - i)
-      and top_cap = List.init n_facets (fun i -> i + top_offset) in
+      and bottom_cap =
+        List.init n_facets (if rev then Fun.id else fun i -> n_facets - 1 - i)
+      and top_cap =
+        let offset = n_facets * (n_layers - 1) in
+        let f = if rev then fun i -> offset + n_facets - 1 - i else ( + ) offset in
+        List.init n_facets f
+      in
       match endcaps with
       | `Both         -> top_cap :: bottom_cap :: faces
       | `None | `Loop -> faces
       | `Top          -> top_cap :: faces
       | `Bot          -> bottom_cap :: faces
     in
-    { n_points = n_layers * n_facets; points; faces = List.rev faces }
+    { n_points = n_layers * n_facets; points; faces }
 
 let of_ragged ?(looped = false) ?(rev = false) rows =
   let starts_lenghts, points =
