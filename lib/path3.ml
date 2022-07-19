@@ -49,6 +49,12 @@ let twister ~len angle =
   let step = angle /. Float.of_int (len - 1) in
   fun i -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (step *. Float.of_int i))
 
+(* TODO: scaler and twister should be dependent on proportional distance
+    travelled along the path, rather than a uniform step between each pair of
+    points. Can support the current pattern and the new one with a poly
+    variant. (steps:[ `N of int | `Rel of float list ]). Now that I am thinking
+    of it, would having ~k curavature hardness like parameters (non-linear
+    transition, implemented with 3 point bezier) be nice for these things? *)
 let to_transforms ?(euler = false) ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p

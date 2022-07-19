@@ -1,3 +1,26 @@
+(* TODO:
+   - come up with a design that will allow composing morphing sweep functions
+    with relative ease (For those, will need to morph the correct amount between
+    steps along the path. If going from path, rather than from transforms, then
+    using relative distance along the path would enable a linear morph through
+    the sweep)
+   - morphing sweep/extrusions will be starting from Poly2 as the others do, and
+    support rounded caps
+   - added TODO to Path3 RE:scaling and twisting about adding some of this kind
+    of power over there.
+   - as noted in that TODO, I think a ~k curvature hardness parameter would be
+    nice to have, so that morphing doesn't have to be strictly linear between
+    the profiles (bezier with middle control point set between 0 and 1)
+   - I think I probably can't get around exposing a "low level" version that
+    deals in lists of profiles and parameters, but the simpler bases should all
+    be covered by the functions that only take two profiles as parameters.
+   - read through and understand how I should implement the types such that
+    efficient upsampling timing like in BOSL2 can be achieved without too much
+    headache or dynamism
+    *)
+
+module Bez = Bezier.Make (Vec3)
+
 type spec =
   [ `Direct
   | `Reindex
@@ -10,6 +33,15 @@ type slices =
   [ `Flat of int
   | `Mix of int list
   ]
+
+let bezier_transition ?(k = 0.5) ~fn ~init a b =
+  let step = 1. /. Float.of_int fn
+  and bezs = List.map2 (fun a b -> Bez.make [ a; Vec3.lerp a b k; b ]) a b in
+  let f j acc =
+    let u = Float.of_int j *. step in
+    List.map (fun bez -> bez u) bezs :: acc
+  in
+  Util.fold_init fn f init
 
 let slice_profiles ?(closed = false) ~slices = function
   | [] | [ _ ]        -> invalid_arg "Too few profiles to slice."
@@ -35,7 +67,8 @@ let slice_profiles ?(closed = false) ~slices = function
       let step = 1. /. Float.of_int n in
       let acc =
         let g j acc =
-          List.map2 (fun a b -> Vec3.lerp a b (Float.of_int j *. step)) last next :: acc
+          let u = Float.of_int j *. step in
+          List.map2 (fun a b -> Vec3.lerp a b u) last next :: acc
         in
         Util.fold_init n g acc
       in
