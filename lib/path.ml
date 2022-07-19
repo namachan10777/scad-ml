@@ -126,8 +126,15 @@ module type S = sig
   (** [segment ?closed path]
 
       Break [path] into line segments. If [closed] is [true], include a segment
-    between the last and first points of [path] (default [false]). *)
+      between the last and first points of [path] (default [false]). *)
   val segment : ?closed:bool -> t -> line list
+
+  (** [reindex_polygon reference poly]
+
+       Rotate the polygonal (closed) path [poly] to optimize it pairwise point
+       association with the [reference] polygon. Paths should have the same
+       clockwise winding direction (not checked / corrected). *)
+  val reindex_polygon : t -> t -> t
 end
 
 module type S' = sig
@@ -446,4 +453,27 @@ module Make (V : Vec.S) = struct
       let f (a, segs) b = b, V.{ a; b } :: segs in
       let last, segs = List.fold_left f (hd, []) tl in
       List.rev @@ if closed then V.{ a = last; b = hd } :: segs else segs
+
+  let reindex_polygon reference poly =
+    let ref' = Array.of_list reference
+    and poly' = Array.of_list poly in
+    let len = Array.length ref' in
+    if len <> Array.length poly' then invalid_arg "Polygons must have the same length.";
+    let idx =
+      let min_dist = ref Float.max_float
+      and min_idx = ref 0
+      and dist = ref 0. in
+      for i = 0 to len - 1 do
+        for j = 0 to len - 1 do
+          dist := !dist +. V.distance ref'.(j) poly'.((i + j) mod len)
+        done;
+        if !dist < !min_dist
+        then (
+          min_dist := !dist;
+          min_idx := i );
+        dist := 0.
+      done;
+      !min_idx
+    in
+    List.init len (fun i -> poly'.(Util.index_wrap ~len (idx + i)))
 end
