@@ -318,7 +318,7 @@ val sweep
   -> Poly2.t
   -> t
 
-(** [linear_extrude ?check_valid ?merge ?winding ?fa ?slices ?scale ?twist
+(** [linear_extrude ?check_valid ?merge ?winding ?fa ?slices ?scale_k ?twist_k ?scale ?twist
     ?center ?caps ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
@@ -332,6 +332,8 @@ val linear_extrude
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fa:float
   -> ?slices:int
+  -> ?scale_k:float
+  -> ?twist_k:float
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
@@ -340,7 +342,8 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [path_extrude ?check_valid ?merge ?winding ?spec ?euler ?scale ?twist ~path poly]
+(** [path_extrude ?check_valid ?merge ?winding ?spec ?euler
+     ?scale_k ?twist_k ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
     convenience function that composes transform generation using
@@ -351,13 +354,15 @@ val path_extrude
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?spec:Cap.t
   -> ?euler:bool
+  -> ?scale_k:float
+  -> ?twist_k:float
   -> ?scale:Vec2.t
   -> ?twist:float
   -> path:Path3.t
   -> Poly2.t
   -> t
 
-(** [helix_extrude ?check_valid ?merge ?fn ?fs ?fa ?scale ?twist
+(** [helix_extrude ?check_valid ?merge ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
     Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
@@ -369,6 +374,8 @@ val helix_extrude
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
+  -> ?scale_k:float
+  -> ?twist_k:float
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?caps:Cap.caps

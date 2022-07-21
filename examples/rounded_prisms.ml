@@ -17,23 +17,23 @@ open Scad_ml
    {{!Scad_ml.Mesh.prism} [Mesh.prism]} mean, see the documentation for the
    {{!type:Scad_ml.Mesh.Prism.spec} [Mesh.Prism.spec]} type. *)
 let () =
-  Poly2.circle ~fn:5 4.
+  Poly2.star ~r1:4. ~r2:8. 5
   |> Mesh.(
        linear_prism
          ~outer:
            Prism.(
              spec
-               ~joint_top:(1., 1.)
+               ~joint_top:(0.95, 0.95)
                ~joint_bot:(-1., 1.)
                ~joint_sides:(`Flat (2., 2.))
                ())
          ~height:2.)
   |> Mesh.to_scad
-  |> Scad.to_file "rounded_prism_penta.scad"
+  |> Scad.to_file "rounded_prism_star.scad"
 
 (** {%html:
     <p style="text-align:center;">
-    <img src="../assets/rounded_prism_penta.png" style="width:150mm;"/>
+    <img src="../assets/rounded_prism_star.png" style="width:150mm;"/>
     </p> %}
     *)
 

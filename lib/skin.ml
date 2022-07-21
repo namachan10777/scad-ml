@@ -6,9 +6,7 @@
     the sweep)
    - morphing sweep/extrusions will be starting from Poly2 as the others do, and
     support rounded caps
-   - added TODO to Path3 RE:scaling and twisting about adding some of this kind
-    of power over there.
-   - as noted in that TODO, I think a ~k curvature hardness parameter would be
+   - I think a ~k curvature hardness parameter would be
     nice to have, so that morphing doesn't have to be strictly linear between
     the profiles (bezier with middle control point set between 0 and 1)
    - I think I probably can't get around exposing a "low level" version that
@@ -17,6 +15,9 @@
    - read through and understand how I should implement the types such that
     efficient upsampling timing like in BOSL2 can be achieved without too much
     headache or dynamism
+   - need to watch out for the impact that duplicated vertices will have on
+    integration with sweeping / polyholes since I have checks in some places
+    that would catch it as an incorrect polygon.
     *)
 
 module Bez = Bezier.Make (Vec3)

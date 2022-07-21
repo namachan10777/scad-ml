@@ -203,19 +203,25 @@ val bbox : t -> Vec3.bbox
 
 (** {1 Sweeping Transform Helpers} *)
 
-(** [scaler ~len scale]
+(** [scaler ~k scale]
 
-    Create a lookup from index to scaling transformation matrix for
-   interpolating from [{x = 1.; y = 1.}] at [0] to [scale] by [len - 1]. *)
-val scaler : len:int -> Vec2.t -> int -> MultMatrix.t
+    Create a lookup from relative position ([0.] to [1.]) to scaling
+    transformation matrix for interpolating from [{x = 1.; y = 1.}] at [0.] to
+    [scale] by [1.]. [k] sets the "hardness" of the bezier transition, with
+    values [< 0.5] starting slow, and [> 0.5] starting fast (values below [0.]
+    and above [1.] are allowed). The default [0.5] is simply linear. *)
+val scaler : ?k:float -> Vec2.t -> float -> MultMatrix.t
 
-(** [twister ~len angle]
+(** [twister ~k angle]
 
-    Create a lookup from index to rotation transformation matrix for
-    interpolating from [0.] (no rotation) at [0] to [angle] by [len - 1]. *)
-val twister : len:int -> float -> int -> MultMatrix.t
+    Create a lookup from relative position ([0.] to [1.]) to rotation
+    transformation matrix for interpolating from [0.] (no rotation) at [0.] to
+    [angle] by [1.]. [k] sets the "hardness" of the bezier transition, with
+    values [< 0.5] starting slow, and [> 0.5] starting fast (values below [0.]
+    and above [1.] are allowed). The default [0.5] is simply linear. *)
+val twister : ?k:float -> float -> float -> MultMatrix.t
 
-(** [to_transforms t]
+(** [to_transforms ?euler ?scale_k ?twist_k ?scale ?twist t]
 
    Generate list of transformations that can be applied to three-dimensional
    vectors ({!Vec3.t} via {!MultMatrix.transform}) or shapes ({!Scad.d3} via
@@ -231,12 +237,20 @@ val twister : len:int -> float -> int -> MultMatrix.t
    have results more in line with expectations in some scenarios (helical-like
    paths for example, though {!Mesh.helix_extrude} may be a better fit in that
    case), but fail in others. For instance, [euler] can generate an abrupt when
-    the path tangent is exactly vertical.
+   the path tangent is exactly vertical.
 
    If provided, [scale] and [twist], specify scaling and rotation to be linearly
    applied to along the path, analogous to the parameters of the same names in
-   {!Scad.linear_extrude}. *)
-val to_transforms : ?euler:bool -> ?scale:Vec2.t -> ?twist:float -> t -> MultMatrix.t list
+   {!Scad.linear_extrude}, but with the added wrinkle of the [_k] parameters
+   that enable non-linear transitions (see {!scaler} and {!twister}). *)
+val to_transforms
+  :  ?euler:bool
+  -> ?scale_k:float
+  -> ?twist_k:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> t
+  -> MultMatrix.t list
 
 (** {1 Basic Transfomations} *)
 

@@ -32,7 +32,11 @@ let () =
     desired. *)
 let () =
   let mesh =
-    Mesh.path_extrude ~scale:(v2 4. 1.) ~twist:(Float.pi *. 4.) ~path:resampled
+    Mesh.path_extrude
+      ~scale_k:0.3
+      ~scale:(v2 4. 1.)
+      ~twist:(Float.pi *. 4.)
+      ~path:resampled
     @@ Poly2.square ~center:true (v2 1. 0.5)
   in
   Scad.to_file "scaling_twister_extrude.scad" (Mesh.to_scad mesh)

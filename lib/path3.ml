@@ -2,6 +2,7 @@ open Vec
 include Path.Make (Vec3)
 include Arc3
 include Rounding.Make (Vec3) (Arc3)
+module Bez2 = Bezier.Make (Vec2)
 
 let of_tups = List.map Vec3.of_tup
 let of_path2 ?(plane = Plane.xy) = Path2.lift plane
@@ -41,27 +42,31 @@ let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   in
   List.init ((n_frags * n_turns) + 1) f
 
-let scaler ~len { x; y } =
-  let step = Vec3.map (fun a -> (a -. 1.) /. Float.of_int (len - 1)) (v3 x y 1.) in
-  fun i -> MultMatrix.scaling @@ Vec3.map (fun a -> (a *. Float.of_int i) +. 1.) step
+let scaler ?(k = 0.5) dims =
+  let bez = Bez2.make [ v2 1. 1.; Vec2.lerp (v2 1. 1.) dims k; dims ] in
+  fun u -> MultMatrix.scaling @@ Vec3.of_vec2 ~z:1. @@ bez u
 
-let twister ~len angle =
-  let step = angle /. Float.of_int (len - 1) in
-  fun i -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (step *. Float.of_int i))
+let twister ?(k = 0.5) rot =
+  let bez = Bez2.make Vec2.[ zero; lerp zero (v rot 0.) k; v rot 0. ] in
+  fun u -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (bez u).x)
 
-(* TODO: scaler and twister should be dependent on proportional distance
-    travelled along the path, rather than a uniform step between each pair of
-    points. Can support the current pattern and the new one with a poly
-    variant. (steps:[ `N of int | `Rel of float list ]). Now that I am thinking
-    of it, would having ~k curavature hardness like parameters (non-linear
-    transition, implemented with 3 point bezier) be nice for these things? *)
-let to_transforms ?(euler = false) ?scale ?twist path =
+let to_transforms ?(euler = false) ?scale_k ?twist_k ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = MultMatrix.id in
+  let rel_pos =
+    if Option.(is_some scale || is_some twist)
+    then (
+      let a = Array.of_list @@ cummulative_length path in
+      for i = 0 to len - 1 do
+        a.(i) <- a.(i) /. a.(len - 1)
+      done;
+      Array.get a )
+    else Fun.const 0.
+  in
   if len < 2 then invalid_arg "Invalid path (too few points).";
-  let scale = Util.value_map_opt ~default:id (scaler ~len) scale
-  and twist = Util.value_map_opt ~default:id (twister ~len) twist
+  let scale = Util.value_map_opt ~default:id (scaler ?k:scale_k) scale
+  and twist = Util.value_map_opt ~default:id (twister ?k:twist_k) twist
   and transform =
     if euler
     then (
@@ -137,7 +142,11 @@ let to_transforms ?(euler = false) ?scale ?twist path =
         else MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) accum_qs.(i - 1)) init
       )
   in
-  let f i = scale i |> MultMatrix.mul (twist i) |> MultMatrix.mul (transform i) in
+  let f i =
+    scale (rel_pos i)
+    |> MultMatrix.mul (twist (rel_pos i))
+    |> MultMatrix.mul (transform i)
+  in
   List.init len f
 
 let normal = function

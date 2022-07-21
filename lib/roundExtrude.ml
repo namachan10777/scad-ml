@@ -316,6 +316,8 @@ let linear_extrude
     ?winding
     ?fa
     ?slices
+    ?scale_k
+    ?twist_k
     ?scale
     ?(twist = 0.)
     ?(center = false)
@@ -335,7 +337,7 @@ let linear_extrude
   and twist = if Float.abs twist > 0. then Some twist else None in
   let transforms =
     List.init (slices + 1) (fun i -> v3 0. 0. ((Float.of_int i *. s) +. z))
-    |> Path3.to_transforms ?scale ?twist
+    |> Path3.to_transforms ?scale_k ?twist_k ?scale ?twist
   in
   sweep ?check_valid ?merge ?winding ~spec:(`Caps caps) ~transforms shape
 
@@ -345,6 +347,8 @@ let helix_extrude
     ?fn
     ?fa
     ?fs
+    ?scale_k
+    ?twist_k
     ?scale
     ?twist
     ?(caps = { top = `Flat; bot = `Flat })
@@ -367,18 +371,39 @@ let helix_extrude
     let path = Path3.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
     let len = List.length path
     and id _ = MultMatrix.id in
-    let scale = Util.value_map_opt ~default:id (Path3.scaler ~len) scale
-    and twist = Util.value_map_opt ~default:id (Path3.twister ~len) twist in
+    let rel_pos =
+      if Option.(is_some scale || is_some twist)
+      then (
+        let a = Array.of_list @@ Path3.cummulative_length path in
+        for i = 0 to len - 1 do
+          a.(i) <- a.(i) /. a.(len - 1)
+        done;
+        Array.get a )
+      else Fun.const 0.
+    in
+    let scale = Util.value_map_opt ~default:id (Path3.scaler ?k:scale_k) scale
+    and twist = Util.value_map_opt ~default:id (Path3.twister ?k:twist_k) twist in
     let f i trans =
       let eul = v3 ax 0. (a_step *. Float.of_int i) in
-      scale i
-      |> MultMatrix.mul (twist i)
+      scale (rel_pos i)
+      |> MultMatrix.mul (twist (rel_pos i))
       |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
     in
     List.mapi f path
   in
   sweep ?check_valid ?merge ~winding ~spec:(`Caps caps) ~transforms shape
 
-let path_extrude ?check_valid ?merge ?winding ?spec ?euler ?scale ?twist ~path =
-  let transforms = Path3.to_transforms ?euler ?scale ?twist path in
+let path_extrude
+    ?check_valid
+    ?merge
+    ?winding
+    ?spec
+    ?euler
+    ?scale_k
+    ?twist_k
+    ?scale
+    ?twist
+    ~path
+  =
+  let transforms = Path3.to_transforms ?euler ?scale_k ?twist_k ?scale ?twist path in
   sweep ?check_valid ?merge ?winding ?spec ~transforms

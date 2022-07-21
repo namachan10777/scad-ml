@@ -8,14 +8,14 @@ module type S = sig
   (** [length ?closed path]
 
       Calculate the length (total travel distance) of the [path]. If [closed]
-      is [true], include the distance between the endpoints. *)
+      is [true], include the distance between the endpoints (default = [false]). *)
   val length : ?closed:bool -> t -> float
 
   (** [cummulative_length ?closed path]
 
       Calculate the cummulative length (distance travelled by each point) along
       the [path]. If [closed] is [true], include the distance between the
-      endpoints. *)
+      endpoints (default = [false]). *)
   val cummulative_length : ?closed:bool -> t -> float list
 
   (** [to_continuous path]
