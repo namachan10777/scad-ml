@@ -36,17 +36,21 @@ module type S = sig
 
       Subdivides [path] with given [freq]uency, including each of the original
       points in the output (unlike {!resample}). This can be a flat number of points
-      provided directly with [`N n], or as a multiple of number of points in
-      [path] with [`Refine factor]. Alternatively, a maximum [`Spacing dist] can
-      be specified instead. The exact point sampling variants will return the
-      number of points specified, at the expense of sampling uniformity. *)
+      provided directly with [`N (n, by)], or as a multiple of number of points in
+      [path] with [`Refine (factor, by)]. The strategy for distribution of
+      points for these count based methods is set with the second parameter [by],
+      which can be either [`BySeg] (same number of additional points per segment)
+      and [`ByLen] (segments gain new points proportional to their length).
+      Alternatively, a maximum [`Spacing dist] can be specified instead. The
+      [`Rough] point sampling variants will favour sampling uniformity, at the
+      expense of not adhering exactly to the requested point count. *)
   val subdivide
     :  ?closed:bool
     -> freq:
-         [> `ExactN of int
-         | `ExactRefine of int
-         | `N of int
-         | `Refine of int
+         [ `N of int * [ `BySeg | `ByLen ]
+         | `RoughN of int * [ `BySeg | `ByLen ]
+         | `Refine of int * [ `BySeg | `ByLen ]
+         | `RoughRefine of int * [ `BySeg | `ByLen ]
          | `Spacing of float
          ]
     -> vec list
@@ -233,8 +237,8 @@ module Make (V : Vec.S) = struct
           init
       and len = List.length path in
       ( match freq with
-      | `Refine 1 | `ExactRefine 1 -> path
-      | (`ExactN n | `N n) when len = n -> path
+      | `Refine (1, _) | `RoughRefine (1, _) -> path
+      | (`N (n, _) | `RoughN (n, _)) when len = n -> path
       | `Spacing s ->
         let f (a, ps) b =
           let n = Float.(to_int @@ ceil (V.distance a b /. s)) in
@@ -243,18 +247,25 @@ module Make (V : Vec.S) = struct
         let last, ps = List.fold_left f (hd, []) tl in
         List.rev @@ if closed then snd @@ f (last, ps) hd else last :: ps
       | freq ->
-        let exact, n =
+        let exact, density_by, n =
           match freq with
-          | `ExactN n           -> true, n
-          | `N n                -> false, n
-          | `ExactRefine factor -> true, len * factor
-          | `Refine factor      -> false, len * factor
-          | _                   -> failwith "`Spacing is unreachable."
+          | `N (n, by)                -> true, by, n
+          | `RoughN (n, by)           -> false, by, n
+          | `Refine (factor, by)      -> true, by, len * factor
+          | `RoughRefine (factor, by) -> false, by, len * factor
+          | _                         -> failwith "`Spacing is unreachable."
         in
         if n < len
         then invalid_arg "Target number of points must not be less than input length.";
         let add_ns =
-          let seg_lens = segment_lengths ~closed path in
+          let seg_lens =
+            match density_by with
+            | `ByLen -> segment_lengths ~closed path
+            | `BySeg ->
+              let n_segs = len - if closed then 0 else 1 in
+              let l = length ~closed path /. Float.of_int n_segs in
+              List.init n_segs (Fun.const l)
+          in
           let density = Float.of_int (n - len) /. List.fold_left ( +. ) 0. seg_lens in
           if exact
           then (
