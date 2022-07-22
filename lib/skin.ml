@@ -81,3 +81,57 @@ let slice_profiles ?(closed = false) ~slices = function
       let profiles, _, _ = f (profiles, last, i) hd in
       List.rev profiles )
     else List.rev profiles
+
+type dp_map_dir =
+  | Diag
+  | Left
+  | Up
+
+module Tbl = Hashtbl.Make (struct
+  type t = int
+
+  let equal = Int.equal
+  let hash = Fun.id
+end)
+
+let dp_distance_array ?(abort_thresh = Float.infinity) small big =
+  let len_small = Array.length small
+  and len_big = Array.length big in
+  let small_idx = ref 1
+  and tdist =
+    let a = Array.make (len_big + 1) 0. in
+    for i = 1 to len_big do
+      a.(i) <- Vec3.distance big.(i mod len_big) small.(0)
+    done;
+    ref a
+  and dp_map = Tbl.create (len_small + 1) in
+  Tbl.add dp_map 0 (Array.make (len_big + 1) Left);
+  while !small_idx <= len_small + 1 do
+    let min_cost =
+      ref (Vec3.distance big.(0) small.(!small_idx mod len_small) +. !tdist.(0))
+    in
+    let new_row = Array.make (len_big + 1) !min_cost
+    and new_map = Array.make (len_big + 1) Up in
+    for big_idx = 1 to len_big do
+      let cost, map_dir =
+        let diag = !tdist.(big_idx - 1)
+        and left = new_row.(big_idx - 1)
+        and up = !tdist.(big_idx) in
+        if up < diag && up < left
+        then up, Up
+        else if left < diag && left <= up
+        then left, Left (* favoured in tie with up *)
+        else diag, Diag (* smallest, tied with left, or three-way *)
+      and d = Vec3.distance big.(big_idx mod len_big) small.(!small_idx mod len_small) in
+      if cost < !min_cost then min_cost := cost;
+      new_row.(big_idx) <- cost +. d;
+      new_map.(big_idx) <- map_dir
+    done;
+    tdist := new_row;
+    Tbl.add dp_map !small_idx new_map;
+    (* Break out early if minimum cost for this combination of small/big is
+         above the threshold. The map is incomplete, but it will not be used
+         anyway. *)
+    small_idx := if !min_cost > abort_thresh then len_small + 1 else !small_idx + 1
+  done;
+  !tdist.(len_big), dp_map
