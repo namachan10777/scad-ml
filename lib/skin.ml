@@ -96,37 +96,102 @@ let dp_distance_array ?(abort_thresh = Float.infinity) small big =
     for i = 1 to len_big do
       a.(i) <- a.(i - 1) +. Vec3.distance big.(i mod len_big) small.(0)
     done;
-    ref a
+    (* ref a *)
+    a
+  and dist_row = Array.make (len_big + 1) 0.
+  and min_cost = ref 0.
   and dir_map = Array.init (len_small + 1) (fun _ -> Array.make (len_big + 1) Left) in
   while !small_idx < len_small + 1 do
-    let min_cost =
-      ref (Vec3.distance big.(0) small.(!small_idx mod len_small) +. !total_dist.(0))
-    in
-    let new_row = Array.make (len_big + 1) !min_cost
-    and map_row = dir_map.(!small_idx) in
+    (* let min_cost = *)
+    (*   ref (Vec3.distance big.(0) small.(!small_idx mod len_small) +. !total_dist.(0)) *)
+    (* in *)
+    (* let dist_row = Array.make (len_big + 1) !min_cost *)
+    (* min_cost := Vec3.distance big.(0) small.(!small_idx mod len_small) +. !total_dist.(0); *)
+    min_cost := Vec3.distance big.(0) small.(!small_idx mod len_small) +. total_dist.(0);
+    dist_row.(0) <- !min_cost;
+    let map_row = dir_map.(!small_idx) in
     map_row.(0) <- Up;
     for big_idx = 1 to len_big do
       let cost, dir =
-        let diag = !total_dist.(big_idx - 1)
-        and left = new_row.(big_idx - 1)
-        and up = !total_dist.(big_idx) in
+        (* let diag = !total_dist.(big_idx - 1) *)
+        (* and left = dist_row.(big_idx - 1) *)
+        (* and up = !total_dist.(big_idx) in *)
+        let diag = total_dist.(big_idx - 1)
+        and left = dist_row.(big_idx - 1)
+        and up = total_dist.(big_idx) in
         if up < diag && up < left
         then up, Up
         else if left < diag && left <= up
         then left, Left (* favoured in tie with up *)
         else diag, Diag (* smallest, tied with left, or three-way *)
       and d = Vec3.distance big.(big_idx mod len_big) small.(!small_idx mod len_small) in
-      new_row.(big_idx) <- cost +. d;
+      dist_row.(big_idx) <- cost +. d;
       map_row.(big_idx) <- dir;
-      if new_row.(big_idx) < !min_cost then min_cost := new_row.(big_idx)
+      if dist_row.(big_idx) < !min_cost then min_cost := dist_row.(big_idx)
     done;
-    total_dist := new_row;
+    (* total_dist := dist_row; *)
+    Array.blit dist_row 0 total_dist 0 (len_big + 1);
     (* Break out early if minimum cost for this combination of small/big is
          above the threshold. The map matrix is incomplete, but it will not be
          used anyway. *)
     small_idx := if !min_cost > abort_thresh then len_small + 1 else !small_idx + 1
   done;
-  (* in BOSL2 the len_big index is taken from total_dist, but should it be the
-      min_cost instead? That it is used for "bestcost" determination in
-      distance_match makes me wonder.*)
-  !total_dist.(len_big), dir_map
+  (* !total_dist.(len_big), dir_map *)
+  total_dist.(len_big), dir_map
+
+let dp_extract_map m =
+  let len_big = Array.length m.(0) - 1
+  and len_small = Array.length m - 1 in
+  let rec loop i j small_map big_map =
+    let i, j =
+      match m.(i).(j) with
+      | Diag -> i - 1, j - 1
+      | Left -> i, j - 1
+      | Up   -> i - 1, j
+    in
+    if i = 0 && j = 0
+    then small_map, big_map
+    else loop i j ((i mod len_small) :: small_map) ((j mod len_big) :: big_map)
+  in
+  loop len_small len_big [] []
+
+let distance_match a b =
+  let a = Array.of_list a
+  and b = Array.of_list b in
+  let swap = Array.length a > Array.length b in
+  let small, big = if swap then b, a else a, b in
+  let len_big = Array.length big in
+  let rec loop cost map poly i =
+    let shifted =
+      Array.init len_big (fun j -> big.(Util.index_wrap ~len:len_big (i + j)))
+    in
+    let cost', map' = dp_distance_array ~abort_thresh:cost small shifted in
+    let cost, map, poly =
+      if cost' < cost then cost', map', shifted else cost, map, poly
+    in
+    if i < len_big then loop cost map poly (i + 1) else map, poly
+  in
+  let map, shifted_big =
+    let cost, map = dp_distance_array small big in
+    loop cost map big 1
+  in
+  let small_map, big_map = dp_extract_map map in
+  (* Duplicate points according to mappings and shift the new polygon (rotating
+      its the point list) to handle the case when points from both ends of one
+      curve map to a single point on the other. *)
+  let shifting_map map poly =
+    let shift =
+      (* the mapping lists are already sorted in ascending order *)
+      let last_max_idx l =
+        let f (i, max, idx) v = if v >= max then i + 1, v, i else i + 1, max, idx in
+        List.fold_left f (0, 0, 0) l
+      in
+      let len, _, idx = last_max_idx map in
+      len - idx - 1
+    and len = Array.length poly in
+    let f i acc = poly.((i + shift) mod len) :: acc in
+    List.fold_right f map []
+  in
+  let small' = shifting_map small_map small
+  and big' = shifting_map big_map shifted_big in
+  if swap then big', small' else small', big'
