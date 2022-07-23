@@ -96,26 +96,16 @@ let dp_distance_array ?(abort_thresh = Float.infinity) small big =
     for i = 1 to len_big do
       a.(i) <- a.(i - 1) +. Vec3.distance big.(i mod len_big) small.(0)
     done;
-    (* ref a *)
     a
-  and dist_row = Array.make (len_big + 1) 0.
-  and min_cost = ref 0.
+  and dist_row = Array.make (len_big + 1) 0. (* current row, reused each iter *)
+  and min_cost = ref 0. (* minimum cost of current dist_row, break above threshold *)
   and dir_map = Array.init (len_small + 1) (fun _ -> Array.make (len_big + 1) Left) in
   while !small_idx < len_small + 1 do
-    (* let min_cost = *)
-    (*   ref (Vec3.distance big.(0) small.(!small_idx mod len_small) +. !total_dist.(0)) *)
-    (* in *)
-    (* let dist_row = Array.make (len_big + 1) !min_cost *)
-    (* min_cost := Vec3.distance big.(0) small.(!small_idx mod len_small) +. !total_dist.(0); *)
     min_cost := Vec3.distance big.(0) small.(!small_idx mod len_small) +. total_dist.(0);
     dist_row.(0) <- !min_cost;
-    let map_row = dir_map.(!small_idx) in
-    map_row.(0) <- Up;
+    dir_map.(!small_idx).(0) <- Up;
     for big_idx = 1 to len_big do
       let cost, dir =
-        (* let diag = !total_dist.(big_idx - 1) *)
-        (* and left = dist_row.(big_idx - 1) *)
-        (* and up = !total_dist.(big_idx) in *)
         let diag = total_dist.(big_idx - 1)
         and left = dist_row.(big_idx - 1)
         and up = total_dist.(big_idx) in
@@ -126,17 +116,16 @@ let dp_distance_array ?(abort_thresh = Float.infinity) small big =
         else diag, Diag (* smallest, tied with left, or three-way *)
       and d = Vec3.distance big.(big_idx mod len_big) small.(!small_idx mod len_small) in
       dist_row.(big_idx) <- cost +. d;
-      map_row.(big_idx) <- dir;
+      dir_map.(!small_idx).(big_idx) <- dir;
       if dist_row.(big_idx) < !min_cost then min_cost := dist_row.(big_idx)
     done;
-    (* total_dist := dist_row; *)
+    (* dump current row of distances as new totals *)
     Array.blit dist_row 0 total_dist 0 (len_big + 1);
     (* Break out early if minimum cost for this combination of small/big is
          above the threshold. The map matrix is incomplete, but it will not be
          used anyway. *)
     small_idx := if !min_cost > abort_thresh then len_small + 1 else !small_idx + 1
   done;
-  (* !total_dist.(len_big), dir_map *)
   total_dist.(len_big), dir_map
 
 let dp_extract_map m =
@@ -149,9 +138,9 @@ let dp_extract_map m =
       | Left -> i, j - 1
       | Up   -> i - 1, j
     in
-    if i = 0 && j = 0
-    then small_map, big_map
-    else loop i j ((i mod len_small) :: small_map) ((j mod len_big) :: big_map)
+    let small_map = (i mod len_small) :: small_map
+    and big_map = (j mod len_big) :: big_map in
+    if i = 0 && j = 0 then small_map, big_map else loop i j small_map big_map
   in
   loop len_small len_big [] []
 

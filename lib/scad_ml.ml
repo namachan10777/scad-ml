@@ -221,3 +221,4 @@ module Math = Math
 module Export = Export
 module BallTree2 = BallTree2
 module BallTree3 = BallTree3
+module Skin = Skin
