@@ -152,6 +152,29 @@ module Cap = struct
 
   let unwrap_offsets (Offsets l) = l
   let flip_d (Offsets l) = Offsets (List.map (fun { d; z } -> { d = d *. -1.; z }) l)
+
+  let unpack_poly_spec ?(n_holes = 0) spec =
+    let hole_spec outer_offsets = function
+      | `Same      -> fun _ -> `Round outer_offsets
+      | `Flip      ->
+        let flipped = flip_d outer_offsets in
+        fun _ -> `Round flipped
+      | `Spec offs -> fun _ -> `Round offs
+      | `Mix specs ->
+        let specs = Array.of_list specs in
+        if Array.length specs = n_holes
+        then
+          fun i ->
+          match Array.get specs i with
+          | `Same      -> `Round outer_offsets
+          | `Flip      -> `Round (flip_d outer_offsets)
+          | `Spec offs -> `Round offs
+        else invalid_arg "Mixed hole specs must match the number of holes."
+    in
+    match spec with
+    | `Flat                         -> `Flat, (fun _ -> `Flat), None
+    | `Empty                        -> `Empty, (fun _ -> `Empty), None
+    | `Round { outer; holes; mode } -> `Round outer, hole_spec outer holes, Some mode
 end
 
 open Cap
@@ -279,30 +302,8 @@ let sweep
       Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes)
     | `Caps { top; bot }, holes ->
       let n_holes = List.length holes in
-      let hole_spec outer_offsets = function
-        | `Same      -> fun _ -> `Round outer_offsets
-        | `Flip      ->
-          let flipped = flip_d outer_offsets in
-          fun _ -> `Round flipped
-        | `Spec offs -> fun _ -> `Round offs
-        | `Mix specs ->
-          let specs = Array.of_list specs in
-          if Array.length specs = n_holes
-          then
-            fun i ->
-            match Array.get specs i with
-            | `Same      -> `Round outer_offsets
-            | `Flip      -> `Round (flip_d outer_offsets)
-            | `Spec offs -> `Round offs
-          else invalid_arg "Mixed hole specs must match the number of holes."
-      in
-      let unpack_spec = function
-        | `Flat                         -> `Flat, (fun _ -> `Flat), None
-        | `Empty                        -> `Empty, (fun _ -> `Empty), None
-        | `Round { outer; holes; mode } -> `Round outer, hole_spec outer holes, Some mode
-      in
-      let top, top_holes, top_mode = unpack_spec top
-      and bot, bot_holes, bot_mode = unpack_spec bot in
+      let top, top_holes, top_mode = unpack_poly_spec ~n_holes top
+      and bot, bot_holes, bot_mode = unpack_poly_spec ~n_holes bot in
       let _, tunnel_bots, tunnel_tops, tunnels =
         let f (i, bots, tops, tuns) hole =
           let bot, top, tunnel =
@@ -382,38 +383,20 @@ let helix_extrude
     r1
     shape
   =
-  let r2 = Option.value ~default:r1 r2 in
-  let n_frags = helical_fragments ?fn ?fa ?fs (Float.max r1 r2) in
-  let rot_sign, winding = if left then -1., `CCW else 1., `CW in
-  let a_step = 2. *. Float.pi /. Float.of_int n_frags *. rot_sign
-  and ax =
-    let a = Float.(atan2 (pitch /. of_int n_frags) (pi *. 2. *. r1 /. of_int n_frags)) in
-    (a *. rot_sign) +. (Float.pi /. 2.)
-  in
   let transforms =
-    let path = Path3.helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
-    let len = List.length path
-    and id _ = MultMatrix.id in
-    let rel_pos =
-      if Option.(is_some scale || is_some twist)
-      then (
-        let a = Array.of_list @@ Path3.cummulative_length path in
-        for i = 0 to len - 1 do
-          a.(i) <- a.(i) /. a.(len - 1)
-        done;
-        Array.get a )
-      else Fun.const 0.
-    in
-    let scale = Util.value_map_opt ~default:id (Path3.scaler ?k:scale_k) scale
-    and twist = Util.value_map_opt ~default:id (Path3.twister ?k:twist_k) twist in
-    let f i trans =
-      let eul = v3 ax 0. (a_step *. Float.of_int i) in
-      scale (rel_pos i)
-      |> MultMatrix.mul (twist (rel_pos i))
-      |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
-    in
-    List.mapi f path
-  in
+    Path3.helical_transforms
+      ?fn
+      ?fa
+      ?fs
+      ?scale_k
+      ?twist_k
+      ?scale
+      ?twist
+      ~n_turns
+      ~pitch
+      ?r2
+      r1
+  and winding = if left then `CCW else `CW in
   sweep ?check_valid ?merge ~winding ~spec:(`Caps caps) ~transforms shape
 
 let path_extrude

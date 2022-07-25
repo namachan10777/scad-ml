@@ -149,6 +149,51 @@ let to_transforms ?(euler = false) ?scale_k ?twist_k ?scale ?twist path =
   in
   List.init len f
 
+let helical_transforms
+    ?fn
+    ?fa
+    ?fs
+    ?scale_k
+    ?twist_k
+    ?scale
+    ?twist
+    ?(left = true)
+    ~n_turns
+    ~pitch
+    ?r2
+    r1
+  =
+  let r2 = Option.value ~default:r1 r2 in
+  let n_frags = Util.helical_fragments ?fn ?fa ?fs (Float.max r1 r2) in
+  let rot_sign = if left then -1. else 1. in
+  let a_step = 2. *. Float.pi /. Float.of_int n_frags *. rot_sign
+  and ax =
+    let a = Float.(atan2 (pitch /. of_int n_frags) (pi *. 2. *. r1 /. of_int n_frags)) in
+    (a *. rot_sign) +. (Float.pi /. 2.)
+  in
+  let path = helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
+  let len = List.length path
+  and id _ = MultMatrix.id in
+  let rel_pos =
+    if Option.(is_some scale || is_some twist)
+    then (
+      let a = Array.of_list @@ cummulative_length path in
+      for i = 0 to len - 1 do
+        a.(i) <- a.(i) /. a.(len - 1)
+      done;
+      Array.get a )
+    else Fun.const 0.
+  in
+  let scale = Util.value_map_opt ~default:id (scaler ?k:scale_k) scale
+  and twist = Util.value_map_opt ~default:id (twister ?k:twist_k) twist in
+  let f i trans =
+    let eul = v3 ax 0. (a_step *. Float.of_int i) in
+    scale (rel_pos i)
+    |> MultMatrix.mul (twist (rel_pos i))
+    |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
+  in
+  List.mapi f path
+
 let normal = function
   | p0 :: p1 :: p2 :: poly ->
     let area_vec =

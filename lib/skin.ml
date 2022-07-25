@@ -189,40 +189,6 @@ let aligned_distance_match a b =
   and b' = dp_apply_map_and_shift b_map b in
   a', b'
 
-let find_one_tangent ?(closed = true) ?(offset = Vec3.zero) curve edge =
-  match curve with
-  | [] | [ _ ]     -> invalid_arg "Curved path has too few points."
-  | p0 :: p1 :: tl ->
-    let angle_sign tangent =
-      let plane = Plane.make edge.Vec3.a edge.b tangent.Vec3.a in
-      Float.sign_bit @@ Plane.line_angle plane tangent
-    in
-    let f (i, min_cross, nearest_tangent, last_sign, last_p) p =
-      let tangent = Vec3.{ a = last_p; b = p } in
-      let sign = angle_sign tangent in
-      if not (Bool.equal sign last_sign)
-      then (
-        let zero_cross = Vec3.distance_to_line ~line:edge (Vec3.add p offset) in
-        if zero_cross < min_cross
-        then i + 1, zero_cross, Some (i, tangent), sign, p
-        else i + 1, min_cross, nearest_tangent, sign, p )
-      else i + 1, min_cross, nearest_tangent, sign, p
-    in
-    let ((_, _, nearest_tangent, _, _) as acc) =
-      let tangent = Vec3.{ a = p0; b = p1 } in
-      List.fold_left f (0, Float.max_float, None, angle_sign tangent, p1) tl
-    in
-    let tangent =
-      if closed
-      then (
-        let _, _, nearest_tangent, _, _ = f acc p0 in
-        nearest_tangent )
-      else nearest_tangent
-    in
-    ( match tangent with
-    | Some tangent -> tangent
-    | None         -> failwith "No appropriate tangent points found." )
-
 let tangent_match a b =
   let a' = Array.of_list a
   and b' = Array.of_list b in

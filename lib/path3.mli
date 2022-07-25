@@ -265,6 +265,28 @@ val to_transforms
   -> t
   -> MultMatrix.t list
 
+(** [helical_transforms ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
+     ?left ~n_turns ~pitch ?r2 r1]
+
+    Affine transformations following a helical path. This can be thought of like
+    a special case of {!to_transforms}, but using a path generated with {!helix},
+    and with rotational calculations taking into account the helical
+    trajectory. *)
+val helical_transforms
+  :  ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale_k:float
+  -> ?twist_k:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> MultMatrix.t list
+
 (** {1 Basic Transfomations} *)
 
 val translate : Vec3.t -> t -> t
