@@ -156,6 +156,48 @@ end
 
 open Cap
 
+let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
+  let len =
+    match len with
+    | Some l -> l
+    | None   -> List.length shape
+  and z_dir = if flip then -1. else 1.
+  and lift ~z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ~z p) in
+  let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
+    let mode, fn, fs, fa =
+      match offset_mode with
+      | Radius { fn; fs; fa } -> `Radius, fn, fs, fa
+      | Delta                 -> `Delta, None, None, None
+      | Chamfer               -> `Chamfer, None, None, None
+    and z = z *. z_dir in
+    let n, ps, fs =
+      Offset.offset_with_faces
+        ?check_valid
+        ?fn
+        ?fs
+        ?fa
+        ~flip_faces:flip
+        ~start_idx
+        ~mode
+        (d -. last_d)
+        last_shape
+    in
+    lift ~z m ps :: pts, fs :: faces, start_idx + last_len, ps, n, d
+  in
+  let points, faces, idx, last_shape, last_len, _ =
+    List.fold_left f ([ lift ~z:0. m shape ], [], 0, shape, len, 0.) offsets
+  in
+  let faces =
+    if close
+    then (
+      let close =
+        if flip then fun i _ -> last_len + idx - i - 1 else fun i _ -> i + idx
+      in
+      List.mapi close last_shape :: List.concat faces )
+    else List.concat faces
+  in
+  List.hd points, Mesh0.make ~points:List.(concat (rev points)) ~faces
+
 let sweep'
     ?check_valid
     ?(winding = `CCW)
@@ -175,60 +217,41 @@ let sweep'
   in
   let close_top, top_offsets = unpack_cap top
   and close_bot, bot_offsets = unpack_cap bot
-  and len = List.length shape
-  and lift ?z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ?z p) in
-  let cap ~top ~close ~m offsets =
-    let z_dir, flip_faces, offset_mode =
-      if top then 1., false, top_mode else -1., true, bot_mode
-    in
-    let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
-      let mode, fn, fs, fa =
-        match offset_mode with
-        | Radius { fn; fs; fa } -> `Radius, fn, fs, fa
-        | Delta                 -> `Delta, None, None, None
-        | Chamfer               -> `Chamfer, None, None, None
-      and z = z *. z_dir in
-      let n, ps, fs =
-        Offset.offset_with_faces
-          ?check_valid
-          ?fn
-          ?fs
-          ?fa
-          ~flip_faces
-          ~start_idx
-          ~mode
-          (d -. last_d)
-          last_shape
-      in
-      lift ~z m ps :: pts, fs :: faces, start_idx + last_len, ps, n, d
-    in
-    let points, faces, idx, last_shape, last_len, _ =
-      List.fold_left f ([ lift m shape ], [], 0, shape, len, 0.) offsets
-    in
-    let faces =
-      if close
-      then (
-        let close =
-          if flip_faces then fun i _ -> last_len + idx - i - 1 else fun i _ -> i + idx
-        in
-        List.mapi close last_shape :: List.concat faces )
-      else List.concat faces
-    in
-    List.hd points, Mesh0.make ~points:List.(concat (rev points)) ~faces
+  and len = List.length shape in
+  let cap = function
+    | `Top ->
+      cap
+        ?check_valid
+        ~len
+        ~flip:false
+        ~close:close_top
+        ~offset_mode:top_mode
+        ~offsets:top_offsets
+    | `Bot ->
+      cap
+        ?check_valid
+        ~len
+        ~flip:true
+        ~close:close_bot
+        ~offset_mode:bot_mode
+        ~offsets:bot_offsets
   in
   match transforms with
   | []       ->
-    let bot_lid, bot = cap ~top:false ~close:close_top ~m:MultMatrix.id bot_offsets
-    and top_lid, top = cap ~top:true ~close:close_bot ~m:MultMatrix.id top_offsets in
+    let bot_lid, bot = cap `Bot ~m:MultMatrix.id shape
+    and top_lid, top = cap `Top ~m:MultMatrix.id shape in
     bot_lid, top_lid, Mesh0.join [ bot; top ]
   | hd :: tl ->
     let mid, last_transform =
-      let f (acc, _last) m = lift m shape :: acc, m in
+      let f (acc, _last) m =
+        let lifted = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 p) shape in
+        lifted :: acc, m
+      in
       List.fold_left f (f ([], hd) hd) tl
     in
     let mid = Mesh0.of_rows ~endcaps:`None (List.rev mid)
-    and bot_lid, bot = cap ~top:false ~close:close_bot ~m:hd bot_offsets
-    and top_lid, top = cap ~top:true ~close:close_top ~m:last_transform top_offsets in
+    and bot_lid, bot = cap `Bot ~m:hd shape
+    and top_lid, top = cap `Top ~m:last_transform shape in
     bot_lid, top_lid, Mesh0.join [ bot; mid; top ]
 
 let sweep
