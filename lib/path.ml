@@ -222,6 +222,7 @@ module Make (V : Vec.S) = struct
       | `N n       -> n
       | `Spacing s -> Int.of_float @@ (length path /. s)
     in
+    if n < 0 then invalid_arg "Resampling frequency must be positive.";
     let step = 1. /. Float.of_int (n - 1)
     and f = to_continuous path in
     List.init n (fun i -> f @@ (Float.of_int i *. step))
@@ -239,6 +240,7 @@ module Make (V : Vec.S) = struct
       ( match freq with
       | `Refine (1, _) | `RoughRefine (1, _) -> path
       | (`N (n, _) | `RoughN (n, _)) when len = n -> path
+      | `Spacing s when s <= 0. -> invalid_arg "Minumum spacing must be greater than 0."
       | `Spacing s ->
         let f (a, ps) b =
           let n = Float.(to_int @@ ceil (V.distance a b /. s)) in
