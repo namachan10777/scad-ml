@@ -66,7 +66,7 @@ module type S = sig
 
   (** [curve ?init ?rev ?fn ?endpoint t]
 
-      Draw a path of [fn] points (default = [16]) along the bezier curve [t].
+      Draw a path of [fn] segments (default = [16]) along the bezier curve [t].
 
       - [init] can be provided to be prepended to (defaults to an empty list)
       - If [rev] is [true], the bezier will be drawn in reverse (default = [false])
@@ -91,7 +91,7 @@ module type S = sig
 
   (** [patch_curve ?fn p]
 
-      Sample a grid of [fn] by [fn] points describing a curved surface from the
+      Sample a grid of [fn] by [fn] segments describing a curved surface from the
       bezier patch [p]. (default [fn = 16]). *)
   val patch_curve : ?fn:int -> (float -> t) -> vec list list
 
@@ -139,7 +139,7 @@ module type S = sig
 
       Compute a bezier function from a series of degree [n] beziers connected
       end-to-end defined by the control points [ps] and use to draw a path of
-      [fn] points. See {!of_bezpath} for explanation of bezier paths. *)
+      [fn] segments. See {!of_bezpath} for explanation of bezier paths. *)
   val bezpath_curve : ?fn:int -> ?n:int -> vec list -> vec list
 
   (** [of_path ?closed ?uniform ?size ?tangents path]

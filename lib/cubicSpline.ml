@@ -208,11 +208,11 @@ let extrapolate_path t xs =
 let interpolate_path ~fn t =
   let xmin = t.xmins.(0)
   and xmax = t.xmaxs.(t.len - 1) in
-  let step = (xmax -. xmin) /. Float.of_int (fn - 1) in
+  let step = (xmax -. xmin) /. Float.of_int fn in
   let f i pts =
     let x = xmin +. (Float.of_int i *. step) in
     match extrapolate t x with
     | Some y -> v2 x y :: pts
     | None   -> pts
   in
-  List.rev @@ Util.fold_init fn f []
+  List.rev @@ Util.fold_init (fn + 1) f []
