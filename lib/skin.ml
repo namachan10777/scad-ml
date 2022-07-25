@@ -64,12 +64,13 @@ let slice_profiles ?(closed = false) ~slices = function
         Array.get a
     in
     let f (acc, last, i) next =
-      let n = get_slices i in
+      let n = get_slices i + 1 in
       let step = 1. /. Float.of_int n in
       let acc =
         let g j acc =
           let u = Float.of_int j *. step in
-          List.map2 (fun a b -> Vec3.lerp a b u) last next :: acc
+          try List.map2 (fun a b -> Vec3.lerp a b u) last next :: acc with
+          | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
         in
         Util.fold_init n g acc
       in
@@ -80,7 +81,7 @@ let slice_profiles ?(closed = false) ~slices = function
     then (
       let profiles, _, _ = f (profiles, last, i) hd in
       List.rev profiles )
-    else List.rev profiles
+    else List.rev (last :: profiles)
 
 type dp_map_dir =
   | Diag
