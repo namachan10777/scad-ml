@@ -71,8 +71,8 @@ let greatest_distance t ps =
 let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
 let is_point_above t p = distance_to_point t p > Util.epsilon
 
-let line_angle t (p1, p2) =
-  let dir = Vec3.(normalize @@ sub p2 p1)
+let line_angle t Vec3.{ a; b } =
+  let dir = Vec3.(normalize @@ sub b a)
   and n = normal t in
   let sin_angle = Vec3.dot dir n
   and cos_angle = Vec3.(norm @@ cross dir n) in

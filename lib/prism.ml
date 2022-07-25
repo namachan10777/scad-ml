@@ -158,7 +158,8 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
       Vec3.add top.(i) s
     and down =
       let edge_angle =
-        rt_down /. Float.sin (Float.abs (Plane.line_angle plane (bot.(i), top.(i))))
+        let edge = Vec3.{ a = bot.(i); b = top.(i) } in
+        rt_down /. Float.sin (Float.abs (Plane.line_angle plane edge))
       in
       Vec3.(smul (normalize edge) edge_angle)
     and fill_row p1 p2 p3 =
