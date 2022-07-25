@@ -37,43 +37,38 @@ type slices =
 
 let bezier_transition ?(k = 0.5) ~fn ~init a b =
   let step = 1. /. Float.of_int fn
-  and bezs = List.map2 (fun a b -> Bez.make [ a; Vec3.lerp a b k; b ]) a b in
+  and bezs =
+    try List.map2 (fun a b -> Bez.make [ a; Vec3.lerp a b k; b ]) a b with
+    | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
+  in
   let f j acc =
     let u = Float.of_int j *. step in
     List.map (fun bez -> bez u) bezs :: acc
   in
   Util.fold_init fn f init
 
-let slice_profiles ?(closed = false) ~slices = function
+let getter ~len ~name = function
+  | `Flat n -> Fun.const n
+  | `Mix l  ->
+    let a = Array.of_list l in
+    if Array.length a <> len
+    then
+      invalid_arg
+      @@ Printf.sprintf
+           "`Mix %s entries (%i) do not match the number of transitions (%i)"
+           name
+           (Array.length a)
+           len;
+    Array.get a
+
+let slice_profiles ?(closed = false) ?(k = `Flat 0.5) ~slices = function
   | [] | [ _ ]        -> invalid_arg "Too few profiles to slice."
   | hd :: tl as profs ->
     let len = List.length profs in
-    let get_slices =
-      match slices with
-      | `Flat n -> Fun.const n
-      | `Mix l  ->
-        let a = Array.of_list l
-        and n = len - if closed then 0 else 1 in
-        if Array.length a <> n
-        then
-          invalid_arg
-          @@ Printf.sprintf
-               "`Mix slice entries (%i) do not match the number of transitions (%i)"
-               (Array.length a)
-               n;
-        Array.get a
-    in
-    let f (acc, last, i) next =
-      let n = get_slices i + 1 in
-      let step = 1. /. Float.of_int n in
-      let acc =
-        let g j acc =
-          let u = Float.of_int j *. step in
-          try List.map2 (fun a b -> Vec3.lerp a b u) last next :: acc with
-          | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
-        in
-        Util.fold_init n g acc
-      in
+    let get_slices = getter ~len:(len - if closed then 0 else 1) ~name:"slice" slices
+    and get_k = getter ~len:(len - if closed then 0 else 1) ~name:"k" k in
+    let f (init, last, i) next =
+      let acc = bezier_transition ~k:(get_k i) ~fn:(get_slices i + 1) ~init last next in
       acc, next, i + 1
     in
     let profiles, last, i = List.fold_left f ([], hd, 0) tl in
