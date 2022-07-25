@@ -144,43 +144,120 @@ let dp_extract_map m =
   in
   loop len_small len_big [] []
 
+(* Duplicate points according to mappings and shift the new polygon (rotating
+   its the point list) to handle the case when points from both ends of one
+   curve map to a single point on the other. *)
+let dp_apply_map_and_shift map poly =
+  let shift =
+    (* the mapping lists are already sorted in ascending order *)
+    let last_max_idx l =
+      let f (i, max, idx) v = if v >= max then i + 1, v, i else i + 1, max, idx in
+      List.fold_left f (0, 0, 0) l
+    in
+    let len, _, idx = last_max_idx map in
+    len - idx - 1
+  and len = Array.length poly in
+  let f i acc = poly.((i + shift) mod len) :: acc in
+  List.fold_right f map []
+
 let distance_match a b =
   let a = Array.of_list a
   and b = Array.of_list b in
   let swap = Array.length a > Array.length b in
   let small, big = if swap then b, a else a, b in
-  let len_big = Array.length big in
-  let rec loop cost map poly i =
-    let shifted =
-      Array.init len_big (fun j -> big.(Util.index_wrap ~len:len_big (i + j)))
-    in
-    let cost', map' = dp_distance_array ~abort_thresh:cost small shifted in
-    let cost, map, poly =
-      if cost' < cost then cost', map', shifted else cost, map, poly
-    in
-    if i < len_big then loop cost map poly (i + 1) else map, poly
-  in
   let map, shifted_big =
+    let len_big = Array.length big in
+    let rec find_best cost map poly i =
+      let shifted =
+        Array.init len_big (fun j -> big.(Util.index_wrap ~len:len_big (i + j)))
+      in
+      let cost', map' = dp_distance_array ~abort_thresh:cost small shifted in
+      let cost, map, poly =
+        if cost' < cost then cost', map', shifted else cost, map, poly
+      in
+      if i < len_big then find_best cost map poly (i + 1) else map, poly
+    in
     let cost, map = dp_distance_array small big in
-    loop cost map big 1
+    find_best cost map big 1
   in
   let small_map, big_map = dp_extract_map map in
-  (* Duplicate points according to mappings and shift the new polygon (rotating
-      its the point list) to handle the case when points from both ends of one
-      curve map to a single point on the other. *)
-  let shifting_map map poly =
-    let shift =
-      (* the mapping lists are already sorted in ascending order *)
-      let last_max_idx l =
-        let f (i, max, idx) v = if v >= max then i + 1, v, i else i + 1, max, idx in
-        List.fold_left f (0, 0, 0) l
-      in
-      let len, _, idx = last_max_idx map in
-      len - idx - 1
-    and len = Array.length poly in
-    let f i acc = poly.((i + shift) mod len) :: acc in
-    List.fold_right f map []
-  in
-  let small' = shifting_map small_map small
-  and big' = shifting_map big_map shifted_big in
+  let small' = dp_apply_map_and_shift small_map small
+  and big' = dp_apply_map_and_shift big_map shifted_big in
   if swap then big', small' else small', big'
+
+let aligned_distance_match a b =
+  let a = Array.of_list a
+  and b = Array.of_list b in
+  let a_map, b_map = dp_extract_map @@ snd @@ dp_distance_array a b in
+  let a' = dp_apply_map_and_shift a_map a
+  and b' = dp_apply_map_and_shift b_map b in
+  a', b'
+
+let find_one_tangent ?(closed = true) ?(offset = Vec3.zero) curve edge =
+  match curve with
+  | [] | [ _ ]     -> invalid_arg "Curved path has too few points."
+  | p0 :: p1 :: tl ->
+    let angle_sign tangent =
+      let plane = Plane.make edge.Vec3.a edge.b tangent.Vec3.a in
+      Float.sign_bit @@ Plane.line_angle plane tangent
+    in
+    let f (i, min_cross, nearest_tangent, last_sign, last_p) p =
+      let tangent = Vec3.{ a = last_p; b = p } in
+      let sign = angle_sign tangent in
+      if not (Bool.equal sign last_sign)
+      then (
+        let zero_cross = Vec3.distance_to_line ~line:edge (Vec3.add p offset) in
+        if zero_cross < min_cross
+        then i + 1, zero_cross, Some (i, tangent), sign, p
+        else i + 1, min_cross, nearest_tangent, sign, p )
+      else i + 1, min_cross, nearest_tangent, sign, p
+    in
+    let ((_, _, nearest_tangent, _, _) as acc) =
+      let tangent = Vec3.{ a = p0; b = p1 } in
+      List.fold_left f (0, Float.max_float, None, angle_sign tangent, p1) tl
+    in
+    let tangent =
+      if closed
+      then (
+        let _, _, nearest_tangent, _, _ = f acc p0 in
+        nearest_tangent )
+      else nearest_tangent
+    in
+    ( match tangent with
+    | Some tangent -> tangent
+    | None         -> failwith "No appropriate tangent points found." )
+
+let tangent_match a b =
+  let a' = Array.of_list a
+  and b' = Array.of_list b in
+  let swap = Array.length a' > Array.length b' in
+  let small, big = if swap then b', a' else a', b' in
+  let len_small = Array.length small
+  and len_big = Array.length big in
+  let cut_pts =
+    let sm, bg = if swap then b, a else a, b in
+    Array.init len_small (fun i ->
+        fst
+        @@ Path3.closest_tangent
+             ~offset:Poly3.(Vec3.sub (centroid (make sm)) (centroid (make bg)))
+             ~line:Vec3.{ a = small.(i); b = small.((i + 1) mod len_small) }
+             bg )
+  in
+  let len_duped, duped_small =
+    let f i (len, pts) =
+      let count =
+        (cut_pts.(len_small - 1 - i) - cut_pts.(len_small - 2 - i)) mod len_big
+      in
+      ( len + count
+      , Util.fold_init count (fun _ pts -> small.(len_small - 1 - i) :: pts) pts )
+    in
+    Util.fold_init len_small f (0, [])
+  and shifted_big =
+    let shift = cut_pts.(len_small - 1) + 1 in
+    List.init len_big (fun i -> big.((shift + i) mod len_big))
+  in
+  if len_duped <> len_big
+  then
+    failwith
+      "Tangent alignment failed, likely due to insufficient points or a concave curve.";
+  if swap then shifted_big, duped_small else duped_small, shifted_big
