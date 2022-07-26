@@ -97,12 +97,12 @@ module Cap = struct
       then acc, last_z
       else { d = quantize (radius *. (Float.cos (i *. step) -. 1.)); z } :: acc, z
     in
-    Offsets (List.rev @@ fst @@ Util.fold_init fn f ([], Float.min_float))
+    Offsets (List.rev @@ fst @@ Util.fold_init (fn + 1) f ([], Float.min_float))
 
   let tear ?(fn = 16) roundover =
     let radius = radius_of_roundover roundover in
     let abs_radius = Float.abs radius
-    and step = Float.pi /. 4. /. Float.of_int (Int.max 3 fn) in
+    and step = Float.pi /. 4. /. Float.of_int (Int.max 3 (fn - 1)) in
     let f i (acc, last_z) =
       if i < fn
       then (
