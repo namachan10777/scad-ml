@@ -150,9 +150,9 @@ let circle ?fn ?fa ?fs r =
 let square ?(center = false) { x; y } =
   if center
   then (
-    let x' = x /. 2.
-    and y' = y /. 2. in
-    Vec2.[ v x' (-.y'); v (-.x') (-.y'); v (-.x') y'; v x' y' ] )
+    let x = x /. 2.
+    and y = y /. 2. in
+    Vec2.[ v x (-.y); v (-.x) (-.y); v (-.x) y; v x y ] )
   else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
 
 let ellipse ?fn ?fa ?fs { x; y } =
