@@ -140,7 +140,7 @@ let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 
 let circle ?fn ?fa ?fs r =
   let fn = Util.helical_fragments ?fn ?fa ?fs r in
-  let step = 2. *. Float.pi /. Float.of_int (fn + 1) in
+  let step = -2. *. Float.pi /. Float.of_int (fn + 1) in
   let f i =
     let a = step *. Float.of_int i in
     v2 (r *. Float.cos a) (r *. Float.sin a)
@@ -157,7 +157,7 @@ let square ?(center = false) { x; y } =
 
 let ellipse ?fn ?fa ?fs { x; y } =
   let fn = Util.helical_fragments ?fn ?fa ?fs (Float.max x y) in
-  let step = 2. *. Float.pi /. Float.of_int (fn + 1) in
+  let step = -2. *. Float.pi /. Float.of_int (fn + 1) in
   let f i =
     let a = step *. Float.of_int i in
     v2 (x *. Float.cos a) (y *. Float.sin a)
