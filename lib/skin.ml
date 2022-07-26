@@ -6,34 +6,58 @@
     the sweep)
    - morphing sweep/extrusions will be starting from Poly2 as the others do, and
     support rounded caps
-   - I think a ~k curvature hardness parameter would be
-    nice to have, so that morphing doesn't have to be strictly linear between
-    the profiles (bezier with middle control point set between 0 and 1)
    - I think I probably can't get around exposing a "low level" version that
     deals in lists of profiles and parameters, but the simpler bases should all
     be covered by the functions that only take two profiles as parameters.
-   - read through and understand how I should implement the types such that
-    efficient upsampling timing like in BOSL2 can be achieved without too much
-    headache or dynamism
    - need to watch out for the impact that duplicated vertices will have on
     integration with sweeping / polyholes since I have checks in some places
     that would catch it as an incorrect polygon.
+   - I think I have decided to leave `refine` out or only allow a flat value
+    (defaulting to 1), so that is one less complication. Still need to find the
+    longest profile and subdivide up to that amount for resampling methods, and
+    refine the duplicator profiles post duplication. Though, since generated
+    curves should be generated at desired quality from the start, I think maybe
+    the caller should just take care of refinining their discrete profiles
+    themselves (this discrepancy is what one would want non-flat refine values
+    for in the first place I think).
+   - sampling and refine should be non-default optionals with custom handling
+   ~ sampling default depends on whether duplicator methods are included
+   ~ refine must be Some > 0 (invalid_arg if not)
     *)
 
 module Bez = Bezier.Make (Vec3)
 
-type spec =
-  [ `Direct
-  | `Reindex
-  | `Distance
+type sampling =
+  [ `ByLen
+  | `BySeg
+  ]
+
+type resampler =
+  [ `Direct of sampling
+  | `Reindex of sampling
+  ]
+
+type duplicator =
+  [ `Distance
   | `FastDistance
   | `Tangent
+  ]
+
+type spec =
+  [ `Flat of [ resampler | duplicator ]
+  | `Resamplers of resampler
+  | `Duplicators of duplicator
+  | `Mix of [ resampler | duplicator ]
   ]
 
 type slices =
   [ `Flat of int
   | `Mix of int list
   ]
+
+let is_direct = function
+  | `Direct _ -> true
+  | _         -> false
 
 let bezier_transition ?(k = 0.5) ~fn ~init a b =
   let step = 1. /. Float.of_int fn
@@ -44,6 +68,18 @@ let bezier_transition ?(k = 0.5) ~fn ~init a b =
   let f j acc =
     let u = Float.of_int j *. step in
     List.map (fun bez -> bez u) bezs :: acc
+  in
+  Util.fold_init fn f init
+
+let linear_transition ~fn ~init a b =
+  let step = 1. /. Float.of_int fn
+  and lerps =
+    try List.map2 Vec3.lerp a b with
+    | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
+  in
+  let f j acc =
+    let u = Float.of_int j *. step in
+    List.map (fun lerp -> lerp u) lerps :: acc
   in
   Util.fold_init fn f init
 
@@ -61,28 +97,29 @@ let getter ~len ~name = function
            len;
     Array.get a
 
-let slice_profiles ?(closed = false) ?(k = `Flat 0.5) ~slices = function
+let slice_profiles ?(looped = false) ~slices = function
   | [] | [ _ ]        -> invalid_arg "Too few profiles to slice."
   | hd :: tl as profs ->
     let len = List.length profs in
-    let get_slices = getter ~len:(len - if closed then 0 else 1) ~name:"slice" slices
-    and get_k = getter ~len:(len - if closed then 0 else 1) ~name:"k" k in
+    let get_slices = getter ~len:(len - if looped then 0 else 1) ~name:"slice" slices in
     let f (init, last, i) next =
-      let acc = bezier_transition ~k:(get_k i) ~fn:(get_slices i + 1) ~init last next in
+      let acc = linear_transition ~fn:(get_slices i + 1) ~init last next in
       acc, next, i + 1
     in
     let profiles, last, i = List.fold_left f ([], hd, 0) tl in
-    if closed
+    if looped
     then (
       let profiles, _, _ = f (profiles, last, i) hd in
       List.rev profiles )
     else List.rev (last :: profiles)
 
 type dp_map_dir =
-  | Diag
-  | Left
-  | Up
+  | Diag (* map the next vertex of [big] to the next vertex of [small] *)
+  | Left (* map the next vertex of [big] to the current vertex of [small] *)
+  | Up (* map the next vertex of [small] to the current vertex of [big] *)
 
+(* Construct a matrix of shape ([len_small] x [len_big]) with mappings between the
+   points of the polygons [small] and [big]. *)
 let dp_distance_array ?(abort_thresh = Float.infinity) small big =
   let len_small = Array.length small
   and len_big = Array.length big in
@@ -124,9 +161,12 @@ let dp_distance_array ?(abort_thresh = Float.infinity) small big =
   done;
   total_dist.(len_big), dir_map
 
+(* Produce ascending lists of indices (with repeats) for the small and big
+   polygons that should be used to reconstruct the polygons with the point
+   duplications required to associate the vertices between them.  *)
 let dp_extract_map m =
-  let len_big = Array.length m.(0) - 1
-  and len_small = Array.length m - 1 in
+  let len_small = Array.length m - 1
+  and len_big = Array.length m.(0) - 1 in
   let rec loop i j small_map big_map =
     let i, j =
       match m.(i).(j) with
@@ -223,3 +263,50 @@ let tangent_match a b =
     failwith
       "Tangent alignment failed, likely due to insufficient points or a concave curve.";
   if swap then shifted_big, duped_small else duped_small, shifted_big
+
+let skin ?style ?refine ?(spec = `Flat (`Direct `ByLen)) ?(endcaps = `Both) ~slices
+  = function
+  | [] | [ _ ]           -> invalid_arg "At least two profiles are required to skin."
+  | hd :: tl as profiles ->
+    let refine = Option.bind refine (fun n -> if n > 1 then Some n else None)
+    and looped, bot_cap, top_cap =
+      match endcaps with
+      | `Both   -> false, true, true
+      | `Looped -> true, false, false
+      | `Bot    -> false, true, false
+      | `Top    -> false, false, true
+      | `None   -> false, false, false
+    and resample n s = Path3.subdivide ~closed:true ~freq:(`N (n, s)) in
+    let fixed_profiles =
+      match spec with
+      | `Flat ((`Direct sampling | `Reindex sampling) as spec) ->
+        let direct = is_direct spec
+        and n =
+          let max_len =
+            List.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
+          in
+          Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine
+        in
+        let f (acc, last_p) p =
+          let resampled = resample n sampling p in
+          if direct
+          then resampled :: acc, resampled
+          else Path3.reindex_polygon last_p resampled :: acc, resampled
+        in
+        let first_fixed = resample n sampling hd in
+        let fixed, _ = List.fold_left f ([ first_fixed ], first_fixed) tl in
+        List.rev @@ if looped then first_fixed :: fixed else fixed
+    in
+    let sliced = [ slice_profiles ~looped ~slices fixed_profiles ] in
+    let len = List.length sliced in
+    let f (i, acc) rows =
+      let endcaps =
+        match bot_cap, top_cap with
+        | true, true when i = 0 && i = len - 1 -> `Both
+        | true, _ when i = 0 -> `Bot
+        | _, true when i = len - 1 -> `Top
+        | _ -> `None
+      in
+      i + 1, Mesh.of_rows ?style ~endcaps rows :: acc
+    in
+    Mesh.join @@ snd @@ List.fold_left f (0, []) sliced
