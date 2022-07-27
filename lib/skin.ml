@@ -45,9 +45,7 @@ type duplicator =
 
 type spec =
   [ `Flat of [ resampler | duplicator ]
-  | `Resamplers of resampler
-  | `Duplicators of duplicator
-  | `Mix of [ resampler | duplicator ]
+  | `Mix of [ resampler | duplicator ] list
   ]
 
 type slices =
@@ -55,9 +53,17 @@ type slices =
   | `Mix of int list
   ]
 
-let is_direct = function
+let is_direct : resampler -> bool = function
   | `Direct _ -> true
   | _         -> false
+
+let is_resampler : [ resampler | duplicator ] -> bool = function
+  | `Direct _ | `Reindex _ -> true
+  | _                      -> false
+
+let is_duplicator : [ resampler | duplicator ] -> bool = function
+  | `Distance | `FastDistance | `Tangent -> true
+  | _ -> false
 
 let bezier_transition ?(k = 0.5) ~fn ~init a b =
   let step = 1. /. Float.of_int fn
@@ -264,40 +270,103 @@ let tangent_match a b =
       "Tangent alignment failed, likely due to insufficient points or a concave curve.";
   if swap then shifted_big, duped_small else duped_small, shifted_big
 
-let skin ?style ?refine ?(spec = `Flat (`Direct `ByLen)) ?(endcaps = `Both) ~slices
+let skin
+    ?(style = `MinEdge)
+    ?refine (* ?(spec = `Flat (`Direct `ByLen)) *)
+    ~spec
+    ?(endcaps = `Both)
+    ~slices
   = function
-  | [] | [ _ ]           -> invalid_arg "At least two profiles are required to skin."
-  | hd :: tl as profiles ->
+  | [] | [ _ ] -> invalid_arg "At least two profiles are required to skin."
+  | profiles   ->
     let refine = Option.bind refine (fun n -> if n > 1 then Some n else None)
     and looped, bot_cap, top_cap =
       match endcaps with
-      | `Both   -> false, true, true
-      | `Looped -> true, false, false
-      | `Bot    -> false, true, false
-      | `Top    -> false, false, true
-      | `None   -> false, false, false
-    and resample n s = Path3.subdivide ~closed:true ~freq:(`N (n, s)) in
-    let fixed_profiles =
+      | `Both -> false, true, true
+      | `Loop -> true, false, false
+      | `Bot  -> false, true, false
+      | `Top  -> false, false, true
+      | `None -> false, false, false
+    and resample n s = Path3.subdivide ~closed:true ~freq:(`N (n, s))
+    and profiles = Array.of_list profiles in
+    let n_profiles = Array.length profiles in
+    let n_transitions = n_profiles - if looped then 0 else 1 in
+    let get_spec = getter ~len:n_transitions ~name:"spec" spec in
+    let all_resamplers =
       match spec with
-      | `Flat ((`Direct sampling | `Reindex sampling) as spec) ->
-        let direct = is_direct spec
+      | `Flat (`Direct _ | `Reindex _) -> true
+      | `Mix l -> List.for_all is_resampler l
+      | _ -> false
+    in
+    let sliced =
+      if all_resamplers
+      then (
+        let unpack_resampler i =
+          match get_spec i with
+          | `Direct sampling  -> true, sampling
+          | `Reindex sampling -> false, sampling
+          | _                 -> failwith "impossible"
         and n =
           let max_len =
-            List.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
+            Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
           in
           Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine
         in
-        let f (acc, last_p) p =
-          let resampled = resample n sampling p in
+        let f i (acc, last_p) =
+          let direct, sampling = unpack_resampler i in
+          let resampled = resample n sampling profiles.(i + 1) in
+          if direct
+          then resampled :: acc, resampled
+          else Path3.reindex_polygon last_p resampled :: acc, resampled
+        and resampled_hd = resample n (snd @@ unpack_resampler 0) profiles.(0) in
+        let fixed_hd =
+          let direct, sampling = unpack_resampler (n_profiles - 1) in
+          if looped && not direct
+          then
+            Path3.reindex_polygon
+              (resample n sampling profiles.(n_profiles - 1))
+              resampled_hd
+          else resampled_hd
+        in
+        let fixed =
+          let l, _ = Util.fold_init (n_profiles - 1) f ([ resampled_hd ], resampled_hd) in
+          List.rev @@ if looped then fixed_hd :: l else l
+        in
+        [ slice_profiles ~looped:false ~slices fixed ] )
+      else (
+        (* let n = *)
+
+        (*   let max_lens (\* = *\) *)
+        (*     let f i (mx, acc) l = *)
+        (*             if is_duplicator @@ get_spec i then , mx::acc, *)
+        (*     List.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles *)
+        (*   in *)
+        (*   Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine *)
+        (* in *)
+        (* let profile_lens = Array.map List.length profiles in *)
+        let unpack_spec i =
+          match get_spec i with
+          | `Direct sampling  -> true, sampling
+          | `Reindex sampling -> false, sampling
+          | _                 -> failwith "impossible"
+        and n =
+          let max_len =
+            Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
+          in
+          Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine
+        in
+        let f i (acc, last_p) =
+          let direct, sampling = unpack_spec i in
+          let resampled = resample n sampling profiles.(i) in
           if direct
           then resampled :: acc, resampled
           else Path3.reindex_polygon last_p resampled :: acc, resampled
         in
-        let first_fixed = resample n sampling hd in
-        let fixed, _ = List.fold_left f ([ first_fixed ], first_fixed) tl in
-        List.rev @@ if looped then first_fixed :: fixed else fixed
+        let first_fixed = resample n (snd @@ unpack_spec 0) profiles.(0) in
+        let fixed, _ = Util.fold_init n_profiles f ([ first_fixed ], first_fixed) in
+        let fixed = List.rev @@ if looped then first_fixed :: fixed else fixed in
+        [ slice_profiles ~looped:false ~slices fixed ] )
     in
-    let sliced = [ slice_profiles ~looped ~slices fixed_profiles ] in
     let len = List.length sliced in
     let f (i, acc) rows =
       let endcaps =
@@ -307,6 +376,6 @@ let skin ?style ?refine ?(spec = `Flat (`Direct `ByLen)) ?(endcaps = `Both) ~sli
         | _, true when i = len - 1 -> `Top
         | _ -> `None
       in
-      i + 1, Mesh.of_rows ?style ~endcaps rows :: acc
+      i + 1, Mesh.of_rows ~style ~endcaps rows :: acc
     in
     Mesh.join @@ snd @@ List.fold_left f (0, []) sliced
