@@ -53,7 +53,7 @@ type slices =
   | `Mix of int list
   ]
 
-let is_direct : resampler -> bool = function
+let is_direct = function
   | `Direct _ -> true
   | _         -> false
 
@@ -251,19 +251,30 @@ let tangent_match a b =
              ~line:Vec3.{ a = small.(i); b = small.((i + 1) mod len_small) }
              bg )
   in
+  Array.iter (Printf.printf "%i\n") cut_pts;
   let len_duped, duped_small =
     let f i (len, pts) =
       let count =
-        (cut_pts.(len_small - 1 - i) - cut_pts.(len_small - 2 - i)) mod len_big
+        (* let a = cut_pts.(len_small - 1 - i) *)
+        (* and b = cut_pts.(Util.index_wrap ~len:len_small (len_small - 2 - i)) in *)
+        let a = cut_pts.(i)
+        and b = cut_pts.(Util.index_wrap ~len:len_small (i - 1)) in
+        (* let a = cut_pts.(i) *)
+        (* and b = cut_pts.(Util.index_wrap ~len:len_small (i + 1)) in *)
+        Math.posmod (a - b) len_big
       in
+      (* print_endline (Int.to_string count); *)
       ( len + count
-      , Util.fold_init count (fun _ pts -> small.(len_small - 1 - i) :: pts) pts )
+        (* , Util.fold_init count (fun _ pts -> small.(len_small - 1 - i) :: pts) pts ) *)
+      , Util.fold_init count (fun _ pts -> small.(i) :: pts) pts )
     in
+    (* Util.fold_init len_small f (0, []) *)
     Util.fold_init len_small f (0, [])
   and shifted_big =
     let shift = cut_pts.(len_small - 1) + 1 in
     List.init len_big (fun i -> big.((shift + i) mod len_big))
   in
+  Printf.printf "duped %i; big %i\n" len_duped len_big;
   if len_duped <> len_big
   then
     failwith
@@ -278,7 +289,7 @@ let skin
     ~slices
   = function
   | [] | [ _ ] -> invalid_arg "At least two profiles are required to skin."
-  | profiles   ->
+  | profs      ->
     let refine = Option.bind refine (fun n -> if n > 1 then Some n else None)
     and looped, bot_cap, top_cap =
       match endcaps with
@@ -288,9 +299,9 @@ let skin
       | `Top  -> false, false, true
       | `None -> false, false, false
     and resample n s = Path3.subdivide ~closed:true ~freq:(`N (n, s))
-    and profiles = Array.of_list profiles in
-    let n_profiles = Array.length profiles in
-    let n_transitions = n_profiles - if looped then 0 else 1 in
+    and profs = Array.of_list profs in
+    let n_profs = Array.length profs in
+    let n_transitions = n_profs - if looped then 0 else 1 in
     let get_spec = getter ~len:n_transitions ~name:"spec" spec in
     let all_resamplers =
       match spec with
@@ -307,65 +318,64 @@ let skin
           | `Reindex sampling -> false, sampling
           | _                 -> failwith "impossible"
         and n =
-          let max_len =
-            Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
-          in
-          Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine
+          let max = Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profs in
+          Util.value_map_opt ~default:max (fun r -> r * max) refine
         in
         let f i (acc, last_p) =
           let direct, sampling = unpack_resampler i in
-          let resampled = resample n sampling profiles.(i + 1) in
+          let resampled = resample n sampling profs.(i + 1) in
           if direct
           then resampled :: acc, resampled
           else Path3.reindex_polygon last_p resampled :: acc, resampled
-        and resampled_hd = resample n (snd @@ unpack_resampler 0) profiles.(0) in
+        and resampled_hd = resample n (snd @@ unpack_resampler 0) profs.(0) in
         let fixed_hd =
-          let direct, sampling = unpack_resampler (n_profiles - 1) in
+          let direct, sampling = unpack_resampler (n_profs - 1) in
           if looped && not direct
           then
-            Path3.reindex_polygon
-              (resample n sampling profiles.(n_profiles - 1))
-              resampled_hd
+            Path3.reindex_polygon (resample n sampling profs.(n_profs - 1)) resampled_hd
           else resampled_hd
         in
         let fixed =
-          let l, _ = Util.fold_init (n_profiles - 1) f ([ resampled_hd ], resampled_hd) in
+          let l, _ = Util.fold_init (n_profs - 1) f ([ resampled_hd ], resampled_hd) in
           List.rev @@ if looped then fixed_hd :: l else l
         in
         [ slice_profiles ~looped:false ~slices fixed ] )
       else (
-        (* let n = *)
-
-        (*   let max_lens (\* = *\) *)
-        (*     let f i (mx, acc) l = *)
-        (*             if is_duplicator @@ get_spec i then , mx::acc, *)
-        (*     List.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles *)
-        (*   in *)
-        (*   Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine *)
-        (* in *)
-        (* let profile_lens = Array.map List.length profiles in *)
-        let unpack_spec i =
-          match get_spec i with
-          | `Direct sampling  -> true, sampling
-          | `Reindex sampling -> false, sampling
-          | _                 -> failwith "impossible"
-        and n =
+        let n =
           let max_len =
-            Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profiles
+            Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profs
           in
           Util.value_map_opt ~default:max_len (fun r -> r * max_len) refine
         in
-        let f i (acc, last_p) =
-          let direct, sampling = unpack_spec i in
-          let resampled = resample n sampling profiles.(i) in
-          if direct
-          then resampled :: acc, resampled
-          else Path3.reindex_polygon last_p resampled :: acc, resampled
+        let up =
+          let fallback i p =
+            match get_spec (Util.index_wrap ~len:n_profs (i - 1)) with
+            | `Direct sampling | `Reindex sampling -> resample n sampling p
+            | _ -> resample n `BySeg p
+          in
+          let f i p =
+            if i < n_transitions || looped
+            then (
+              match get_spec i with
+              | `Direct sampling | `Reindex sampling -> resample n sampling p
+              | _ -> if i > 0 || looped then fallback i p else resample n `BySeg p )
+            else fallback i p
+          in
+          Array.mapi f profs
+        and upsample_dups (a, b) = [ resample n `BySeg a; resample n `BySeg b ] in
+        let f i acc =
+          let j = (i + 1) mod n_profs in
+          let pair =
+            match get_spec i with
+            | `Direct _     -> [ up.(i); up.(j) ]
+            | `Reindex _    -> [ up.(i); Path3.reindex_polygon up.(i) up.(j) ]
+            | `Distance     -> upsample_dups @@ distance_match profs.(i) profs.(j)
+            | `FastDistance -> upsample_dups @@ aligned_distance_match profs.(i) profs.(j)
+            | `Tangent      -> upsample_dups @@ tangent_match profs.(i) profs.(j)
+          in
+          slice_profiles ~slices pair :: acc
         in
-        let first_fixed = resample n (snd @@ unpack_spec 0) profiles.(0) in
-        let fixed, _ = Util.fold_init n_profiles f ([ first_fixed ], first_fixed) in
-        let fixed = List.rev @@ if looped then first_fixed :: fixed else fixed in
-        [ slice_profiles ~looped:false ~slices fixed ] )
+        List.rev @@ Util.fold_init n_transitions f [] )
     in
     let len = List.length sliced in
     let f (i, acc) rows =
