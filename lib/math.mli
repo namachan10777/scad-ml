@@ -59,8 +59,8 @@ val approx : ?eps:float -> float -> float -> bool
 (** [posmod a m]
 
     Compute the positive modulo [m] of [a]. The resulting value will be in the
-    range of [0.] to [m -. 1.]. *)
-val posmod : float -> float -> float
+    range of [0] to [m - 1]. *)
+val posmod : int -> int -> int
 
 (** {1 Angles and Trigonometry} *)
 

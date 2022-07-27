@@ -21,7 +21,7 @@ let law_of_cosines a b c =
   Float.acos
   @@ clamp ~min:(-1.) ~max:1. (((a *. a) +. (b *. b) -. (c *. c)) /. (2. *. a *. b))
 
-let posmod a m = mod_float (mod_float a m +. m) m
+let posmod a m = ((a mod m) + m) mod m
 
 let mat_dims m =
   let n_rows = Array.length m in
