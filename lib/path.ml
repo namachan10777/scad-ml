@@ -47,10 +47,10 @@ module type S = sig
   val subdivide
     :  ?closed:bool
     -> freq:
-         [ `N of int * [ `BySeg | `ByLen ]
-         | `RoughN of int * [ `BySeg | `ByLen ]
-         | `Refine of int * [ `BySeg | `ByLen ]
-         | `RoughRefine of int * [ `BySeg | `ByLen ]
+         [ `N of int * [ `ByLen | `BySeg ]
+         | `RoughN of int * [ `ByLen | `BySeg ]
+         | `Refine of int * [ `ByLen | `BySeg ]
+         | `RoughRefine of int * [ `ByLen | `BySeg ]
          | `Spacing of float
          ]
     -> vec list

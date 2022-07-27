@@ -1,40 +1,8 @@
-(* TODO:
-   - come up with a design that will allow composing morphing sweep functions
-    with relative ease (For those, will need to morph the correct amount between
-    steps along the path. If going from path, rather than from transforms, then
-    using relative distance along the path would enable a linear morph through
-    the sweep)
-   - morphing sweep/extrusions will be starting from Poly2 as the others do, and
-    support rounded caps
-   - I think I probably can't get around exposing a "low level" version that
-    deals in lists of profiles and parameters, but the simpler bases should all
-    be covered by the functions that only take two profiles as parameters.
-   - need to watch out for the impact that duplicated vertices will have on
-    integration with sweeping / polyholes since I have checks in some places
-    that would catch it as an incorrect polygon.
-   - I think I have decided to leave `refine` out or only allow a flat value
-    (defaulting to 1), so that is one less complication. Still need to find the
-    longest profile and subdivide up to that amount for resampling methods, and
-    refine the duplicator profiles post duplication. Though, since generated
-    curves should be generated at desired quality from the start, I think maybe
-    the caller should just take care of refinining their discrete profiles
-    themselves (this discrepancy is what one would want non-flat refine values
-    for in the first place I think).
-   - sampling and refine should be non-default optionals with custom handling
-   ~ sampling default depends on whether duplicator methods are included
-   ~ refine must be Some > 0 (invalid_arg if not)
-    *)
-
 module Bez = Bezier.Make (Vec3)
 
-type sampling =
-  [ `ByLen
-  | `BySeg
-  ]
-
 type resampler =
-  [ `Direct of sampling
-  | `Reindex of sampling
+  [ `Direct of [ `ByLen | `BySeg ]
+  | `Reindex of [ `ByLen | `BySeg ]
   ]
 
 type duplicator =
@@ -43,7 +11,7 @@ type duplicator =
   | `Tangent
   ]
 
-type spec =
+type mapping =
   [ `Flat of [ resampler | duplicator ]
   | `Mix of [ resampler | duplicator ] list
   ]
@@ -275,7 +243,7 @@ let tangent_match a b =
 let skin
     ?(style = `MinEdge)
     ?refine
-    ?(spec = `Flat (`Direct `ByLen))
+    ?(mapping = `Flat (`Direct `ByLen))
     ?(endcaps = `Both)
     ~slices
   = function
@@ -293,12 +261,12 @@ let skin
     and profs = Array.of_list profs in
     let n_profs = Array.length profs in
     let n_transitions = n_profs - if looped then 0 else 1 in
-    let get_spec = getter ~len:n_transitions ~name:"spec" spec
+    let get_mapping = getter ~len:n_transitions ~name:"mapping" mapping
     and n =
       let max = Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profs in
       Util.value_map_opt ~default:max (fun r -> r * max) refine
     and all_resamplers =
-      match spec with
+      match mapping with
       | `Flat (`Direct _ | `Reindex _) -> true
       | `Mix l -> List.for_all is_resampler l
       | _ -> false
@@ -308,7 +276,7 @@ let skin
       then (
         (* there are no duplicators, so all profiles can be handled together. *)
         let unpack_resampler i =
-          match get_spec i with
+          match get_mapping i with
           | `Direct sampling  -> true, sampling
           | `Reindex sampling -> false, sampling
           | _                 -> failwith "impossible"
@@ -343,14 +311,14 @@ let skin
               something more similar to BOSL2s solution is still in the cards. *)
         let up =
           let fallback i p =
-            match get_spec (Util.index_wrap ~len:n_profs (i - 1)) with
+            match get_mapping (Util.index_wrap ~len:n_profs (i - 1)) with
             | `Direct sampling | `Reindex sampling -> resample n sampling p
             | _ -> resample n `BySeg p
           in
           let f i p =
             if i < n_transitions || looped
             then (
-              match get_spec i with
+              match get_mapping i with
               | `Direct sampling | `Reindex sampling -> resample n sampling p
               | _ -> if i > 0 || looped then fallback i p else resample n `BySeg p )
             else fallback i p
@@ -361,7 +329,7 @@ let skin
           let j = (i + 1) mod n_profs in
           let pair =
             (* resamplers are upsampled before alignment, duplicators are upsampled after *)
-            match get_spec i with
+            match get_mapping i with
             | `Direct _     -> [ up.(i); up.(j) ]
             | `Reindex _    -> [ up.(i); Path3.reindex_polygon up.(i) up.(j) ]
             | `Distance     -> upsample_dups @@ distance_match profs.(i) profs.(j)
@@ -383,3 +351,5 @@ let skin
       i + 1, Mesh.of_rows ~style ~endcaps rows :: acc
     in
     Mesh.join @@ snd @@ List.fold_left f (0, []) sliced
+
+(* let linear_morph *)

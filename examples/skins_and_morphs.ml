@@ -34,7 +34,7 @@ let () =
     ~refine:2
     ~endcaps:`Loop (* ~endcaps:`Bot *)
     ~slices:(`Flat 35)
-    ~spec:
+    ~mapping:
       (`Mix
         [ `Reindex `ByLen
         ; `Reindex `ByLen
@@ -79,7 +79,7 @@ let () =
   Skin.skin
     ~refine:2
     ~slices:(`Flat 25)
-    ~spec:(`Flat `Tangent)
+    ~mapping:(`Flat `Tangent)
     Path3.[ circle ~fn:5 4.; translate (v3 0. 0. 3.) @@ circle ~fn:80 2. ]
   |> Mesh.to_scad
   |> Scad.to_file "tangent_skin_test.scad"
