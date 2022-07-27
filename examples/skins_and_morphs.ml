@@ -80,11 +80,21 @@ let () =
     duplication is leading to 2 or 3 times (exactly) the number of desired
     points. *)
 
+let () =
+  Skin.skin
+    ~refine:2
+    ~slices:(`Flat 25)
+    ~spec:(`Flat `Tangent)
+    Path3.[ translate (v3 0. 0. 3.) @@ circle ~fn:80 2.; circle ~fn:5 4. ]
+  |> Mesh.to_scad
+  |> Scad.to_file "tangent_skin_test.scad"
+
 (* let () = *)
-(*   Skin.skin *)
-(*     ~refine:2 *)
-(*     ~slices:(`Flat 25) *)
-(*     ~spec:(`Flat `Tangent) *)
-(*     Path3.[ translate (v3 0. 0. 3.) @@ circle ~fn:80 2.; circle ~fn:5 4. ] *)
-(*   |> Mesh.to_scad *)
-(*   |> Scad.to_file "tangent_skin_test.scad" *)
+(*   Scad.union *)
+(*     [ Scad.circle ~fn:5 1. |> Scad.linear_extrude ~height:1. *)
+(*     ; Poly2.circle ~fn:5 1. *)
+(*       |> Mesh.linear_extrude ~height:1. *)
+(*       |> Mesh.translate (v3 0. 0. 1.5) *)
+(*       |> Mesh.to_scad *)
+(*     ] *)
+(*   |> Scad.to_file "circ_test.scad" *)

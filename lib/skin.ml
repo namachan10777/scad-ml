@@ -247,34 +247,25 @@ let tangent_match a b =
     Array.init len_small (fun i ->
         fst
         @@ Path3.closest_tangent
-             ~offset:Poly3.(Vec3.sub (centroid (make sm)) (centroid (make bg)))
+             ~offset:Path3.(Vec3.sub (centroid sm) (centroid bg))
              ~line:Vec3.{ a = small.(i); b = small.((i + 1) mod len_small) }
              bg )
   in
-  Array.iter (Printf.printf "%i\n") cut_pts;
   let len_duped, duped_small =
     let f i (len, pts) =
       let count =
-        (* let a = cut_pts.(len_small - 1 - i) *)
-        (* and b = cut_pts.(Util.index_wrap ~len:len_small (len_small - 2 - i)) in *)
         let a = cut_pts.(i)
         and b = cut_pts.(Util.index_wrap ~len:len_small (i - 1)) in
-        (* let a = cut_pts.(i) *)
-        (* and b = cut_pts.(Util.index_wrap ~len:len_small (i + 1)) in *)
         Math.posmod (a - b) len_big
       in
-      (* print_endline (Int.to_string count); *)
       ( len + count
-        (* , Util.fold_init count (fun _ pts -> small.(len_small - 1 - i) :: pts) pts ) *)
-      , Util.fold_init count (fun _ pts -> small.(i) :: pts) pts )
+      , Util.fold_init count (fun _ pts -> small.(len_small - 1 - i) :: pts) pts )
     in
-    (* Util.fold_init len_small f (0, []) *)
     Util.fold_init len_small f (0, [])
   and shifted_big =
     let shift = cut_pts.(len_small - 1) + 1 in
     List.init len_big (fun i -> big.((shift + i) mod len_big))
   in
-  Printf.printf "duped %i; big %i\n" len_duped len_big;
   if len_duped <> len_big
   then
     failwith
