@@ -36,7 +36,7 @@ let centroid ?(eps = Util.epsilon) = function
   | p0 :: p1 :: tl        ->
     let f (area_sum, p_sum, p1) p2 =
       let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
-      area +. area_sum, Vec2.(add p_sum (add p0 (add p1 p2))), p2
+      area +. area_sum, Vec2.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
     in
     let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
@@ -140,12 +140,12 @@ let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
 
 let circle ?fn ?fa ?fs r =
   let fn = Util.helical_fragments ?fn ?fa ?fs r in
-  let step = -2. *. Float.pi /. Float.of_int (fn + 1) in
+  let step = -2. *. Float.pi /. Float.of_int fn in
   let f i =
     let a = step *. Float.of_int i in
     v2 (r *. Float.cos a) (r *. Float.sin a)
   in
-  List.init (fn + 1) f
+  List.init fn f
 
 let square ?(center = false) { x; y } =
   if center
@@ -157,12 +157,12 @@ let square ?(center = false) { x; y } =
 
 let ellipse ?fn ?fa ?fs { x; y } =
   let fn = Util.helical_fragments ?fn ?fa ?fs (Float.max x y) in
-  let step = -2. *. Float.pi /. Float.of_int (fn + 1) in
+  let step = -2. *. Float.pi /. Float.of_int fn in
   let f i =
     let a = step *. Float.of_int i in
     v2 (x *. Float.cos a) (y *. Float.sin a)
   in
-  List.init (fn + 1) f
+  List.init fn f
 
 let star ~r1 ~r2 n =
   if n < 2 then invalid_arg "Cannot draw star path with less than 2 points.";

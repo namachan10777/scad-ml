@@ -231,12 +231,12 @@ let centroid ?(eps = Util.epsilon) = function
     let n = Plane.normal plane in
     let f (area_sum, p_sum, p1) p2 =
       let area = Vec3.(dot (cross (sub p2 p0) (sub p1 p0)) n) in
-      area +. area_sum, Vec3.(add p_sum (add p0 (add p1 p2))), p2
+      area +. area_sum, Vec3.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
     in
     let area_sum, p_sum, _ = List.fold_left f (0., Vec3.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec3.(sdiv p_sum (area_sum /. 3.))
+    Vec3.(sdiv p_sum (area_sum *. 3.))
 
 let area ?(signed = false) = function
   | [] | [ _ ] | [ _; _ ] -> 0.
@@ -267,70 +267,76 @@ let nearby_points ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
     let tree = BallTree3.make path in
     BallTree3.search_points ~radius tree )
 
-(* let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve = *)
-(*   match curve with *)
-(*   | [] | [ _ ]     -> invalid_arg "Curved path has too few points." *)
-(*   | p0 :: p1 :: tl -> *)
-(*     let angle_sign tangent = *)
-(*       let plane = Plane.make line.Vec3.a line.b tangent.Vec3.b in *)
-(*       Float.sign_bit @@ Plane.line_angle plane tangent *)
-(*     in *)
-(*     let f (i, min_cross, nearest_tangent, last_sign, last_tangent) p = *)
-(*       let tangent = Vec3.{ a = last_tangent.b; b = p } in *)
-(*       let sign = angle_sign tangent in *)
-(*       if not (Bool.equal sign last_sign) *)
-(*       then ( *)
-(*         let zero_cross = Vec3.distance_to_line ~line (Vec3.add last_tangent.b offset) in *)
-(*         if zero_cross < min_cross *)
-(*         then i + 1, zero_cross, Some (i - 1, last_tangent), sign, tangent *)
-(*         else i + 1, min_cross, nearest_tangent, sign, tangent ) *)
-(*       else i + 1, min_cross, nearest_tangent, sign, tangent *)
-(*     in *)
-(*     let ((_, _, nearest_tangent, _, _) as acc) = *)
-(*       let tangent = Vec3.{ a = p0; b = p1 } in *)
-(*       List.fold_left f (1, Float.max_float, None, angle_sign tangent, tangent) tl *)
-(*     in *)
-(*     let tangent = *)
-(*       if closed *)
-(*       then ( *)
-(*         let _, _, nearest_tangent, _, _ = f acc p0 in *)
-(*         nearest_tangent ) *)
-(*       else nearest_tangent *)
-(*     in *)
-(*     ( match tangent with *)
-(*     | Some tangent -> tangent *)
-(*     | None         -> failwith "No appropriate tangent points found." ) *)
-
 let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve =
   match curve with
-  | [] | [ _ ] -> invalid_arg "Curved path has too few points."
-  | curve      ->
-    let curve = Array.of_list curve in
+  | [] | [ _ ]     -> invalid_arg "Curved path has too few points."
+  | p0 :: p1 :: tl ->
     let angle_sign tangent =
-      let plane = Plane.make line.Vec3.a line.b tangent.Vec3.a in
-      Plane.line_angle plane tangent >= 0.
+      let plane = Plane.make line.Vec3.a line.b tangent.Vec3.b in
+      Float.sign_bit @@ Plane.line_angle plane tangent
     in
-    let len = Array.length curve in
-    let n = len - if closed then 0 else 1 in
-    let angles =
-      Array.init n (fun i ->
-          angle_sign Vec3.{ a = curve.(i); b = curve.((i + 1) mod len) } )
+    let f (i, min_cross, nearest_tangent, last_sign, last_tangent) p =
+      let tangent = Vec3.{ a = last_tangent.b; b = p } in
+      let sign = angle_sign tangent in
+      if not (Bool.equal sign last_sign)
+      then (
+        let zero_cross = Vec3.distance_to_line ~line (Vec3.add last_tangent.b offset) in
+        if zero_cross < min_cross
+        then i + 1, zero_cross, Some (i - 1, last_tangent), sign, tangent
+        else i + 1, min_cross, nearest_tangent, sign, tangent )
+      else i + 1, min_cross, nearest_tangent, sign, tangent
     in
-    let zero_cross =
-      Util.fold_init
-        n
-        (fun i acc -> if angles.(i) <> angles.((i + 1) mod n) then i :: acc else acc)
-        []
+    let ((_, _, nearest_tangent, _, _) as acc) =
+      let tangent = Vec3.{ a = p0; b = p1 } in
+      List.fold_left f (1, Float.max_float, None, angle_sign tangent, tangent) tl
     in
-    let _, idx =
-      List.fold_left
-        (fun (min_dist, min_idx) zc ->
-          let d = Vec3.distance_to_line ~line (Vec3.add curve.(zc) offset) in
-          if d < min_dist then d, zc else min_dist, min_idx )
-        (Float.max_float, 0)
-        zero_cross
+    let tangent =
+      if closed
+      then (
+        let _, _, nearest_tangent, _, _ = f acc p0 in
+        nearest_tangent )
+      else nearest_tangent
     in
-    idx, Vec3.{ a = curve.(idx); b = curve.((idx + 1) mod len) }
+    ( match tangent with
+    | Some tangent -> tangent
+    | None         -> failwith "No appropriate tangent points found." )
+
+(* let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve = *)
+(*   match curve with *)
+(*   | [] | [ _ ] -> invalid_arg "Curved path has too few points." *)
+(*   | curve      -> *)
+(*     Printf.printf "offset = %s\n" (Vec3.to_string offset); *)
+(*     (\* let offset = v3 (-0.00125061) 0. (-3.) in *\) *)
+(*     let curve = Array.of_list curve in *)
+(*     let angle_sign tangent = *)
+(*       let plane = Plane.make line.Vec3.a line.b tangent.Vec3.a in *)
+(*       Plane.line_angle plane tangent >= 0. *)
+(*     in *)
+(*     let len = Array.length curve in *)
+(*     let n = len - if closed then 0 else 1 in *)
+(*     let angles = *)
+(*       Array.init n (fun i -> *)
+(*           angle_sign Vec3.{ a = curve.(i); b = curve.((i + 1) mod len) } ) *)
+(*     in *)
+(*     (\* List.iteri (fun i zc ->Printf.printf "zc %i = %i\n" i zc) zero_cross; *\) *)
+(*     let zero_cross = *)
+(*       Util.fold_init *)
+(*         n *)
+(*         (fun i acc -> if angles.(i) <> angles.((i + 1) mod n) then i :: acc else acc) *)
+(*         [] *)
+(*     in *)
+(*     List.iteri (fun i zc -> Printf.printf "zc %i = %i\n" i zc) zero_cross; *)
+(*     print_endline ""; *)
+(*     let _, idx = *)
+(*       List.fold_left *)
+(*         (fun (min_dist, min_idx) zc -> *)
+(*           let d = Vec3.distance_to_line ~line (Vec3.add curve.(zc) offset) in *)
+(*           Printf.printf "zc %i -> d %f\n" zc d; *)
+(*           if d < min_dist then d, zc else min_dist, min_idx ) *)
+(*         (Float.max_float, 0) *)
+(*         zero_cross *)
+(*     in *)
+(*     idx, Vec3.{ a = curve.(idx); b = curve.((idx + 1) mod len) } *)
 
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)
