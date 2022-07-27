@@ -1,4 +1,4 @@
-(** {0 Rounded sweep with holes} *)
+(** {0 Rounded sweeps} *)
 open Scad_ml
 
 (** Create a bezier spline function which passes through all of points in
@@ -99,5 +99,37 @@ let () = Scad.to_file "rounded_polyhole_sweep.scad" (Mesh.to_scad mesh)
 (** {%html:
     <p style="text-align:center;">
     <img src="../assets/rounded_polyhole_sweep.png" style="width:150mm;"/>
+    </p> %}
+    *)
+
+(** Rounded 3d paths for sweeping can also be drawn with the help of the
+    {{!Scad_ml.Path3.Round} [Path3.Round]} module, which works much the same as
+    its counterpart in {{!Scad_ml.Path2} [Path2]} that we used to chamfer our
+    [poly] earlier. *)
+let rounded_path =
+  Path3.(
+    roundover ~fn:32
+    @@ Round.flat
+         ~closed:true
+         ~corner:(Round.circ (`Radius 10.))
+         (v3 (-25.) 25. 0. :: Path3.square (v2 50. 50.)))
+
+(** {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]} (and other functions
+    derived from [Mesh.sweep]) can be given [~spec:`Looped], which will connect
+    the final position of the sweep up with the beginning, rather than sealing
+    both ends off with caps. If the swept polygon has holes (as our [poly]
+    does), they will be included, and continuous much like the outer shape. *)
+let () =
+  let loop = Mesh.(to_scad @@ path_extrude ~spec:`Looped ~path:rounded_path poly)
+  and cut =
+    Scad.cylinder ~fn:50 ~center:true ~height:11. 5.
+    |> Scad.scale (v3 1.2 1. 1.)
+    |> Scad.translate (v3 20. (-4.) 0.)
+  in
+  Scad.difference loop [ cut ] |> Scad.to_file "chamfered_loop.scad"
+
+(** {%html:
+    <p style="text-align:center;">
+    <img src="../assets/chamfered_loop.png" style="width:150mm;"/>
     </p> %}
     *)

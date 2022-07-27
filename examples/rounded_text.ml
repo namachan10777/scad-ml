@@ -15,7 +15,7 @@ let hello = PolyText.text ~center:true ~fn:5 ~size:5. ~font:"Ubuntu" "Hello!"
     close together, leading to illegal paths when further roundover operations
     are applied. *)
 let caps =
-  let spec = Mesh.Cap.(round ~mode:Delta @@ circ ~fn:5 (`Cut 0.028)) in
+  let spec = Mesh.Cap.(round ~mode:Delta @@ circ ~fn:5 (`Cut 0.025)) in
   Mesh.Cap.{ top = spec; bot = spec }
 
 (** Map over the character polys in [hello] with a rounded extrusion funcion

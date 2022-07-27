@@ -13,7 +13,8 @@
   axial_chalice
   polyholes
   resampled_path
-  default_vs_euler_sweeps)
+  default_vs_euler_sweeps
+  skins_and_morphs)
  (libraries scad_ml))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)

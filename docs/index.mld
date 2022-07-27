@@ -94,7 +94,7 @@ respectively.
 - {{!page-"resampled_path"} {b Path resampling and scaling/twisting sweeps}}
 
 {2 Rounded Extrusions}
-- {{!page-"rounded_polyhole_sweep"} {b Rounded sweep along bezier spline with holes}}
+- {{!page-"rounded_polyhole_sweep"} {b Rounded sweeps}}
 - {{!page-"rounded_prisms"} {b Continuous curvature rounded prisms}}
 - {{!page-"rounded_text"} {b Rounded extrusion of cairo imported polygonal font}}
 
