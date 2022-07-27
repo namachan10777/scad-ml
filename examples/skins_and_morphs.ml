@@ -32,7 +32,7 @@ let () =
   ignore [ sq; circ; ellipse; rect; circ2; ellipse2; sq2 ];
   Skin.skin
     ~refine:2
-    ~endcaps:`Loop
+    ~endcaps:`Loop (* ~endcaps:`Bot *)
     ~slices:(`Flat 35)
     ~spec:
       (`Mix
@@ -75,17 +75,12 @@ let () =
 (*   |> Mesh.to_scad *)
 (*   |> Scad.to_file "tangent_skin_test.scad" *)
 
-(* NOTE: need to test this simple case with BOSL2 and see where my tangent_match
-   diverges. From looking at the two of them, they seem the same, but the point
-    duplication is leading to 2 or 3 times (exactly) the number of desired
-    points. *)
-
 let () =
   Skin.skin
     ~refine:2
     ~slices:(`Flat 25)
     ~spec:(`Flat `Tangent)
-    Path3.[ translate (v3 0. 0. 3.) @@ circle ~fn:80 2.; circle ~fn:5 4. ]
+    Path3.[ circle ~fn:5 4.; translate (v3 0. 0. 3.) @@ circle ~fn:80 2. ]
   |> Mesh.to_scad
   |> Scad.to_file "tangent_skin_test.scad"
 
