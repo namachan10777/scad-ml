@@ -258,7 +258,12 @@ module Make (V : Vec.S) = struct
           | _                         -> failwith "`Spacing is unreachable."
         in
         if n < len
-        then invalid_arg "Target number of points must not be less than input length.";
+        then
+          invalid_arg
+          @@ Printf.sprintf
+               "Target number of points (%i) must not be less than input length (%i)."
+               n
+               len;
         let add_ns =
           let seg_lens =
             match density_by with
