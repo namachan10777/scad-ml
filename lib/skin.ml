@@ -353,3 +353,177 @@ let skin
     Mesh.join @@ snd @@ List.fold_left f (0, []) sliced
 
 (* let linear_morph *)
+
+open Sweep.Cap
+
+let morph'
+    ?check_valid
+    ?(winding = `CCW)
+    ?(sealed = true)
+    ?(top_mode = radius_mode ())
+    ?(bot_mode = radius_mode ())
+    ?(progress = `AutoDist)
+    ~top
+    ~bot
+    ~transforms
+    shape
+  =
+  let n_trans = List.length transforms in
+  let get_shape, len =
+    match shape with
+    | `Shape shape           ->
+      let shape = Mesh0.enforce_winding winding shape in
+      Fun.const shape, List.length shape
+    | `Morph (mapping, a, b) ->
+      if n_trans < 2 then invalid_arg "More than one transform is required for morphs.";
+      let a = Path3.of_path2 @@ Mesh0.enforce_winding winding a
+      and b = Path3.of_path2 @@ Mesh0.enforce_winding winding b in
+      let len_a = List.length a
+      and len_b = List.length b in
+      let a, b =
+        match mapping with
+        | `Direct samp | `Reindex samp ->
+          let a, b =
+            if len_a = len_b
+            then a, b
+            else if len_a > len_b
+            then a, Path3.subdivide ~closed:true ~freq:(`N (len_a, samp)) b
+            else Path3.subdivide ~closed:true ~freq:(`N (len_b, samp)) a, b
+          in
+          if is_direct mapping then a, b else a, Path3.reindex_polygon a b
+        | `Distance                    -> distance_match a b
+        | `FastDistance                -> aligned_distance_match a b
+        | `Tangent                     -> tangent_match a b
+      in
+      let prog =
+        match progress with
+        | `RelDist prog ->
+          let a = Array.of_list prog in
+          if Array.length a <> n_trans
+          then
+            invalid_arg
+            @@ Printf.sprintf
+                 "`RelDist progress (%i) must be the same length as transforms (%i)"
+                 (Array.length a)
+                 n_trans;
+          Array.get a
+        | `AutoDist     ->
+          let pts = List.map (fun m -> MultMatrix.transform m Vec3.zero) transforms in
+          let dists = Path3.cummulative_length pts |> Array.of_list in
+          for i = 0 to n_trans - 1 do
+            dists.(i) <- dists.(i) /. dists.(n_trans - 1)
+          done;
+          Array.get dists
+        | `AutoPoints   ->
+          let n = List.length transforms in
+          (* less than 2 transforms are not allowed for morphs *)
+          let step = 1. /. Float.of_int (n - 1) in
+          let a = Array.init n (fun i -> Float.of_int i *. step) in
+          Array.get a
+      in
+      let lerp i = List.map2 (fun a b -> Vec2.of_vec3 @@ Vec3.lerp a b (prog i)) a b in
+      lerp, Int.max len_a len_b
+  in
+  let bot_shape = get_shape 0
+  and top_shape = get_shape (n_trans - 1) in
+  let unpack_cap = function
+    | `Flat                    -> sealed, []
+    | `Empty                   -> false, []
+    | `Round (Offsets offsets) -> sealed, offsets
+  in
+  let close_top, top_offsets = unpack_cap top
+  and close_bot, bot_offsets = unpack_cap bot in
+  let cap = function
+    | `Top ->
+      Sweep.cap
+        ?check_valid
+        ~len
+        ~flip:false
+        ~close:close_top
+        ~offset_mode:top_mode
+        ~offsets:top_offsets
+    | `Bot ->
+      Sweep.cap
+        ?check_valid
+        ~len
+        ~flip:true
+        ~close:close_bot
+        ~offset_mode:bot_mode
+        ~offsets:bot_offsets
+  in
+  match transforms with
+  | []       ->
+    let bot_lid, bot = cap `Bot ~m:MultMatrix.id bot_shape
+    and top_lid, top = cap `Top ~m:MultMatrix.id top_shape in
+    bot_lid, top_lid, Mesh0.join [ bot; top ]
+  | hd :: tl ->
+    let _, mid, last_transform =
+      let f (i, acc, _last) m =
+        let lifted =
+          List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 p) (get_shape i)
+        in
+        i + 1, lifted :: acc, m
+      in
+      List.fold_left f (f (0, [], hd) hd) tl
+    in
+    let mid = Mesh0.of_rows ~endcaps:`None (List.rev mid)
+    and bot_lid, bot = cap `Bot ~m:hd bot_shape
+    and top_lid, top = cap `Top ~m:last_transform top_shape in
+    bot_lid, top_lid, Mesh0.join [ bot; mid; top ]
+
+(* let morph *)
+(*     ?check_valid *)
+(*     ?(merge = true) *)
+(*     ?winding *)
+(*     ?(spec = flat_caps) *)
+(*     ~transforms *)
+(*     Poly2.{ outer; holes } *)
+(*   = *)
+(*   let morph = morph' ?check_valid ~transforms in *)
+(*   let mesh = *)
+(*     match spec, holes with *)
+(*     | `Caps { top; bot }, []    -> *)
+(*       let top = poly_to_path_spec top *)
+(*       and bot = poly_to_path_spec bot in *)
+(*       let _, _, poly = morph ?winding ~top ~bot outer in *)
+(*       poly *)
+(*     | `Looped, holes            -> *)
+(*       let f ~winding path = *)
+(*         let path = Mesh0.enforce_winding winding path in *)
+(*         List.map (fun m -> Path2.multmatrix m path) transforms *)
+(*         |> Mesh0.of_rows ~endcaps:`Loop *)
+(*       in *)
+(*       Mesh0.join (f ~winding:`CCW outer :: List.map (f ~winding:`CW) holes) *)
+(*     | `Caps { top; bot }, holes -> *)
+(*       let n_holes = List.length holes in *)
+(*       let top, top_holes, top_mode = unpack_poly_spec ~n_holes top *)
+(*       and bot, bot_holes, bot_mode = unpack_poly_spec ~n_holes bot in *)
+(*       let _, tunnel_bots, tunnel_tops, tunnels = *)
+(*         let f (i, bots, tops, tuns) hole = *)
+(*           let bot, top, tunnel = *)
+(*             morph *)
+(*               ~winding:`CW *)
+(*               ~sealed:false *)
+(*               ?top_mode *)
+(*               ?bot_mode *)
+(*               ~top:(top_holes i) *)
+(*               ~bot:(bot_holes i) *)
+(*               hole *)
+(*           in *)
+(*           i + 1, bot :: bots, top :: tops, tunnel :: tuns *)
+(*         in *)
+(*         List.fold_left f (0, [], [], []) holes *)
+(*       in *)
+(*       let validate = *)
+(*         match check_valid with *)
+(*         | Some `No -> false *)
+(*         | _        -> true *)
+(*       and outer_bot, outer_top, outer = *)
+(*         morph ~winding:`CCW ~sealed:false ?top_mode ?bot_mode ~top ~bot outer *)
+(*       in *)
+(*       let bot_lid = *)
+(*         Mesh0.of_poly3 ~rev:true (Poly3.make ~validate ~holes:tunnel_bots outer_bot) *)
+(*       and top_lid = Mesh0.of_poly3 (Poly3.make ~validate ~holes:tunnel_tops outer_top) in *)
+(*       Mesh0.join (bot_lid :: top_lid :: outer :: tunnels) *)
+(*   in *)
+(*   if merge then Mesh0.merge_points mesh else mesh *)
