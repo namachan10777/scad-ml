@@ -290,7 +290,7 @@ module Cap : sig
   val open_caps : t
 end
 
-(** [sweep ?check_valid ?winding ?merge ?fn ?fs ?fa ?caps ~transforms poly]
+(** [sweep ?check_valid ?style ?winding ?merge ?fn ?fs ?fa ?caps ~transforms poly]
 
     Sweep a 2d polygon into a 3d mesh by applying a sequence of [transforms] to
     the original shape. The [winding] parameter can be used to set automatic
@@ -298,7 +298,10 @@ end
     the generated faces of the mesh. What is done with the endcaps can be
     specified with [caps]. By default the ends of the extrusion are sealed with
     flat faces, but they can instead be looped to eachother, left empty, or
-    rounded over. If [merge] is [true] (as is default), {!merge_points} is
+    rounded over. If [style] is provided, it will be passed along to {!of_rows},
+    which handles converting the swept shapes into a mesh.
+
+    If [merge] is [true] (as is default), {!merge_points} is
     applied to the resulting mesh, as duplicate points are introduced when end
     caps are joined to the outer and inner meshes. If the duplicate points aren't
     a problem for you (they aren't {i necessarily}), this can be turned off to
@@ -311,6 +314,7 @@ end
     points in the {!Path2.offset} roundover, if [`Radius] mode is being used. *)
 val sweep
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
@@ -323,26 +327,27 @@ val sweep
 *)
 val morph
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
-  -> ?outer_map:[ Skin.resampler | Skin.duplicator ]
-  -> ?hole_map:[ `Same | Skin.mapping ]
+  -> ?outer_map:Skin.mapping
+  -> ?hole_map:[ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
+  -> ?refine:int
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Poly2.t
   -> t
 
-(** [linear_extrude ?check_valid ?merge ?winding ?fa ?slices ?scale_k ?twist_k ?scale ?twist
+(** [linear_extrude ?check_valid ?style ?merge ?winding ?fa ?slices ?scale_k ?twist_k ?scale ?twist
     ?center ?caps ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
     [center], and [height] parameters are analogous to those found on
-    {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters
-    (note: [caps] is a subset of [caps], since the ends of a linear extrusion
-    cannot be looped) *)
+    {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters. *)
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fa:float
@@ -357,7 +362,31 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [path_extrude ?check_valid ?merge ?winding ?caps ?euler
+(** [linear_morph]
+
+*)
+val linear_morph
+  :  ?check_valid:[ `No | `Quality of int ]
+  -> ?style:style
+  -> ?merge:bool
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW ]
+  -> ?fa:float
+  -> ?slices:int
+  -> ?scale_k:float
+  -> ?twist_k:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?center:bool
+  -> ?caps:Cap.caps
+  -> ?outer_map:Skin.mapping
+  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?refine:int
+  -> height:float
+  -> Poly2.t
+  -> Poly2.t
+  -> t
+
+(** [path_extrude ?check_valid ?style ?merge ?winding ?caps ?euler
      ?scale_k ?twist_k ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
@@ -365,6 +394,7 @@ val linear_extrude
     {!Path3.to_transforms} with {!Mesh.sweep}. *)
 val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
@@ -377,7 +407,29 @@ val path_extrude
   -> Poly2.t
   -> t
 
-(** [helix_extrude ?check_valid ?merge ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
+(** [path_morph]
+
+*)
+val path_morph
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
+  -> ?merge:bool
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?caps:Cap.t
+  -> ?outer_map:Skin.mapping
+  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?refine:int
+  -> ?euler:bool
+  -> ?scale_k:float
+  -> ?twist_k:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> path:Path3.t
+  -> Poly2.t
+  -> Poly2.t
+  -> t
+
+(** [helix_extrude ?check_valid ?style ?merge ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
     Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
@@ -385,6 +437,7 @@ val path_extrude
     using transforms that take the helical rotation into account. *)
 val helix_extrude
   :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
   -> ?merge:bool
   -> ?fn:int
   -> ?fa:float
@@ -399,6 +452,33 @@ val helix_extrude
   -> pitch:float
   -> ?r2:float
   -> float
+  -> Poly2.t
+  -> t
+
+(** [helix_morph]
+
+*)
+val helix_morph
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?style:style
+  -> ?merge:bool
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale_k:float
+  -> ?twist_k:float
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?caps:Cap.caps
+  -> ?outer_map:Skin.mapping
+  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?refine:int
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> Poly2.t
   -> Poly2.t
   -> t
 
@@ -493,7 +573,7 @@ val prism
 (** [linear_prism ?debug ?fn ?holes ?outer ?center ~height bottom]
 
     Create a prism with continuous curvature rounding by extruding the polygon
-    [bottom] lineraly upward to the given [height]. If [center] is [true], the
+    [bottom] linearaly upward to the given [height]. If [center] is [true], the
     resulting prism will be centred in z around the xy plane. See the
     more general case {!val:prism} for more details. *)
 val linear_prism

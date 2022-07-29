@@ -12,8 +12,8 @@ type duplicator =
   ]
 
 type mapping =
-  [ `Flat of [ resampler | duplicator ]
-  | `Mix of [ resampler | duplicator ] list
+  [ resampler
+  | duplicator
   ]
 
 type slices =
@@ -351,3 +351,6 @@ let skin
       i + 1, Mesh0.of_rows ~style ~endcaps rows :: acc
     in
     Mesh0.join @@ snd @@ List.fold_left f (0, []) sliced
+
+let morph_between ?style ?refine ?(mapping = `Direct `ByLen) ?endcaps ~slices a b =
+  skin ?style ?refine ~mapping:(`Flat mapping) ?endcaps ~slices [ a; b ]
