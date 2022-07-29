@@ -290,13 +290,13 @@ module Cap : sig
   val open_caps : t
 end
 
-(** [sweep ?check_valid ?winding ?merge ?fn ?fs ?fa ?spec ~transforms poly]
+(** [sweep ?check_valid ?winding ?merge ?fn ?fs ?fa ?caps ~transforms poly]
 
     Sweep a 2d polygon into a 3d mesh by applying a sequence of [transforms] to
     the original shape. The [winding] parameter can be used to set automatic
     enforcement of polygon winding direction, which will impact the winding of
     the generated faces of the mesh. What is done with the endcaps can be
-    specified with [spec]. By default the ends of the extrusion are sealed with
+    specified with [caps]. By default the ends of the extrusion are sealed with
     flat faces, but they can instead be looped to eachother, left empty, or
     rounded over. If [merge] is [true] (as is default), {!merge_points} is
     applied to the resulting mesh, as duplicate points are introduced when end
@@ -313,8 +313,23 @@ val sweep
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?spec:Cap.t
+  -> ?caps:Cap.t
   -> transforms:MultMatrix.t list
+  -> Poly2.t
+  -> t
+
+(** [morph]
+
+*)
+val morph
+  :  ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?caps:Cap.t
+  -> ?outer_map:[ Skin.resampler | Skin.duplicator ]
+  -> ?hole_map:[ `Same | Skin.mapping ]
+  -> transforms:MultMatrix.t list
+  -> Poly2.t
   -> Poly2.t
   -> t
 
@@ -324,7 +339,7 @@ val sweep
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
     [center], and [height] parameters are analogous to those found on
     {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters
-    (note: [caps] is a subset of [spec], since the ends of a linear extrusion
+    (note: [caps] is a subset of [caps], since the ends of a linear extrusion
     cannot be looped) *)
 val linear_extrude
   :  ?check_valid:[ `Quality of int | `No ]
@@ -342,7 +357,7 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [path_extrude ?check_valid ?merge ?winding ?spec ?euler
+(** [path_extrude ?check_valid ?merge ?winding ?caps ?euler
      ?scale_k ?twist_k ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
@@ -352,7 +367,7 @@ val path_extrude
   :  ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?spec:Cap.t
+  -> ?caps:Cap.t
   -> ?euler:bool
   -> ?scale_k:float
   -> ?twist_k:float
@@ -431,7 +446,7 @@ module Prism : sig
   (** [flip spec]
 
       Negate the top and bottom inwards joints (firsts of the [joint_bot] and
-      [joint_top] pairs) of [spec]. These values govern whether the roundover
+      [joint_top] pairs) of [caps]. These values govern whether the roundover
       flare inwards (positive when shape is CCW) or outwards (negative when shape
       is CCW). Since holes (inner paths) have reverse winding compared the outer
       path, you'll often want to use opposite polarity inward joints. *)

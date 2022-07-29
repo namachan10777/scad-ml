@@ -95,27 +95,16 @@ let () =
 
 let () =
   let transforms =
-    let control = Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ] in
-    let path = Bezier3.curve ~fn:60 @@ Bezier3.of_path control in
+    let control = Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 20. 10.; v 30. 0. 10. ] in
+    let path = Bezier3.curve ~fn:60 @@ Bezier3.of_path ~size:(`FlatRel 0.3) control in
     Path3.to_transforms path
-  and spec =
+  and caps =
     Mesh.Cap.(
       capped
         ~bot:(round ~holes:`Same @@ chamf ~height:(-1.2) ~angle:(Float.pi /. 8.) ())
         ~top:(round @@ circ (`Radius 0.5)))
-  in
-  (* Skin.Morph *)
-  (*   { outer_map = `Direct `ByLen *)
-  (*   ; hole_map = `Same *)
-  (*   ; a = Poly2.circle ~fn:5 6. *)
-  (*   ; b = Poly2.circle ~fn:80 2. *)
-  (*   } *)
-  Skin.Morph
-    { outer_map = `Tangent
-    ; hole_map = `Same
-    ; a = Poly2.ring ~fn:5 ~thickness:(v2 2. 3.) (v2 6. 6.)
-    ; b = Poly2.ring ~fn:80 ~thickness:(v2 2. 2.) (v2 4. 4.)
-    }
-  |> Skin.morph ~spec ~transforms
+  and a = Poly2.ring ~fn:5 ~thickness:(v2 2.5 2.5) (v2 6. 6.)
+  and b = Poly2.ring ~fn:80 ~thickness:(v2 2. 2.) (v2 4. 4.) in
+  Mesh.morph ~caps ~transforms ~outer_map:`Tangent a b
   |> Mesh.to_scad
   |> fun s -> Scad.union [ s; Scad.sphere 2. ] |> Scad.to_file "tangent_morph_test.scad"

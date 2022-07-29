@@ -6,8 +6,10 @@ open Scad_ml
    interpolate [20] points along it to create our [path] with
    {{!Scad_ml.Bezier3.curve} [Bezier3.curve]}. *)
 
-let control = Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 10. 0.; v 50. 10. 5. ]
-let path = Bezier3.curve ~fn:20 @@ Bezier3.of_path control
+let control =
+  Vec3.[ v 5. 5. 12.; v 0. 20. 20.; v 30. 30. 0.; v 50. 20. 5.; v 35. (-10.) 15. ]
+
+let path = Bezier3.curve ~fn:30 @@ Bezier3.of_path control
 
 (** We can quickly visualize [path], and the [control] points that it passes
     through by using the {{!Scad_ml.Path3.show_points} [Path3.show_points]}
@@ -59,13 +61,13 @@ let () = Scad.to_file "chamfered_square_with_holes.scad" (Poly2.to_scad poly)
     </p> %}
     *)
 
-(** {{!Scad_ml.Mesh.sweep} [Mesh.sweep]} derived functions take a [~spec]
+(** {{!Scad_ml.Mesh.sweep} [Mesh.sweep]} derived functions take a [~caps]
    parameter that specifies what to do with the end faces of the extruded mesh.
    By default, both caps are flat and identical to the input polygon
    ({{!Scad_ml.Mesh.Cap.flat_caps} [Mesh.Cap.flat_caps]}), but in this example, we
    will be rounding them over.
 
-    To build our [spec], we'll use the {{!Scad_ml.Mesh.Cap.capped} [Mesh.Cap.capped]}
+    To build our [caps], we'll use the {{!Scad_ml.Mesh.Cap.capped} [Mesh.Cap.capped]}
     constructor which takes specification types for how we would like to treat the
     bottom and top faces of our extrusion. In this case, we'll be applying
     roundovers to both the [bot]tom and [top] faces, so we use
@@ -82,15 +84,15 @@ let () = Scad.to_file "chamfered_square_with_holes.scad" (Poly2.to_scad poly)
     negates the outer roundover for inner paths). For the top face, we specify
     a positive (inward) circular roundover, leaving [holes] as its default since
     we want the holes to flare out instead. *)
-let spec =
+let caps =
   Mesh.Cap.(
     capped
       ~bot:(round ~holes:`Same @@ chamf ~height:(-1.2) ~angle:(Float.pi /. 8.) ())
       ~top:(round @@ circ (`Radius 0.5)))
 
 (** Extrude [poly] along [path], with rounding over the end caps according to
-    [spec] using {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]}. *)
-let mesh = Mesh.path_extrude ~path ~spec poly
+    [caps] using {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]}. *)
+let mesh = Mesh.path_extrude ~path ~caps poly
 
 (** Convert our mesh into an OpenSCAD polyhedron and output to file with
    {{!Scad_ml.Mesh.to_scad} [Mesh.to_scad]}. *)
@@ -115,12 +117,12 @@ let rounded_path =
          (v3 (-25.) 25. 0. :: Path3.square (v2 50. 50.)))
 
 (** {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]} (and other functions
-    derived from [Mesh.sweep]) can be given [~spec:`Looped], which will connect
+    derived from [Mesh.sweep]) can be given [~caps:`Looped], which will connect
     the final position of the sweep up with the beginning, rather than sealing
     both ends off with caps. If the swept polygon has holes (as our [poly]
     does), they will be included, and continuous much like the outer shape. *)
 let () =
-  let loop = Mesh.(to_scad @@ path_extrude ~spec:`Looped ~path:rounded_path poly)
+  let loop = Mesh.(to_scad @@ path_extrude ~caps:`Looped ~path:rounded_path poly)
   and cut =
     Scad.cylinder ~fn:50 ~center:true ~height:11. 5.
     |> Scad.scale (v3 1.2 1. 1.)
