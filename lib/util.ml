@@ -150,14 +150,14 @@ let bisection ?(max_iter = 100) ?(tolerance = 0.001) ~lower ~upper f =
   in
   loop 0 lower upper
 
-let deduplicate_consecutive list ~equal =
-  let rec loop acc last = function
-    | []       -> last :: acc
-    | hd :: tl -> if equal hd last then loop acc last tl else loop (last :: acc) hd tl
-  in
-  match list with
-  | []       -> []
-  | hd :: tl -> List.rev (loop [] hd tl)
+let deduplicate_consecutive ?(closed = false) ~equal = function
+  | []            -> []
+  | first :: rest ->
+    let rec loop acc last = function
+      | []       -> if closed && equal first last then acc else last :: acc
+      | hd :: tl -> if equal hd last then loop acc last tl else loop (last :: acc) hd tl
+    in
+    List.rev (loop [] first rest)
 
 let value_map_opt ~default f = function
   | Some a -> f a
