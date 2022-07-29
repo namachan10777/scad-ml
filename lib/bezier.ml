@@ -418,7 +418,8 @@ module Make (V : Vec.S) = struct
       let l = Float.min (seg_len /. parallel) (get_size i seg_len /. scale) in
       V.(add p2 (smul t2 l)) :: V.(add p1 (smul t1 l)) :: p1 :: acc
     in
-    List.rev (ps.(len_ps - 1) :: Util.fold_init len_ts f [])
+    let last_idx = len_ps - if closed then 0 else 1 in
+    List.rev (ps.(last_idx mod len_ps) :: Util.fold_init last_idx f [])
 
   let bezpath_curve ?(fn = 16) ?(n = 3) bezpath =
     let bezpath = Array.of_list bezpath in

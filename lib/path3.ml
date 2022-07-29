@@ -107,9 +107,9 @@ let to_transforms ?(euler = false) ?scale_k ?twist_k ?scale ?twist path =
       let init =
         let cardinal =
           (* Determine an appropriate axis to pre-align the 2d shape with
-                 (from normal of (0., 0., 1.)), BEFORE alignment with the initial
-                 tangent of the path. Adjust for sign of major axes to prevent
-                 inconsistent flipping. *)
+                 (from normal of {x = 0.; y = 0.; z = 1.}), BEFORE alignment
+                 with the initial tangent of the path. Adjust for sign of major
+                 axes to prevent inconsistent flipping. *)
           let similarity a b = Vec3.dot a b /. Vec3.(norm a *. norm b)
           and n = Vec3.(normalize (p.(1) -@ p.(0))) in
           let z = similarity n (v3 0. 0. 1.)

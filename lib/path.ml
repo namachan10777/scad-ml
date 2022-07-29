@@ -388,7 +388,7 @@ module Make (V : Vec.S) = struct
           V.(sub (sub (g (-3)) (g (-2))) (smul (sub (g (-2)) (g (-1))) 3.))
         | i -> calc i
     in
-    List.init (len - Bool.to_int (not closed)) (fun i -> V.sdiv (f i) (2. *. h))
+    List.init len (fun i -> V.sdiv (f i) (2. *. h))
 
   let deriv_nonuniform ?(closed = false) ~h path =
     let path = Array.of_list path
@@ -423,7 +423,7 @@ module Make (V : Vec.S) = struct
         | i when i = len - 1 -> V.(sdiv (sub path.(i) path.(i - 1)) h.(i - 1))
         | i -> calc i
     in
-    List.init (len - Bool.to_int (not closed)) f
+    List.init len f
 
   let tangents ?(uniform = true) ?(closed = false) path =
     ( if uniform
