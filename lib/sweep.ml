@@ -224,8 +224,8 @@ let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
 type poly_morph =
   | Fixed of Poly2.t
   | Morph of
-      { outer_map : Skin.mapping
-      ; hole_map : [ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
+      { outer_map : Skin0.mapping
+      ; hole_map : [ `Same | `Flat of Skin0.mapping | `Mix of Skin0.mapping list ]
       ; refine : int option
       ; a : Poly2.t
       ; b : Poly2.t
@@ -329,12 +329,12 @@ let sweep'
           match mapping with
           | `Direct _ | `Reindex _ ->
             let a, b = resample (a, b) in
-            if Skin.is_direct mapping then a, b else a, Path3.reindex_polygon a b
-          | `Distance              -> resample @@ Skin.distance_match a b
-          | `FastDistance          -> resample @@ Skin.aligned_distance_match a b
+            if Skin0.is_direct mapping then a, b else a, Path3.reindex_polygon a b
+          | `Distance              -> resample @@ Skin0.distance_match a b
+          | `FastDistance          -> resample @@ Skin0.aligned_distance_match a b
           | `Tangent               ->
             (* paths cannot be in plane with eachother for tangent mapping *)
-            let a, b = Skin.tangent_match a (Path3.translate (v3 0. 0. 1.) b) in
+            let a, b = Skin0.tangent_match a (Path3.translate (v3 0. 0. 1.) b) in
             resample (a, List.map (fun { x; y; z = _ } -> v3 x y 0.) b)
         in
         let prog =
@@ -366,7 +366,7 @@ let sweep'
         let lerp i = List.map2 (fun a b -> Vec3.lerp a b (prog i)) a b
         and bot, len_bot, top, len_top =
           (* use the original shapes for caps if there has been point duplication *)
-          if Skin.is_duplicator mapping
+          if Skin0.is_duplicator mapping
           then bot, len_a, top, len_b
           else (
             let len = Int.max len_a len_b in
