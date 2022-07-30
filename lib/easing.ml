@@ -4,7 +4,7 @@ module Bez = Bezier.Make (Vec2)
 let n_samples = 11
 let step = 1. /. Float.of_int (n_samples - 1)
 
-let newton_raphson drv bez target_x guess_u =
+let newton_raphson ~bez ~drv target_x guess_u =
   let rec aux attempts guess =
     let slope = (drv guess).x in
     let guess = guess -. (((bez guess).x -. target_x) /. slope) in
@@ -13,6 +13,8 @@ let newton_raphson drv bez target_x guess_u =
   aux 0 guess_u
 
 let make p1 p2 =
+  if p1.x < 0. || p1.x > 1. || p2.x < 0. || p2.x > 1.
+  then invalid_arg "Handle point x values must fall between 0 and 1.";
   let ps = [ v2 0. 0.; p1; p2; v2 1. 1. ] in
   let bez = Bez.make ps
   and drv = Bez.deriv ps in
@@ -37,7 +39,7 @@ let make p1 p2 =
     in
     let initial_slope = (drv guess_u).x in
     if initial_slope >= 0.001
-    then newton_raphson bez drv x guess_u
+    then newton_raphson ~bez ~drv x guess_u
     else if initial_slope = 0.
     then guess_u
     else
