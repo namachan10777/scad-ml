@@ -138,7 +138,6 @@ let bisection ?(max_iter = 100) ?(tolerance = 0.001) ~lower ~upper f =
   let rec loop i a b =
     let c = (a +. b) /. 2. in
     let res = f c in
-    Printf.printf "res = %f" res;
     if res = 0. || (b -. a) /. 2. < tolerance
     then c
     else if i < max_iter

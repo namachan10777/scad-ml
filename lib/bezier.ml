@@ -178,6 +178,14 @@ module type S = sig
       bezier by [3] for each degree. Search continues until a position less
       [max_err] (default = [0.01]) distance from [p] is found. *)
   val closest_point : ?n:int -> ?max_err:float -> t -> vec -> float
+
+  (** [deriv ?order ps]
+
+      Calculate the [order] derivative of the bezier defined by the control points
+      [ps]. The first derivative is taken by default ([order = 1]).
+      [Invalid_argument] is raised if [order] is below [0], or the degree of
+      the bezier ([length ps - 1]) is lower than the [order]. *)
+  val deriv : ?order:int -> vec list -> t
 end
 
 module type S' = sig
@@ -447,4 +455,25 @@ module Make (V : Vec.S) = struct
 
   let closest_point ?(n = 3) ?max_err bez p =
     P.continuous_closest_point ~n_steps:(n * 3) ?max_err bez p
+
+  let deriv ?(order = 1) ps =
+    let rec aux n order = function
+      | hd :: tl ->
+        let deltas =
+          let f (acc, last) p = V.(smul (sub p last) (Float.of_int n)) :: acc, p in
+          List.rev @@ fst @@ List.fold_left f ([], hd) tl
+        in
+        if order = 1 then make deltas else aux (n - 1) (order - 1) deltas
+      | _        -> failwith "impossible"
+    in
+    let n = List.length ps - 1 in
+    if order < 0
+    then invalid_arg "Derivative order cannot be negative."
+    else if n <= order
+    then
+      invalid_arg
+        (Printf.sprintf "Bezier degree (%i) must be no lower than order (%i)." n order)
+    else if order = 0
+    then make ps
+    else aux n order ps
 end
