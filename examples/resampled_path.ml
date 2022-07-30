@@ -33,7 +33,8 @@ let () =
 let () =
   let mesh =
     Mesh.path_extrude
-      ~scale_k:0.3
+      ~scale_ez:(v2 0.42 0., v2 1. 1.)
+      ~twist_ez:(v2 0.42 0., v2 1. 1.)
       ~scale:(v2 4. 1.)
       ~twist:(Float.pi *. 4.)
       ~path:resampled

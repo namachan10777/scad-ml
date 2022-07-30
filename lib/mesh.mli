@@ -307,14 +307,14 @@ end
     a problem for you (they aren't {i necessarily}), this can be turned off to
     save some compute.
 
-   Relevant when roundovers are on:
-    - [check_valid] determines whether validity checks are performed during
-    offset operations, see {!Path2.offset}, for cap roundovers (if specified).
-    - [fn], [fs], and [fa] determine number of points used when generating new
-    points in the {!Path2.offset} roundover, if [`Radius] mode is being used. *)
+    [check_valid] determines whether validity checks are performed during
+    offset operations (see {!Path2.offset}), for cap roundovers (if
+    specified). Additionally, unless [check_valid] is [`No], polygon validation
+    will be performed with final outer and inner paths of the caps before their
+    mesh is generated. *)
 val sweep
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
@@ -326,34 +326,35 @@ val sweep
 
 *)
 val morph
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
   -> ?outer_map:Skin.mapping
   -> ?hole_map:[ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
   -> ?refine:int
+  -> ?progress:[ `RelDist of float list | `AutoDist | `AutoPoints ]
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Poly2.t
   -> t
 
-(** [linear_extrude ?check_valid ?style ?merge ?winding ?fa ?slices ?scale_k ?twist_k ?scale ?twist
+(** [linear_extrude ?check_valid ?style ?merge ?winding ?fa ?slices ?scale_ez ?twist_ez ?scale ?twist
     ?center ?caps ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
     [center], and [height] parameters are analogous to those found on
     {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters. *)
 val linear_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fa:float
   -> ?slices:int
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
@@ -366,14 +367,14 @@ val linear_extrude
 
 *)
 val linear_morph
-  :  ?check_valid:[ `No | `Quality of int ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW ]
   -> ?fa:float
   -> ?slices:int
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?center:bool
@@ -387,20 +388,20 @@ val linear_morph
   -> t
 
 (** [path_extrude ?check_valid ?style ?merge ?winding ?caps ?euler
-     ?scale_k ?twist_k ?scale ?twist ~path poly]
+     ?scale_ez ?twist_ez ?scale ?twist ~path poly]
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
     convenience function that composes transform generation using
     {!Path3.to_transforms} with {!Mesh.sweep}. *)
 val path_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
   -> ?euler:bool
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> path:Path3.t
@@ -411,8 +412,8 @@ val path_extrude
 
 *)
 val path_morph
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
@@ -420,8 +421,8 @@ val path_morph
   -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
   -> ?refine:int
   -> ?euler:bool
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> path:Path3.t
@@ -429,21 +430,21 @@ val path_morph
   -> Poly2.t
   -> t
 
-(** [helix_extrude ?check_valid ?style ?merge ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
+(** [helix_extrude ?check_valid ?style ?merge ?fn ?fs ?fa ?scale_ez ?twist_ez ?scale ?twist
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
     Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
     {!Mesh.path_extrude}, but following a path generated with {!Path3.helix}, and
     using transforms that take the helical rotation into account. *)
 val helix_extrude
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?caps:Cap.caps
@@ -459,14 +460,14 @@ val helix_extrude
 
 *)
 val helix_morph
-  :  ?check_valid:[ `Quality of int | `No ]
-  -> ?style:style
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?caps:Cap.caps

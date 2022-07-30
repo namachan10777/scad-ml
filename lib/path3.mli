@@ -216,25 +216,23 @@ val bbox : t -> Vec3.bbox
 
 (** {1 Sweeping Transform Helpers} *)
 
-(** [scaler ~k scale]
+(** [scaler ?ez scale]
 
     Create a lookup from relative position ([0.] to [1.]) to scaling
     transformation matrix for interpolating from [{x = 1.; y = 1.}] at [0.] to
-    [scale] by [1.]. [k] sets the "hardness" of the bezier transition, with
-    values [< 0.5] starting slow, and [> 0.5] starting fast (values below [0.]
-    and above [1.] are allowed). The default [0.5] is simply linear. *)
-val scaler : ?k:float -> Vec2.t -> float -> MultMatrix.t
+    [scale] by [1.]. If provided, the pair of handle points [ez] will be used to
+    ease the scaling (see {!Easing.make}). *)
+val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> MultMatrix.t
 
-(** [twister ~k angle]
+(** [twister ?ez angle]
 
     Create a lookup from relative position ([0.] to [1.]) to rotation
     transformation matrix for interpolating from [0.] (no rotation) at [0.] to
-    [angle] by [1.]. [k] sets the "hardness" of the bezier transition, with
-    values [< 0.5] starting slow, and [> 0.5] starting fast (values below [0.]
-    and above [1.] are allowed). The default [0.5] is simply linear. *)
-val twister : ?k:float -> float -> float -> MultMatrix.t
+    [angle] by [1.]. If provided, the pair of handle points [ez] will be used to
+    ease the scaling (see {!Easing.make}). *)
+val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> MultMatrix.t
 
-(** [to_transforms ?euler ?scale_k ?twist_k ?scale ?twist t]
+(** [to_transforms ?euler ?scale_ez ?twist_ez ?scale ?twist t]
 
    Generate list of transformations that can be applied to three-dimensional
    vectors ({!Vec3.t} via {!MultMatrix.transform}) or shapes ({!Scad.d3} via
@@ -254,18 +252,18 @@ val twister : ?k:float -> float -> float -> MultMatrix.t
 
    If provided, [scale] and [twist], specify scaling and rotation to be linearly
    applied to along the path, analogous to the parameters of the same names in
-   {!Scad.linear_extrude}, but with the added wrinkle of the [_k] parameters
-   that enable non-linear transitions (see {!scaler} and {!twister}). *)
+   {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters
+   that enable eased transitions (see {!scaler} and {!twister}). *)
 val to_transforms
   :  ?euler:bool
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> t
   -> MultMatrix.t list
 
-(** [helical_transforms ?fn ?fs ?fa ?scale_k ?twist_k ?scale ?twist
+(** [helical_transforms ?fn ?fs ?fa ?scale_ez ?twist_ez ?scale ?twist
      ?left ~n_turns ~pitch ?r2 r1]
 
     Affine transformations following a helical path. This can be thought of like
@@ -276,8 +274,8 @@ val helical_transforms
   :  ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_k:float
-  -> ?twist_k:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?left:bool

@@ -94,10 +94,9 @@ let () =
 (*   |> Scad.to_file "circ_test.scad" *)
 
 let () =
-  let transforms =
+  let path =
     let control = Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 20. 10.; v 30. 0. 10. ] in
-    let path = Bezier3.curve ~fn:60 @@ Bezier3.of_path ~size:(`FlatRel 0.3) control in
-    Path3.to_transforms path
+    Bezier3.curve ~fn:60 @@ Bezier3.of_path ~size:(`FlatRel 0.3) control
   and caps =
     Mesh.Cap.(
       capped
@@ -105,6 +104,6 @@ let () =
         ~top:(round @@ circ (`Radius 0.5)))
   and a = Poly2.ring ~fn:5 ~thickness:(v2 2.5 2.5) (v2 6. 6.)
   and b = Poly2.ring ~fn:80 ~thickness:(v2 2. 2.) (v2 4. 4.) in
-  Mesh.morph ~caps ~transforms ~outer_map:`Tangent a b
+  Mesh.path_morph ~caps ~path ~outer_map:`Tangent a b
   |> Mesh.to_scad
   |> fun s -> Scad.union [ s; Scad.sphere 2. ] |> Scad.to_file "tangent_morph_test.scad"

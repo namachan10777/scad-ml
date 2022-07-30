@@ -42,15 +42,27 @@ let helix ?fn ?fa ?fs ?(left = true) ~n_turns ~pitch ?r2 r1 =
   in
   List.init ((n_frags * n_turns) + 1) f
 
-let scaler ?(k = 0.5) dims =
-  let bez = Bez2.make [ v2 1. 1.; Vec2.lerp (v2 1. 1.) dims k; dims ] in
-  fun u -> MultMatrix.scaling @@ Vec3.of_vec2 ~z:1. @@ bez u
+let scaler ?ez dims =
+  let f =
+    match ez with
+    | Some (p1, p2) ->
+      let ez = Easing.make p1 p2 in
+      fun u -> Vec2.lerp (v2 1. 1.) dims (ez u)
+    | None          -> Vec2.lerp (v2 1. 1.) dims
+  in
+  fun u -> MultMatrix.scaling @@ Vec3.of_vec2 ~z:1. @@ f u
 
-let twister ?(k = 0.5) rot =
-  let bez = Bez2.make Vec2.[ zero; lerp zero (v rot 0.) k; v rot 0. ] in
-  fun u -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (bez u).x)
+let twister ?ez rot =
+  let f =
+    match ez with
+    | Some (p1, p2) ->
+      let ez = Easing.make p1 p2 in
+      fun u -> ez u *. rot
+    | None          -> ( *. ) rot
+  in
+  fun u -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (f u))
 
-let to_transforms ?(euler = false) ?scale_k ?twist_k ?scale ?twist path =
+let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = MultMatrix.id in
@@ -65,8 +77,8 @@ let to_transforms ?(euler = false) ?scale_k ?twist_k ?scale ?twist path =
     else Fun.const 0.
   in
   if len < 2 then invalid_arg "Invalid path (too few points).";
-  let scale = Util.value_map_opt ~default:id (scaler ?k:scale_k) scale
-  and twist = Util.value_map_opt ~default:id (twister ?k:twist_k) twist
+  let scale = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
+  and twist = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist
   and transform =
     if euler
     then (
@@ -153,8 +165,8 @@ let helical_transforms
     ?fn
     ?fa
     ?fs
-    ?scale_k
-    ?twist_k
+    ?scale_ez
+    ?twist_ez
     ?scale
     ?twist
     ?(left = true)
@@ -184,8 +196,8 @@ let helical_transforms
       Array.get a )
     else Fun.const 0.
   in
-  let scale = Util.value_map_opt ~default:id (scaler ?k:scale_k) scale
-  and twist = Util.value_map_opt ~default:id (twister ?k:twist_k) twist in
+  let scale = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
+  and twist = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist in
   let f i trans =
     let eul = v3 ax 0. (a_step *. Float.of_int i) in
     scale (rel_pos i)

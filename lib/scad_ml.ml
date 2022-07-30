@@ -214,11 +214,12 @@ module Path3 = Path3
 module Bezier3 = Bezier3
 module Poly3 = Poly3
 module Mesh = Mesh
+module Skin = Skin
 
 (** {1 Utilities} *)
 
 module Math = Math
+module Easing = Easing
 module Export = Export
 module BallTree2 = BallTree2
 module BallTree3 = BallTree3
-module Skin = Skin
