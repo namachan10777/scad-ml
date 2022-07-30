@@ -334,6 +334,7 @@ val morph
   -> ?outer_map:Skin.mapping
   -> ?hole_map:[ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
   -> ?refine:int
+  -> ?ez:Vec2.t * Vec2.t
   -> ?progress:[ `RelDist of float list | `AutoDist | `AutoPoints ]
   -> transforms:MultMatrix.t list
   -> Poly2.t
@@ -382,6 +383,7 @@ val linear_morph
   -> ?outer_map:Skin.mapping
   -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
   -> ?refine:int
+  -> ?ez:Vec2.t * Vec2.t
   -> height:float
   -> Poly2.t
   -> Poly2.t
@@ -420,6 +422,7 @@ val path_morph
   -> ?outer_map:Skin.mapping
   -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
   -> ?refine:int
+  -> ?ez:Vec2.t * Vec2.t
   -> ?euler:bool
   -> ?scale_ez:Vec2.t * Vec2.t
   -> ?twist_ez:Vec2.t * Vec2.t
@@ -474,6 +477,7 @@ val helix_morph
   -> ?outer_map:Skin.mapping
   -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
   -> ?refine:int
+  -> ?ez:Vec2.t * Vec2.t
   -> ?left:bool
   -> n_turns:int
   -> pitch:float

@@ -107,3 +107,15 @@ let () =
   Mesh.path_morph ~caps ~path ~outer_map:`Tangent a b
   |> Mesh.to_scad
   |> fun s -> Scad.union [ s; Scad.sphere 2. ] |> Scad.to_file "tangent_morph_test.scad"
+
+let () =
+  Mesh.linear_morph
+    ~refine:2
+    ~ez:(v2 0.42 0., v2 1. 1.)
+    ~slices:60
+    ~outer_map:`Tangent
+    ~height:5.
+    (Poly2.circle ~fn:5 4.)
+    (Poly2.circle ~fn:80 0.5)
+  |> Mesh.to_scad
+  |> Scad.to_file "eased_morph.scad"

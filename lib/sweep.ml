@@ -227,6 +227,7 @@ type poly_morph =
       { outer_map : Skin0.mapping
       ; hole_map : [ `Same | `Flat of Skin0.mapping | `Mix of Skin0.mapping list ]
       ; refine : int option
+      ; ez : (Vec2.t * Vec2.t) option
       ; a : Poly2.t
       ; b : Poly2.t
       }
@@ -246,14 +247,15 @@ let sweep'
     | `CCW     -> `CCW, `CW
     | `CW      -> `CW, `CCW
     | `NoCheck -> `NoCheck, `NoCheck
-  and outer, holes, refine =
+  and outer, holes, refine, ez =
     match shape with
     | Fixed Poly2.{ outer; holes } ->
-      `Fixed outer, List.map (fun h -> `Fixed h) holes, None
+      `Fixed outer, List.map (fun h -> `Fixed h) holes, None, None
     | Morph
         { outer_map
         ; hole_map
         ; refine
+        ; ez
         ; a = { outer = oa; holes = ha }
         ; b = { outer = ob; holes = hb }
         } ->
@@ -283,7 +285,7 @@ let sweep'
         | Invalid_argument _ ->
           invalid_arg "Polygon pair to be morphed must have same number of holes."
       and refine = Option.bind refine (fun n -> if n > 1 then Some n else None) in
-      outer, holes, refine
+      outer, holes, refine, ez
   in
   let morph
       ?(sealed = true)
@@ -361,7 +363,12 @@ let sweep'
             let prog = Array.init n (fun i -> Float.of_int i *. step) in
             Array.get prog
         in
-        let lerp i = List.map2 (fun a b -> Vec3.lerp a b (prog i)) a b
+        (* let lerp i = List.map2 (fun a b -> Vec3.lerp a b (prog i)) a b *)
+        let transition =
+          let ez =
+            Util.value_map_opt ~default:Fun.id (fun (p1, p2) -> Easing.make p1 p2) ez
+          in
+          fun i -> List.map2 (fun a b -> Vec3.lerp a b (ez @@ prog i)) a b
         and bot, len_bot, top, len_top =
           (* use the original shapes for caps if there has been point duplication *)
           if Skin0.is_duplicator mapping
@@ -370,7 +377,7 @@ let sweep'
             let len = Int.max len_a len_b in
             Path2.of_path3 a, len, Path2.of_path3 b, len )
         in
-        lerp, bot, len_bot, top, len_top
+        transition, bot, len_bot, top, len_top
     in
     let unpack_cap = function
       | `Flat                    -> sealed, []
@@ -475,6 +482,7 @@ let morph
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
+    ?ez
     ?progress
     ~transforms
     a
@@ -488,7 +496,7 @@ let morph
     ?caps
     ?progress
     ~transforms
-    (Morph { outer_map; hole_map; refine; a; b })
+    (Morph { outer_map; hole_map; refine; ez; a; b })
 
 let linear'
     ?style
@@ -506,7 +514,11 @@ let linear'
     ~height
     shape
   =
-  let slices = helical_slices ?fa ?fn:slices twist in
+  let slices =
+    match slices, twist with
+    | Some s, tw when Float.(abs tw /. (2. *. pi) < 1.) -> s
+    | fn, tw -> helical_slices ?fa ?fn tw
+  in
   let cap_height = function
     | `Flat | `Empty -> 0.
     | `Round { outer = Offsets l; _ } -> List.fold_left (fun _ { z; _ } -> z) 0. l
@@ -578,6 +590,7 @@ let linear_morph
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
+    ?ez
     ~height
     a
     b
@@ -596,7 +609,7 @@ let linear_morph
     ?center
     ?caps
     ~height
-    (Morph { outer_map; hole_map; refine; a; b })
+    (Morph { outer_map; hole_map; refine; ez; a; b })
 
 let helix'
     ?style
@@ -694,6 +707,7 @@ let helix_morph
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
+    ?ez
     ?left
     ~n_turns
     ~pitch
@@ -719,7 +733,7 @@ let helix_morph
     ~pitch
     ?r2
     r1
-    (Morph { outer_map; hole_map; refine; a; b })
+    (Morph { outer_map; hole_map; refine; ez; a; b })
 
 let path'
     ?style
@@ -786,6 +800,7 @@ let path_morph
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
+    ?ez
     ?euler
     ?scale_ez
     ?twist_ez
@@ -807,4 +822,4 @@ let path_morph
     ?scale
     ?twist
     ~path
-    (Morph { outer_map; hole_map; refine; a; b })
+    (Morph { outer_map; hole_map; refine; ez; a; b })

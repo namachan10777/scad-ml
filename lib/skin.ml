@@ -2,9 +2,9 @@ include Skin0
 
 let skin
     ?(style = `MinEdge)
+    ?(endcaps = `Both)
     ?refine
     ?(mapping = `Flat (`Direct `ByLen))
-    ?(endcaps = `Both)
     ~slices
   = function
   | [] | [ _ ] -> invalid_arg "At least two profiles are required to skin."
@@ -112,5 +112,5 @@ let skin
     in
     Mesh0.join @@ snd @@ List.fold_left f (0, []) sliced
 
-let morph_between ?style ?refine ?(mapping = `Direct `ByLen) ?endcaps ~slices a b =
-  skin ?style ?refine ~mapping:(`Flat mapping) ?endcaps ~slices [ a; b ]
+let morph_between ?style ?endcaps ?refine ?mapping:(m = `Direct `ByLen) ~slices:s a b =
+  skin ?style ?refine ~mapping:(`Flat m) ?endcaps ~slices:(`Flat s) [ a; b ]
