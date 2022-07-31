@@ -481,7 +481,6 @@ let morph
     ?(hole_map = `Same)
     ?refine
     ?ez
-    ?progress
     ~transforms
     a
     b
@@ -492,7 +491,7 @@ let morph
     ?merge
     ?winding
     ?caps
-    ?progress
+    ~progress:`AutoDist
     ~transforms
     (Morph { outer_map; hole_map; refine; ez; a; b })
 

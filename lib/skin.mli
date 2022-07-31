@@ -14,32 +14,31 @@ type mapping =
   | duplicator
   ]
 
-(** [slice_profiles]
+(** [slice_profiles ?looped ~slices profiles]
 
 *)
-
 val slice_profiles
   :  ?looped:bool
   -> slices:[< `Flat of int | `Mix of int list ]
   -> Path3.t list
   -> Path3.t list
 
-(** [distance_match]
+(** [distance_match a b]
 
 *)
 val distance_match : Path3.t -> Path3.t -> Path3.t * Path3.t
 
-(** [aligned_distance_match]
+(** [aligned_distance_match a b]
 
 *)
 val aligned_distance_match : Path3.t -> Path3.t -> Path3.t * Path3.t
 
-(** [tangent_match]
+(** [tangent_match a b]
 
 *)
 val tangent_match : Path3.t -> Path3.t -> Path3.t * Path3.t
 
-(** [skin]
+(** [skin ?style ?endcaps ?refine ?mapping ~slices profiles]
 
 *)
 val skin
@@ -51,7 +50,7 @@ val skin
   -> Path3.t list
   -> Mesh0.t
 
-(** [morph_between]
+(** [skin ?style ?endcaps ?refine ?mapping ~slices a b]
 
 *)
 val morph_between

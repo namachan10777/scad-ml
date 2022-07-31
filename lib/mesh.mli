@@ -322,9 +322,14 @@ val sweep
   -> Poly2.t
   -> t
 
-(** [morph]
+(** [morph ~transforms a b]
 
-*)
+    Morph between the polygons [a] and [b] while sweeping the hybrids along
+    [transforms] to create a mesh. The [outer_map], [hole_map], and [refine]
+    correspond to the the similarly named parameters of the more general
+    {!Skin.skin}, while the optional [ez] parameter allows the transition to be
+    bezier eased via {!Easing.make}, rather than strictly linearly. See {!sweep}
+    for details on the remaining common parameters. *)
 val morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -335,18 +340,18 @@ val morph
   -> ?hole_map:[ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
-  -> ?progress:[ `RelDist of float list | `AutoDist | `AutoPoints ]
   -> transforms:MultMatrix.t list
   -> Poly2.t
   -> Poly2.t
   -> t
 
-(** [linear_extrude ?check_valid ?style ?merge ?winding ?fa ?slices ?scale_ez ?twist_ez ?scale ?twist
-    ?center ?caps ~height poly]
+(** [linear_extrude ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
     [center], and [height] parameters are analogous to those found on
-    {!Scad.linear_extrude}. See {!sweep} for explaination of shared parameters. *)
+    {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters,
+    which enable eased transitions (see {!scaler} and {!twister}). See {!sweep}
+    for explaination of shared parameters. *)
 val linear_extrude
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -364,9 +369,11 @@ val linear_extrude
   -> Poly2.t
   -> t
 
-(** [linear_morph]
+(** [linear_morph ~height a b]
 
-*)
+    Vertically morph between the 2d polygons [a] and [b]. This function is to
+    {!morph}, as {!linear_extrude} is to {!sweep}. See each of the former for
+    details on their common parameters.  *)
 val linear_morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -410,9 +417,11 @@ val path_extrude
   -> Poly2.t
   -> t
 
-(** [path_morph]
+(** [path_morph ~path poly]
 
-*)
+    Morph between the 2d polygons [a] and [b] along the given [path]. This is a
+    convenience function that composes transform generation using
+    {!Path3.to_transforms} with {!Mesh.morph}.  *)
 val path_morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -459,9 +468,12 @@ val helix_extrude
   -> Poly2.t
   -> t
 
-(** [helix_morph]
+(** [helix_morph ~n_turns ~pitch ?r2 r1 a b]
 
-*)
+    Morph between the 2d polygons [a] and [b] along a helical path. This is a
+    special case of {!Mesh.path_morph}, but following a path generated with
+    {!Path3.helix}, and using transforms that take the helical rotation into
+    account. *)
 val helix_morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
