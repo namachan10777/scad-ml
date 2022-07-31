@@ -308,11 +308,10 @@ let sweep'
         let a = Path3.of_path2 @@ Mesh0.enforce_winding winding bot
         and b = Path3.of_path2 @@ Mesh0.enforce_winding winding top in
         let len_a = List.length a
-        and len_b = List.length b in
+        and len_b = List.length b
+        and refine = Option.value ~default:1 refine in
         let resample =
-          let n =
-            let max = Int.max len_a len_b in
-            Util.value_map_opt ~default:max (fun r -> r * max) refine
+          let n = Int.max len_a len_b * refine
           and samp =
             match mapping with
             | `Direct samp | `Reindex samp -> samp
@@ -363,7 +362,6 @@ let sweep'
             let prog = Array.init n (fun i -> Float.of_int i *. step) in
             Array.get prog
         in
-        (* let lerp i = List.map2 (fun a b -> Vec3.lerp a b (prog i)) a b *)
         let transition =
           let ez =
             Util.value_map_opt ~default:Fun.id (fun (p1, p2) -> Easing.make p1 p2) ez
@@ -374,7 +372,7 @@ let sweep'
           if Skin0.is_duplicator mapping
           then bot, len_a, top, len_b
           else (
-            let len = Int.max len_a len_b in
+            let len = Int.max len_a len_b * refine in
             Path2.of_path3 a, len, Path2.of_path3 b, len )
         in
         transition, bot, len_bot, top, len_top
@@ -575,7 +573,7 @@ let linear_extrude
     (Fixed shape)
 
 let linear_morph
-    ?style
+    ?(style = `MinEdge)
     ?check_valid
     ?merge
     ?winding
@@ -596,7 +594,7 @@ let linear_morph
     b
   =
   linear'
-    ?style
+    ~style
     ?check_valid
     ?merge
     ?winding
@@ -693,7 +691,7 @@ let helix_extrude
     (Fixed shape)
 
 let helix_morph
-    ?style
+    ?(style = `MinEdge)
     ?check_valid
     ?merge
     ?fn
@@ -717,7 +715,7 @@ let helix_morph
     b
   =
   helix'
-    ?style
+    ~style
     ?check_valid
     ?merge
     ?fn
@@ -792,7 +790,7 @@ let path_extrude
     (Fixed shape)
 
 let path_morph
-    ?style
+    ?(style = `MinEdge)
     ?check_valid
     ?merge
     ?winding
@@ -811,7 +809,7 @@ let path_morph
     b
   =
   path'
-    ?style
+    ~style
     ?check_valid
     ?merge
     ?winding
