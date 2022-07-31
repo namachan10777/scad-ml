@@ -138,11 +138,14 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal point faces. *)
 val of_polygons : Path3.t list -> t
 
-(** {1 Sweeps and Extrusions with roundovers}
+(** {1 Sweeps, extrusions, and morphs with roundovers}
 
-Extrusions from 2d to 3d with optional roundovers based on the implementations found in
-the {{:https://github.com/revarbat/BOSL2} BOSL2} library's [offset_sweep] functions from
-the {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding} module. *)
+Sweeps, extrusions and morphs from 2d to 3d. Each of which can be given rounded
+over end caps via their optional [?caps] parameters with specifications
+contsructed by the {!Cap} module. and the optional [?caps]. Roundovers are based on the
+implementations found in the {{:https://github.com/revarbat/BOSL2} BOSL2}
+library's [offset_sweep] functions from the
+{{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding} module. *)
 
 module Cap : sig
   (** Configuration module for declaring how extrusions from 2d to 3d via
@@ -290,6 +293,8 @@ module Cap : sig
   val open_caps : t
 end
 
+(** {2 Fixed polygon sweeps and extrusions} *)
+
 (** [sweep ?check_valid ?style ?winding ?merge ?fn ?fs ?fa ?caps ~transforms poly]
 
     Sweep a 2d polygon into a 3d mesh by applying a sequence of [transforms] to
@@ -322,6 +327,88 @@ val sweep
   -> Poly2.t
   -> t
 
+(** [linear_extrude ~height poly]
+
+    Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
+    [center], and [height] parameters are analogous to those found on
+    {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters,
+    which enable eased transitions (see {!Path3.scaler} and {!Path3.twister}).
+    See {!sweep} for explaination of shared parameters. *)
+val linear_extrude
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?fa:float
+  -> ?slices:int
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?center:bool
+  -> ?caps:Cap.caps
+  -> height:float
+  -> Poly2.t
+  -> t
+
+(** [path_extrude ?check_valid ?style ?merge ?winding ?caps ?euler
+     ?scale_ez ?twist_ez ?scale ?twist ~path poly]
+
+    Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
+    convenience function that composes transform generation using
+    {!Path3.to_transforms} with {!Mesh.sweep}. *)
+val path_extrude
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
+  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
+  -> ?caps:Cap.t
+  -> ?euler:bool
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> path:Path3.t
+  -> Poly2.t
+  -> t
+
+(** [helix_extrude ?check_valid ?style ?merge ?fn ?fs ?fa ?scale_ez ?twist_ez ?scale ?twist
+     ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
+
+    Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
+    {!Mesh.path_extrude}, but following a path generated with {!Path3.helix}, and
+    using transforms that take the helical rotation into account. *)
+val helix_extrude
+  :  ?style:style
+  -> ?check_valid:[ `Quality of int | `No ]
+  -> ?merge:bool
+  -> ?fn:int
+  -> ?fa:float
+  -> ?fs:float
+  -> ?scale_ez:Vec2.t * Vec2.t
+  -> ?twist_ez:Vec2.t * Vec2.t
+  -> ?scale:Vec2.t
+  -> ?twist:float
+  -> ?caps:Cap.caps
+  -> ?left:bool
+  -> n_turns:int
+  -> pitch:float
+  -> ?r2:float
+  -> float
+  -> Poly2.t
+  -> t
+
+(** {2 Morphing sweeps and extrusions}
+
+    These functions serve as the morphing counterparts of the fixed polygon
+    sweeping functions above. In contrast to the more general {!Skin.skin} which
+    transitions between 3d {!Path3.t} profiles in sequence, these restrict the
+    bounding shapes to 2d, and lift to 3d via the provided transforms, or path
+    specifications. This separation of the morphing transition and spatial
+    transformations allows for the easy addition of non-linear {!Easing} between
+    the shapes via the [?ez] parameters (default is linear transition along the
+    spatial distance covered by the sweep beginning from its origin). *)
+
 (** [morph ~transforms a b]
 
     Morph between the polygons [a] and [b] while sweeping the hybrids along
@@ -342,30 +429,6 @@ val morph
   -> ?ez:Vec2.t * Vec2.t
   -> transforms:MultMatrix.t list
   -> Poly2.t
-  -> Poly2.t
-  -> t
-
-(** [linear_extrude ~height poly]
-
-    Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
-    [center], and [height] parameters are analogous to those found on
-    {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters,
-    which enable eased transitions (see {!scaler} and {!twister}). See {!sweep}
-    for explaination of shared parameters. *)
-val linear_extrude
-  :  ?style:style
-  -> ?check_valid:[ `Quality of int | `No ]
-  -> ?merge:bool
-  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?fa:float
-  -> ?slices:int
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> ?center:bool
-  -> ?caps:Cap.caps
-  -> height:float
   -> Poly2.t
   -> t
 
@@ -396,27 +459,6 @@ val linear_morph
   -> Poly2.t
   -> t
 
-(** [path_extrude ?check_valid ?style ?merge ?winding ?caps ?euler
-     ?scale_ez ?twist_ez ?scale ?twist ~path poly]
-
-    Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
-    convenience function that composes transform generation using
-    {!Path3.to_transforms} with {!Mesh.sweep}. *)
-val path_extrude
-  :  ?style:style
-  -> ?check_valid:[ `Quality of int | `No ]
-  -> ?merge:bool
-  -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?caps:Cap.t
-  -> ?euler:bool
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> path:Path3.t
-  -> Poly2.t
-  -> t
-
 (** [path_morph ~path poly]
 
     Morph between the 2d polygons [a] and [b] along the given [path]. This is a
@@ -439,32 +481,6 @@ val path_morph
   -> ?twist:float
   -> path:Path3.t
   -> Poly2.t
-  -> Poly2.t
-  -> t
-
-(** [helix_extrude ?check_valid ?style ?merge ?fn ?fs ?fa ?scale_ez ?twist_ez ?scale ?twist
-     ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
-
-    Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
-    {!Mesh.path_extrude}, but following a path generated with {!Path3.helix}, and
-    using transforms that take the helical rotation into account. *)
-val helix_extrude
-  :  ?style:style
-  -> ?check_valid:[ `Quality of int | `No ]
-  -> ?merge:bool
-  -> ?fn:int
-  -> ?fa:float
-  -> ?fs:float
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
-  -> ?twist:float
-  -> ?caps:Cap.caps
-  -> ?left:bool
-  -> n_turns:int
-  -> pitch:float
-  -> ?r2:float
-  -> float
   -> Poly2.t
   -> t
 
@@ -499,6 +515,8 @@ val helix_morph
   -> Poly2.t
   -> t
 
+(** {1 Generalized prisms with continous rounding} *)
+
 module Prism : sig
   (** Rounded prism configuration module. *)
 
@@ -530,7 +548,8 @@ module Prism : sig
   (** Specifies how holes in the prism should be treated, either relative to
     the outer shape, or independantly. When multiple holes are present, [`Mix]
     allows each one to be specified separately, to treat all the same, use the
-    other variants directly. *)
+    other variants directly. Defaults to [`Flip] for the {!prism} and
+    {!linear_prism} functions. *)
   type holes =
     [ `Same (** the outer path {!type:spec} should be used for the holes *)
     | `Flip

@@ -112,5 +112,5 @@ let skin
     in
     Mesh0.join @@ snd @@ List.fold_left f (0, []) sliced
 
-let morph_between ?style ?endcaps ?refine ?mapping:(m = `Direct `ByLen) ~slices:s a b =
+let skin_between ?style ?endcaps ?refine ?mapping:(m = `Direct `ByLen) ~slices:s a b =
   skin ?style ?refine ~mapping:(`Flat m) ?endcaps ~slices:(`Flat s) [ a; b ]

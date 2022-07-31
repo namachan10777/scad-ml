@@ -250,10 +250,11 @@ val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> MultMatrix.t
    case), but fail in others. For instance, [euler] can generate an abrupt when
    the path tangent is exactly vertical.
 
-   If provided, [scale] and [twist], specify scaling and rotation to be linearly
-   applied to along the path, analogous to the parameters of the same names in
-   {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters
-   that enable eased transitions (see {!scaler} and {!twister}). *)
+   If provided, [scale] and [twist], specify scaling and rotation to be applied
+   to along the path increasing up to the provided value by the end, analogous
+   to the parameters of the same names in {!Scad.linear_extrude}, but with the
+   added wrinkle of the [_ez] parameters that enable eased transitions (see
+   {!scaler} and {!twister}). *)
 val to_transforms
   :  ?euler:bool
   -> ?scale_ez:Vec2.t * Vec2.t

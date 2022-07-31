@@ -577,7 +577,7 @@ let linear_morph
     ?merge
     ?winding
     ?fa
-    ?slices
+    ?(slices = 10)
     ?scale_ez
     ?twist_ez
     ?scale
@@ -598,7 +598,7 @@ let linear_morph
     ?merge
     ?winding
     ?fa
-    ?slices
+    ~slices
     ?scale_ez
     ?twist_ez
     ?scale
