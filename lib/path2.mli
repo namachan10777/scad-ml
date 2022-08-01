@@ -34,6 +34,19 @@ val nearby_points
   -> Vec2.t
   -> Vec2.t list
 
+(** [closest_tangent ?closed ?offset ~line t]
+
+    Find the tangent segment (and its index) on the curved path [t] closest to [line]
+    after [offset] (default = [Vec2.zero]) is applied to the points of [t] (can
+    be used to centre the path relative to [line] to help in choosing the
+    desired tangent). *)
+val closest_tangent
+  :  ?closed:bool
+  -> ?offset:Vec2.t
+  -> line:Vec2.line
+  -> t
+  -> int * Vec2.line
+
 (** {1 Creation and 2d-3d conversion} *)
 
 (** [of_tups ps]

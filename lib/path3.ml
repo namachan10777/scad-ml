@@ -1,5 +1,6 @@
 open Vec
 include Path.Make (Vec3)
+include Path.Search (Vec3) (BallTree3) (Path.LineAngle3)
 include Arc3
 include Rounding.Make (Vec3) (Arc3)
 module Bez2 = Bezier.Make (Vec2)
@@ -224,13 +225,13 @@ let coplanar ?eps t =
   | Invalid_argument _ -> false
 
 let to_plane ?eps = function
-  | []              -> invalid_arg "Empty path cannot be converted to plane."
   | [ p0; p1; p2 ]  -> Plane.make p0 p1 p2
   | point :: _ as t ->
     let plane = Plane.of_normal ~point (normal t) in
     if Plane.are_points_on ?eps plane t
     then plane
     else invalid_arg "Path is not coplanar."
+  | _               -> invalid_arg "Path must contain at least 3 points to define a plane."
 
 let project plane = to_path2 ~plane
 
@@ -260,58 +261,39 @@ let area ?(signed = false) = function
     let area, _ = List.fold_left f (0., p1) tl in
     if signed then area else Float.abs area
 
-let nearby_idxs ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
-  if List.length path < min_tree_size
-  then
-    fun target ->
-    let g (i, idxs) p =
-      if Vec3.approx ~eps:radius p target then i + 1, i :: idxs else i + 1, idxs
-    in
-    snd @@ List.fold_left g (0, []) path
-  else (
-    let tree = BallTree3.make path in
-    BallTree3.search_idxs ~radius tree )
-
-let nearby_points ?(min_tree_size = 400) ?(radius = Util.epsilon) path =
-  if List.length path < min_tree_size
-  then fun target -> List.filter (fun p -> Vec3.approx ~eps:radius p target) path
-  else (
-    let tree = BallTree3.make path in
-    BallTree3.search_points ~radius tree )
-
-let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve =
-  match curve with
-  | [] | [ _ ]     -> invalid_arg "Curved path has too few points."
-  | p0 :: p1 :: tl ->
-    let angle_sign tangent =
-      let plane = Plane.make line.Vec3.a line.b tangent.Vec3.b in
-      Float.sign_bit @@ Plane.line_angle plane tangent
-    in
-    let f (i, min_cross, nearest_tangent, last_sign, last_tangent) p =
-      let tangent = Vec3.{ a = last_tangent.b; b = p } in
-      let sign = angle_sign tangent in
-      if not (Bool.equal sign last_sign)
-      then (
-        let zero_cross = Vec3.distance_to_line ~line (Vec3.add last_tangent.b offset) in
-        if zero_cross < min_cross
-        then i + 1, zero_cross, Some (i - 1, last_tangent), sign, tangent
-        else i + 1, min_cross, nearest_tangent, sign, tangent )
-      else i + 1, min_cross, nearest_tangent, sign, tangent
-    in
-    let ((_, _, nearest_tangent, _, _) as acc) =
-      let tangent = Vec3.{ a = p0; b = p1 } in
-      List.fold_left f (1, Float.max_float, None, angle_sign tangent, tangent) tl
-    in
-    let tangent =
-      if closed
-      then (
-        let _, _, nearest_tangent, _, _ = f acc p0 in
-        nearest_tangent )
-      else nearest_tangent
-    in
-    ( match tangent with
-    | Some tangent -> tangent
-    | None         -> failwith "No appropriate tangent points found." )
+(* let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve = *)
+(*   match curve with *)
+(*   | [] | [ _ ]     -> invalid_arg "Curved path has too few points." *)
+(*   | p0 :: p1 :: tl -> *)
+(*     let angle_sign tangent = *)
+(*       let plane = Plane.make line.Vec3.a line.b tangent.Vec3.b in *)
+(*       Float.sign_bit @@ Plane.line_angle plane tangent *)
+(*     in *)
+(*     let f (i, min_cross, nearest_tangent, last_sign, last_tangent) p = *)
+(*       let tangent = Vec3.{ a = last_tangent.b; b = p } in *)
+(*       let sign = angle_sign tangent in *)
+(*       if not (Bool.equal sign last_sign) *)
+(*       then ( *)
+(*         let zero_cross = Vec3.distance_to_line ~line (Vec3.add last_tangent.b offset) in *)
+(*         if zero_cross < min_cross *)
+(*         then i + 1, zero_cross, Some (i - 1, last_tangent), sign, tangent *)
+(*         else i + 1, min_cross, nearest_tangent, sign, tangent ) *)
+(*       else i + 1, min_cross, nearest_tangent, sign, tangent *)
+(*     in *)
+(*     let ((_, _, nearest_tangent, _, _) as acc) = *)
+(*       let tangent = Vec3.{ a = p0; b = p1 } in *)
+(*       List.fold_left f (1, Float.max_float, None, angle_sign tangent, tangent) tl *)
+(*     in *)
+(*     let tangent = *)
+(*       if closed *)
+(*       then ( *)
+(*         let _, _, nearest_tangent, _, _ = f acc p0 in *)
+(*         nearest_tangent ) *)
+(*       else nearest_tangent *)
+(*     in *)
+(*     ( match tangent with *)
+(*     | Some tangent -> tangent *)
+(*     | None         -> failwith "No appropriate tangent points found." ) *)
 
 let translate p = List.map (Vec3.translate p)
 let rotate r = List.map (Vec3.rotate r)
