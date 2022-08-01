@@ -1,5 +1,3 @@
-module Bez = Bezier.Make (Vec3)
-
 type resampler =
   [ `Direct of [ `ByLen | `BySeg ]
   | `Reindex of [ `ByLen | `BySeg ]
