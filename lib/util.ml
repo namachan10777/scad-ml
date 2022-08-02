@@ -225,3 +225,17 @@ let helical_fragments ?fn ?(fa = fa) ?(fs = fs) radius =
   | Some n -> Int.max 3 n
   | None   ->
     Float.(to_int @@ max (ceil @@ min (2. *. pi /. fa) (radius *. pi *. 2. /. fs)) 5.)
+
+let getter ~len ~name = function
+  | `Flat n -> Fun.const n
+  | `Mix l  ->
+    let a = Array.of_list l in
+    if Array.length a <> len
+    then
+      invalid_arg
+      @@ Printf.sprintf
+           "`Mix %s entries (%i) do not match the number of transitions (%i)"
+           name
+           (Array.length a)
+           len;
+    Array.get a

@@ -1,4 +1,60 @@
-include Skin0
+type resampler =
+  [ `Direct of [ `ByLen | `BySeg ]
+  | `Reindex of [ `ByLen | `BySeg ]
+  ]
+
+type duplicator =
+  [ `Distance
+  | `FastDistance
+  | `Tangent
+  ]
+
+type mapping =
+  [ resampler
+  | duplicator
+  ]
+
+let is_direct = function
+  | `Direct _ -> true
+  | _         -> false
+
+let is_resampler = function
+  | `Direct _ | `Reindex _ -> true
+  | _                      -> false
+
+let is_duplicator = function
+  | `Distance | `FastDistance | `Tangent -> true
+  | _ -> false
+
+let linear_transition ~fn ~init a b =
+  let step = 1. /. Float.of_int fn
+  and lerps =
+    try List.map2 Vec3.lerp a b with
+    | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
+  in
+  let f j acc =
+    let u = Float.of_int j *. step in
+    List.map (fun lerp -> lerp u) lerps :: acc
+  in
+  Util.fold_init fn f init
+
+let slice_profiles ?(looped = false) ~slices = function
+  | [] | [ _ ]        -> invalid_arg "Too few profiles to slice."
+  | hd :: tl as profs ->
+    let len = List.length profs in
+    let get_slices =
+      Util.getter ~len:(len - if looped then 0 else 1) ~name:"slice" slices
+    in
+    let f (init, last, i) next =
+      let acc = linear_transition ~fn:(get_slices i + 1) ~init last next in
+      acc, next, i + 1
+    in
+    let profiles, last, i = List.fold_left f ([], hd, 0) tl in
+    if looped
+    then (
+      let profiles, _, _ = f (profiles, last, i) hd in
+      List.rev profiles )
+    else List.rev (last :: profiles)
 
 let skin
     ?(style = `MinEdge)
@@ -21,7 +77,7 @@ let skin
     and profs = Array.of_list profs in
     let n_profs = Array.length profs in
     let n_transitions = n_profs - if looped then 0 else 1 in
-    let get_mapping = getter ~len:n_transitions ~name:"mapping" mapping
+    let get_mapping = Util.getter ~len:n_transitions ~name:"mapping" mapping
     and n =
       let max = Array.fold_left (fun mx l -> Int.max (List.length l) mx) 0 profs in
       Util.value_map_opt ~default:max (fun r -> r * max) refine
@@ -63,7 +119,7 @@ let skin
         in
         1, [ slice_profiles ~looped:false ~slices fixed ] )
       else (
-        let get_slices = getter ~len:n_transitions ~name:"slices" slices in
+        let get_slices = Util.getter ~len:n_transitions ~name:"slices" slices in
         (* This is likely to change, but it is my attempt to support having
               sampling method on a per resampler basis, while also navigating the
               transitions between resamplers and duplicators. It may not really be possible
@@ -92,9 +148,10 @@ let skin
             match get_mapping i with
             | `Direct _     -> [ up.(i); up.(j) ]
             | `Reindex _    -> [ up.(i); Path3.reindex_polygon up.(i) up.(j) ]
-            | `Distance     -> upsample_dups @@ distance_match profs.(i) profs.(j)
-            | `FastDistance -> upsample_dups @@ aligned_distance_match profs.(i) profs.(j)
-            | `Tangent      -> upsample_dups @@ tangent_match profs.(i) profs.(j)
+            | `Distance     -> upsample_dups @@ Path3.distance_match profs.(i) profs.(j)
+            | `FastDistance ->
+              upsample_dups @@ Path3.aligned_distance_match profs.(i) profs.(j)
+            | `Tangent      -> upsample_dups @@ Path3.tangent_match profs.(i) profs.(j)
           in
           slice_profiles ~slices:(`Flat (get_slices i)) pair :: acc
         in

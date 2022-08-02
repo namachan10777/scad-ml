@@ -1,37 +1,52 @@
-type resampler =
-  [ `Direct of [ `ByLen | `BySeg ]
-  | `Reindex of [ `ByLen | `BySeg ]
-  ]
-
-type duplicator =
-  [ `Distance
-  | `FastDistance
-  | `Tangent
-  ]
-
-type mapping =
-  [ resampler
-  | duplicator
-  ]
-
-let is_direct = function
-  | `Direct _ -> true
-  | _         -> false
-
-let is_resampler : [ resampler | duplicator ] -> bool = function
-  | `Direct _ | `Reindex _ -> true
-  | _                      -> false
-
-let is_duplicator : [ resampler | duplicator ] -> bool = function
-  | `Distance | `FastDistance | `Tangent -> true
-  | _ -> false
-
 module type CUTPOINT_DEPS = sig
   type vec
   type line
 
   val centroid : ?eps:float -> vec list -> vec
   val closest_tangent : ?closed:bool -> ?offset:vec -> line:line -> vec list -> int * line
+end
+
+module type S = sig
+  type vec
+
+  (** [distance_match a b]
+
+       If the closed polygonal paths [a] and [b] have incommensurate lengths,
+       points on the smaller path are duplicated and the larger path is shifted
+       (list rotated) in such a way that the total length of the edges between the
+       associated vertices (same index/position) is minimized. The replacement
+       paths, now having the same lengths, are returned as a pair (with the same
+       order). This algorithm generally produces a good result when both [a] and [b]
+       are discrete profiles with a small number of vertices.
+
+       This is computationally intensive ( {b O(N{^ 3})} ), if the profiles are
+       already known to be lined up, with their zeroth indices corresponding,
+       then {!aligned_distance_match} provides a ( {b O(N{^ 2})} ) solution. *)
+  val distance_match : vec list -> vec list -> vec list * vec list
+
+  (** [aligned_distance_match a b]
+
+       Like {!distance_match}, but the paths [a] and [b] are assumed to already
+       be "lined up", with the zeroth indices in each corresponding to one
+       another. *)
+  val aligned_distance_match : vec list -> vec list -> vec list * vec list
+
+  (** [tangent_match a b]
+
+       If the closed polygonal paths [a] and [b] have incommensurate lengths,
+       points on the larger (ideally convex, curved) path are grouped by
+       association of their tangents with the edges of the smaller (ideally
+       discrete) polygonal path. The points of the smaller path are then
+       duplicated to associate with their corresponding spans of tangents on the
+       curve, and the larger path is rotated to line up the indices. The
+       profiles, now having the same length are returned as a pair in the order
+       that they were applied returned.
+
+       This algorithm generally produces good results when connecting a discrete
+       polygon to a {i convex} finely sampled curve. It may fail if the curved
+       profile is non-convex, or doesn't have enough points to distinguish all of
+       the tangent points from each other. *)
+  val tangent_match : vec list -> vec list -> vec list * vec list
 end
 
 module Make (V : Vec.S) (P : CUTPOINT_DEPS with type vec := V.t and type line := V.line) =

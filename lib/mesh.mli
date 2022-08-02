@@ -1,8 +1,8 @@
 (** Generation, and manipulation of 3-dimensional meshes (points and faces)
     that can be mapped into {!Scad.d3} as polyhedrons.
 
-    This data type (and its constructors / transformers) is largely a port
-    of the {{:https://github.com/revarbat/BOSL2/blob/master/vnf.scad} vnf
+    This data type and its constructors / transformers is based on the
+    the {{:https://github.com/revarbat/BOSL2/blob/master/vnf.scad} vnf
     structure module} of
     the {{:https://github.com/revarbat/BOSL2/} BOSL2 OpenSCAD library}. *)
 
@@ -13,24 +13,7 @@ type t = Mesh0.t = private
   ; faces : int list list
   }
 
-(** Describes desired row wrapping behaviour in {!of_rows}, which creates a
-    mesh from rows of points. *)
-type endcaps =
-  [ `Loop (** last/top row wrapped to the first/bottom *)
-  | `Both (** both bottom and top rows are closed with flat faces *)
-  | `None (** neither top or bottom rows are closed with a face *)
-  | `Top (** a face is generated to close the top row with itself *)
-  | `Bot (** a face is generated to close the bottom row with itself *)
-  ]
-
-type style =
-  [ `Default
-  | `Alt
-  | `MinEdge
-  | `Quincunx
-  | `Convex
-  | `Concave
-  ]
+(** {1 Basic Constructors }*)
 
 (** [empty]
 
@@ -42,6 +25,28 @@ val empty : t
     Create a mesh [t] from a list of {!Vec3.t} [points], and a list of [faces]
     described by indices into [points]. *)
 val make : points:Vec3.t list -> faces:int list list -> t
+
+(** {1 Low-level Generators} *)
+
+(** Describes desired row wrapping behaviour in {!of_rows}, which creates a
+    mesh from rows of points. *)
+type endcaps =
+  [ `Loop (** Last/top row wrapped to the first/bottom *)
+  | `Both (** Both bottom and top rows are closed with flat faces *)
+  | `None (** Neither top or bottom rows are closed with a face *)
+  | `Top (** A face is generated to close the top row with itself *)
+  | `Bot (** A face is generated to close the bottom row with itself *)
+  ]
+
+(** Quadrilateral face triangulation strategy. *)
+type style =
+  [ `Default
+  | `Alt
+  | `MinEdge
+  | `Quincunx
+  | `Convex
+  | `Concave
+  ]
 
 (** [of_rows ?rev ?endcaps ?col_wrap ?style rows]
 
@@ -137,6 +142,118 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
 
     Create a polyhedron mesh from a list of polygonal point faces. *)
 val of_polygons : Path3.t list -> t
+
+(** {1 Skins}
+
+    Functions for generating meshes which cover over a sequence of closed
+    polygonal {!Path3.t} profiles. Ported from the
+    {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad} skin} module of
+    the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
+
+(** Path resampling vertex mapping strategies.
+
+    Each of these variants specify that profiles of incommensurate length should
+    simply resampled with {!Path3.subdivide} with the provided point distribution
+    frequency strategy ([[`ByLen | `BySeg]]). In the case of [`Direct _], the
+    profiles are assumed to be "lined up", with the points at their zeroth indices
+    corresponding to eachother. The [`Reindex _] strategy will rotate the
+    second profile of a pair via {!Path3.reindex_polygon} following resampling
+    to minimize the distance between the zeroth indices of the two paths. *)
+type resampler =
+  [ `Direct of [ `ByLen | `BySeg ]
+  | `Reindex of [ `ByLen | `BySeg ]
+  ]
+
+(** Point duplicating vertex mapping strategies.
+
+    Each of these variants specify profiles of incommensurate length should be
+    matched up by computing vertex mappings between the profiles, and
+    duplicating vertices on the smaller/shorter profile until the point counts are
+    equalized. See the conspicuously named vertex matching functions
+    {!Path3.distance_match}, {!Path3.aligned_distance_match}, and
+    {!Path3.tangent_match} for more details (also available in the {!Path2}
+    module). *)
+type duplicator =
+  [ `Distance
+    (** Minimize the length of the edges between associated vertices. Best
+        results when connecting discrete polygon profiles with low point counts. *)
+  | `FastDistance
+    (** Like [`Distance], but profiles are assumed to already be
+          lined up, with their zeroth indices corresponding to one another. *)
+  | `Tangent
+    (** Split finely sampled (convex) curve into groups of points, and
+          map each group to point on the smaller discrete polygon. Can fail if
+          the larger curved path is non-convex, or does not have enough points. *)
+  ]
+
+(** Vertex count matching strategy specification type. *)
+type mapping =
+  [ resampler
+  | duplicator
+  ]
+
+(** [slice_profiles ?looped ~slices profiles]
+
+    Linearly transition between each neighbouring pair of closed paths in
+    [profiles] to produce new interpolated list of profiles. The number of
+    [slices] inserted between can either be the same between each pair
+    ([`Flat n]), or specified separately with [`Mix ns]. If [looped] is [true],
+    then slices will also be inserted between the last and initial profiles
+    (default is [false]). Lists of profiles such as these can be used to produce
+    meshes with {!of_rows} (as {!skin} does).
+
+    Raises [Invalid_argument] if the length of [`Mix ns] does not correspond to
+    the number of transitions, or if [profiles] has fewer than two elements. *)
+val slice_profiles
+  :  ?looped:bool
+  -> slices:[< `Flat of int | `Mix of int list ]
+  -> Path3.t list
+  -> Path3.t list
+
+(** [skin ?style ?endcaps ?refine ?mapping ~slices profiles]
+
+    Produce mesh that skins over two or more 3d [profiles] -- closed, ideally
+    coplanar (though some slight variation can be ok) paths. This works by
+    linearly interpolating between neighbouring profiles with [slices] steps,
+    and passing the profiles along to {!of_rows}, which generates faces to
+    enclose the shape. For this to be well defined, each row must have the same
+    length, thus [mapping] can be used to specify the strategy used to
+    map/associate the vertices between them and reconcile the point counts and
+    improve alignment for their connecting edges (see {!resampler} and
+    {!duplicator} configuration variants). By default this is [`Direct], which
+    simply applies resampling without altering the vertex associations
+    established by the start indices of each profile.
+
+    - [refine] can be specified to apply additional upsampling which may help
+      to improve the smoothness of the resulting mesh. Uses {!Path3.subdivide}
+      with the sampling frequency indicated for {!resampler} mapped transitions,
+      and [`BySeg] for {!duplicator}s.
+    - [slices] and [mapping] can be provided as [`Flat _] to be applied to all
+      transitions, or as [`Mix l], where [l] is a list with length equal to the
+      number of profile transitions ([length profiles - 1], or [length profiles]
+      if [endcaps] is [`Loop]) *)
+val skin
+  :  ?style:style
+  -> ?endcaps:endcaps
+  -> ?refine:int
+  -> ?mapping:[ `Flat of mapping | `Mix of mapping list ]
+  -> slices:[< `Flat of int | `Mix of int list ]
+  -> Path3.t list
+  -> t
+
+(** [skin_between ?style ?endcaps ?refine ?mapping ~slices a b]
+
+    Create a mesh that {i skins} over a linear interpolation/morph  between 3d
+    profiles [a] and [b] over [slices] steps. See {!skin} for more details. *)
+val skin_between
+  :  ?style:style
+  -> ?endcaps:[ `Both | `None | `Top | `Bot ]
+  -> ?refine:int
+  -> ?mapping:mapping
+  -> slices:int
+  -> Path3.t
+  -> Path3.t
+  -> t
 
 (** {1 Sweeps, extrusions, and morphs with roundovers}
 
@@ -401,7 +518,7 @@ val helix_extrude
 (** {2 Morphing sweeps and extrusions}
 
     These functions serve as the morphing counterparts of the fixed polygon
-    sweeping functions above. In contrast to the more general {!Skin.skin} which
+    sweeping functions above. In contrast to the more general {!skin} which
     transitions between 3d {!Path3.t} profiles in sequence, these restrict the
     bounding shapes to 2d, and lift to 3d via the provided transforms, or path
     specifications. This separation of the morphing transition and spatial
@@ -414,7 +531,7 @@ val helix_extrude
     Morph between the polygons [a] and [b] while sweeping the hybrids along
     [transforms] to create a mesh. The [outer_map], [hole_map], and [refine]
     correspond to the the similarly named parameters of the more general
-    {!Skin.skin}, while the optional [ez] parameter allows the transition to be
+    {!skin}, while the optional [ez] parameter allows the transition to be
     bezier eased via {!Easing.make}, rather than strictly linearly. See {!sweep}
     for details on the remaining common parameters. *)
 val morph
@@ -423,8 +540,8 @@ val morph
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
-  -> ?outer_map:Skin.mapping
-  -> ?hole_map:[ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
+  -> ?outer_map:mapping
+  -> ?hole_map:[ `Same | `Flat of mapping | `Mix of mapping list ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
   -> transforms:MultMatrix.t list
@@ -450,8 +567,8 @@ val linear_morph
   -> ?twist:float
   -> ?center:bool
   -> ?caps:Cap.caps
-  -> ?outer_map:Skin.mapping
-  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?outer_map:mapping
+  -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
   -> height:float
@@ -470,8 +587,8 @@ val path_morph
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
-  -> ?outer_map:Skin.mapping
-  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?outer_map:mapping
+  -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
   -> ?euler:bool
@@ -502,8 +619,8 @@ val helix_morph
   -> ?scale:Vec2.t
   -> ?twist:float
   -> ?caps:Cap.caps
-  -> ?outer_map:Skin.mapping
-  -> ?hole_map:[ `Flat of Skin.mapping | `Mix of Skin.mapping list | `Same ]
+  -> ?outer_map:mapping
+  -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
   -> ?left:bool
@@ -604,7 +721,7 @@ val prism
   -> ?outer:Prism.spec
   -> Poly3.t
   -> Poly3.t
-  -> Mesh0.t
+  -> t
 
 (** [linear_prism ?debug ?fn ?holes ?outer ?center ~height bottom]
 
@@ -620,7 +737,7 @@ val linear_prism
   -> ?center:bool
   -> height:float
   -> Poly2.t
-  -> Mesh0.t
+  -> t
 
 (** {1 Function Plotting}
 

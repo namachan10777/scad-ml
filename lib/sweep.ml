@@ -224,8 +224,8 @@ let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
 type poly_morph =
   | Fixed of Poly2.t
   | Morph of
-      { outer_map : Skin0.mapping
-      ; hole_map : [ `Same | `Flat of Skin0.mapping | `Mix of Skin0.mapping list ]
+      { outer_map : Skin.mapping
+      ; hole_map : [ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
       ; refine : int option
       ; ez : (Vec2.t * Vec2.t) option
       ; a : Poly2.t
@@ -302,11 +302,11 @@ let sweep'
       | `Fixed shape               ->
         let shape = Mesh0.enforce_winding winding shape in
         let len = List.length shape in
-        Fun.const (Path3.of_path2 shape), shape, len, shape, len
+        Fun.const shape, shape, len, shape, len
       | `Morph (mapping, bot, top) ->
         if n_trans < 2 then invalid_arg "More than one transform is required for morphs.";
-        let a = Path3.of_path2 @@ Mesh0.enforce_winding winding bot
-        and b = Path3.of_path2 @@ Mesh0.enforce_winding winding top in
+        let a = Mesh0.enforce_winding winding bot
+        and b = Mesh0.enforce_winding winding top in
         let len_a = List.length a
         and len_b = List.length b
         and refine = Option.value ~default:1 refine in
@@ -319,7 +319,7 @@ let sweep'
           in
           let f len path =
             if len <> n
-            then Path3.subdivide ~closed:true ~freq:(`N (n, samp)) path
+            then Path2.subdivide ~closed:true ~freq:(`N (n, samp)) path
             else path
           in
           fun (a, b) -> f len_a a, f len_b b
@@ -328,13 +328,10 @@ let sweep'
           match mapping with
           | `Direct _ | `Reindex _ ->
             let a, b = resample (a, b) in
-            if Skin0.is_direct mapping then a, b else a, Path3.reindex_polygon a b
-          | `Distance              -> resample @@ Skin0.distance_match a b
-          | `FastDistance          -> resample @@ Skin0.aligned_distance_match a b
-          | `Tangent               ->
-            (* paths cannot be in plane with eachother for tangent mapping *)
-            let a, b = Skin0.tangent_match a (Path3.translate (v3 0. 0. 1.) b) in
-            resample (a, List.map (fun { x; y; z = _ } -> v3 x y 0.) b)
+            if Skin.is_direct mapping then a, b else a, Path2.reindex_polygon a b
+          | `Distance              -> resample @@ Path2.distance_match a b
+          | `FastDistance          -> resample @@ Path2.aligned_distance_match a b
+          | `Tangent               -> resample @@ Path2.tangent_match a b
         in
         let prog =
           match progress with
@@ -366,14 +363,14 @@ let sweep'
           let ez =
             Util.value_map_opt ~default:Fun.id (fun (p1, p2) -> Easing.make p1 p2) ez
           in
-          fun i -> List.map2 (fun a b -> Vec3.lerp a b (ez @@ prog i)) a b
+          fun i -> List.map2 (fun a b -> Vec2.lerp a b (ez @@ prog i)) a b
         and bot, len_bot, top, len_top =
           (* use the original shapes for caps if there has been point duplication *)
-          if Skin0.is_duplicator mapping
+          if Skin.is_duplicator mapping
           then bot, len_a, top, len_b
           else (
             let len = Int.max len_a len_b * refine in
-            Path2.of_path3 a, len, Path2.of_path3 b, len )
+            a, len, b, len )
         in
         transition, bot, len_bot, top, len_top
     in
@@ -409,7 +406,15 @@ let sweep'
       bot_lid, top_lid, Mesh0.join [ bot; top ]
     | hd :: tl ->
       let _, mid, last_transform =
-        let f (i, acc, _last) m = i + 1, Path3.multmatrix m (get_shape i) :: acc, m in
+        (* let f (i, acc, _last) m = i + 1, Path3.multmatrix m (get_shape i) :: acc, m in *)
+        let f (i, acc, _last) m =
+          ( i + 1
+          , List.map
+              (fun { x; y } -> MultMatrix.transform m { x; y; z = 0. })
+              (get_shape i)
+            :: acc
+          , m )
+        in
         List.fold_left f (f (0, [], hd) hd) tl
       in
       let mid = Mesh0.of_rows ?style ~endcaps:`None (List.rev mid)

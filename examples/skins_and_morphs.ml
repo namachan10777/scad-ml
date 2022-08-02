@@ -30,7 +30,7 @@ let () =
     |> Path3.translate (v3 0. 0. (-1.))
   in
   ignore [ sq; circ; ellipse; rect; circ2; ellipse2; sq2 ];
-  Skin.skin
+  Mesh.skin
     ~refine:2
     ~endcaps:`Loop (* ~endcaps:`Bot *)
     ~slices:(`Flat 35)
@@ -70,12 +70,12 @@ let () =
 (*     v3 4. 0. 0. :: Path3.square ~center:true (v2 10. 10.) *)
 (*     |> Path3.translate (v3 30. 30. 10.) *)
 (*   in *)
-(*   Skin.skin ~refine:2 ~slices:(`Flat 25) ~spec:(`Flat `Tangent) [ rounded; sq ] *)
+(*   Mesh.skin ~refine:2 ~slices:(`Flat 25) ~spec:(`Flat `Tangent) [ rounded; sq ] *)
 (*   |> Mesh.to_scad *)
 (*   |> Scad.to_file "tangent_skin_test.scad" *)
 
 let () =
-  Skin.skin
+  Mesh.skin
     ~refine:2
     ~slices:(`Flat 25)
     ~mapping:(`Flat `Tangent)
@@ -106,7 +106,7 @@ let () =
   and b = Poly2.ring ~fn:80 ~thickness:(v2 2. 2.) (v2 4. 4.) in
   Mesh.path_morph ~caps ~path ~outer_map:`Tangent a b
   |> Mesh.to_scad
-  |> fun s -> Scad.union [ s; Scad.sphere 2. ] |> Scad.to_file "tangent_morph_test.scad"
+  |> fun s -> Scad.union [ s; Scad.sphere 2.5 ] |> Scad.to_file "tangent_morph_test.scad"
 
 let () =
   Mesh.linear_morph
@@ -114,7 +114,7 @@ let () =
     ~ez:(v2 0.42 0., v2 1. 1.)
     ~slices:60
     ~outer_map:`Tangent
-    ~height:5.
+    ~height:3.
     (Poly2.circle ~fn:5 4.)
     (Poly2.circle ~fn:80 0.5)
   |> Mesh.to_scad

@@ -1,6 +1,6 @@
 open Vec
 include Path.Make (Vec3)
-include Path.Search (Vec3) (BallTree3) (Path.LineAngle3)
+include PathSearch.Make (Vec3) (BallTree3) (PathSearch.TangentSign3)
 include Arc3
 include Rounding.Make (Vec3) (Arc3)
 module Bez2 = Bezier.Make (Vec2)
@@ -261,6 +261,13 @@ let area ?(signed = false) = function
     let area, _ = List.fold_left f (0., p1) tl in
     if signed then area else Float.abs area
 
+include
+  PathMatch.Make
+    (Vec3)
+    (struct
+      let centroid = centroid
+      let closest_tangent = closest_tangent
+    end)
 (* let closest_tangent ?(closed = true) ?(offset = Vec3.zero) ~line curve = *)
 (*   match curve with *)
 (*   | [] | [ _ ]     -> invalid_arg "Curved path has too few points." *)

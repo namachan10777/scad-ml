@@ -3,6 +3,8 @@
 
 include Path.S with type vec := Vec2.t and type line := Vec2.line
 
+(** {1 Search} *)
+
 (** [nearby_idxs ?min_tree_size ?radius path p]
 
     Find the indices of points within [radius] (default = [1e-9]) distance from
@@ -264,6 +266,18 @@ val point_inside
   -> t
   -> Vec2.t
   -> [> `Inside | `OnBorder | `Outside ]
+
+(** {1 Path Matching / Vertex Association}
+
+  Point duplicating strategies for associating vertices between incommensurate
+  closed polygonal paths/profiles. Primarily for use in conjunction with
+  {!Mesh.skin} and {!Mesh.morph}, where commensurate profiles are required to
+  draw edges between.
+
+  Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
+  skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
+
+include PathMatch.S with type vec := Vec2.t
 
 (** {1 Basic Transfomations} *)
 

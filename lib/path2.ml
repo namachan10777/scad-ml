@@ -1,6 +1,6 @@
 open Vec
 include Path.Make (Vec2)
-include Path.Search (Vec2) (BallTree2) (Path.LineAngle2)
+include PathSearch.Make (Vec2) (BallTree2) (PathSearch.TangentSign2)
 include Arc2
 include Rounding.Make (Vec2) (Arc2)
 
@@ -103,6 +103,14 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
         else crossings
       in
       if (2 * (List.fold_left f 0 segs mod 2)) - 1 > 0 then `Inside else `Outside ) )
+
+include
+  PathMatch.Make
+    (Vec2)
+    (struct
+      let centroid = centroid
+      let closest_tangent = closest_tangent
+    end)
 
 let offset = Offset.offset
 let lift plane = to_path3 ~plane

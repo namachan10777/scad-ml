@@ -4,6 +4,8 @@
 
 include Path.S with type vec := Vec3.t and type line := Vec3.line
 
+(** {1 Search} *)
+
 (** [nearby_idxs ?min_tree_size ?radius path p]
 
     Find the indices of points within [radius] (default = [1e-9]) distance from
@@ -285,6 +287,18 @@ val helical_transforms
   -> ?r2:float
   -> float
   -> MultMatrix.t list
+
+(** {1 Path Matching / Vertex Association}
+
+  Point duplicating strategies for associating vertices between incommensurate
+  closed polygonal paths/profiles. Primarily for use in conjunction with
+  {!Mesh.skin} and {!Mesh.morph}, where commensurate profiles are required to
+  draw edges between.
+
+  Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
+  skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
+
+include PathMatch.S with type vec := Vec3.t
 
 (** {1 Basic Transfomations} *)
 
