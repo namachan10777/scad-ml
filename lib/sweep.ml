@@ -365,9 +365,15 @@ let sweep'
           in
           fun i -> List.map2 (fun a b -> Vec2.lerp a b (ez @@ prog i)) a b
         and bot, len_bot, top, len_top =
-          (* use the original shapes for caps if there has been point duplication *)
+          (* use the original shapes for caps if there has been point
+                 duplication as repeated points will cause offset to fail (rounded caps) *)
           if Skin.is_duplicator mapping
-          then bot, len_a, top, len_b
+          then
+            if refine > 1
+            then (
+              let sd = Path2.subdivide ~closed:true ~freq:(`Refine (refine, `BySeg)) in
+              sd bot, len_a * refine, sd top, len_b * refine )
+            else bot, len_a, top, len_b
           else (
             let len = Int.max len_a len_b * refine in
             a, len, b, len )
@@ -406,7 +412,6 @@ let sweep'
       bot_lid, top_lid, Mesh0.join [ bot; top ]
     | hd :: tl ->
       let _, mid, last_transform =
-        (* let f (i, acc, _last) m = i + 1, Path3.multmatrix m (get_shape i) :: acc, m in *)
         let f (i, acc, _last) m =
           ( i + 1
           , List.map

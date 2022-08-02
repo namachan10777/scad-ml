@@ -119,10 +119,10 @@ val arc
 (** [arc_about_centre ?rev ?fn ?fa ?fs ?dir ?wedge ~centre p1 p2]
 
     Draw an arc between the points [p1] and [p2], about [centre]. [dir] can be
-   provided to enforce clockwise or counter-clockwise winding direction. By
-   default, the direction is computed automatically, though if [centre], [p1],
-   and [p2] do not form a valid triangle (they're collinear), an
-   [Invalid_argument] exception will be raised if [dir] is not provided.
+    provided to enforce clockwise or counter-clockwise winding direction. By
+    default, the direction is computed automatically, though if [centre], [p1],
+    and [p2] do not form a valid triangle (they're collinear), an
+    [Invalid_argument] exception will be raised if [dir] is not provided.
 
     - See {!arc} for notes on [rev] and [wedge]. *)
 val arc_about_centre
