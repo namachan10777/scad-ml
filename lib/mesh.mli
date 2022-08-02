@@ -15,9 +15,7 @@ type t = Mesh0.t = private
 
 (** {1 Basic Constructors }*)
 
-(** [empty]
-
-    An empty [t], with no points. *)
+(** An empty [t], with no points. *)
 val empty : t
 
 (** [make ~points ~faces]

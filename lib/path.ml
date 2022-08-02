@@ -56,14 +56,25 @@ module type S = sig
     -> vec list
     -> vec list
 
-  (** [split ?closed ~distance path]
+  (** [cut ?closed ~distances path]
 
-      Split [path] into two at the position [distance] ([`Abs]olute or
-      [`Rel]ative) along [path] from the start. If [closed] is [true], the segment
+      Cut [path] at a list of increasing [distances] ([`Abs]olute or
+      [`Rel]ative) along it from the start. If [closed] is [true], the segment
       between the end and beginning of [path] will be considered, and the first
       point will be the last of the second path returned. Negative [`Abs distance]
       will start from the end to find the split point. Raises [Invalid_argument] if
       [distance] is an endpoint, or further than the end of the [path]. *)
+  val cut
+    :  ?closed:bool
+    -> distances:[ `Abs of float list | `Rel of float list ]
+    -> t
+    -> t list
+
+  (** [split ?closed ~distance path]
+
+      Split [path] into two at the position [distance] ([`Abs]olute or
+      [`Rel]ative) along [path] from the start. Otherwise the behaviour is the
+      same as {!cut}. *)
   val split : ?closed:bool -> distance:[ `Abs of float | `Rel of float ] -> t -> t * t
 
   (** [noncollinear_triple ?eps path]
@@ -145,6 +156,7 @@ module type S' = sig
   include S
 
   val length' : ?closed:bool -> vec array -> float
+  val cummulative_length' : ?closed:bool -> vec array -> float array
   val prune_collinear' : vec array -> vec array
 end
 
@@ -183,6 +195,18 @@ module Make (V : Vec.S) = struct
       if closed
       then List.rev ((sum +. V.distance last hd) :: travels)
       else List.rev travels
+
+  let cummulative_length' ?(closed = false) path =
+    let len = Array.length path in
+    let n = len + if closed then 1 else 0 in
+    if len < 1
+    then [||]
+    else (
+      let travels = Array.make n 0. in
+      for i = 1 to n - 1 do
+        travels.(i) <- travels.(i - 1) +. V.distance path.(i - 1) path.(i mod len)
+      done;
+      travels )
 
   let segment_lengths ?(closed = false) = function
     | []       -> []
@@ -294,44 +318,76 @@ module Make (V : Vec.S) = struct
         let last, ps = List.fold_left f ((0, hd), []) tl in
         List.rev @@ if closed then snd @@ f (last, ps) hd else snd last :: ps )
 
-  let split ?(closed = false) ~distance = function
-    | [] | [ _ ]      -> invalid_arg "Path must have more than one point to be split"
-    | hd :: _ as path ->
-      let travels = Array.of_list (cummulative_length ~closed path)
-      and path = Array.of_list path in
+  let cut ?(closed = false) ~distances = function
+    | [] | [ _ ] -> invalid_arg "Path must have more than one point to be cut."
+    | path       ->
+      let path = Array.of_list path in
+      let travels = cummulative_length' ~closed path in
       let len = Array.length path
       and n_segs = Array.length travels in
       let total = travels.(n_segs - 1) in
-      let distance =
-        match distance with
-        | `Abs d when d < 0. -> total +. d
-        | `Abs d -> d
-        | `Rel d -> total *. d
+      let distances =
+        let dist, ds =
+          match distances with
+          | `Abs ds -> (fun d -> if d < 0. then total +. d else d), ds
+          | `Rel ds -> (fun d -> total *. d), ds
+        in
+        let f d (acc, next_dist) =
+          let d = dist d in
+          if d <= 0. || d >= total
+          then invalid_arg "Cut distances must fall between endpoints of path."
+          else if d >= next_dist
+          then invalid_arg "Cut distances must increase monotonically."
+          else d :: acc, d
+        in
+        fst @@ List.fold_right f ds ([], Float.max_float)
       in
-      if distance <= 0. || distance >= total
-      then invalid_arg "Distance must fall between endpoints of path.";
-      let idx =
-        let i = ref 1
-        and continue = ref true in
-        while !continue && !i < n_segs do
-          if travels.(!i) > distance then continue := false else incr i
-        done;
-        !i - 1
+      let f (parts, first_pt, start_idx) d =
+        let idx =
+          let i = ref start_idx
+          and continue = ref true in
+          while !continue && !i < n_segs do
+            if travels.(!i) > d then continue := false else incr i
+          done;
+          !i - 1
+        in
+        let cut_pt =
+          let a = travels.(idx)
+          and b = travels.(idx + 1) in
+          V.lerp path.(idx) path.(Util.index_wrap ~len (idx + 1)) ((d -. a) /. (b -. a))
+        in
+        let part =
+          let n = idx - start_idx + 1 in
+          let cut_at_idx = V.approx cut_pt path.(start_idx + n - 1) in
+          let f i = if i < n - 1 then path.(i + start_idx + 1) else cut_pt in
+          let ps = List.init (if cut_at_idx then n - 1 else n) f in
+          if V.approx first_pt path.(start_idx + 1) then ps else first_pt :: ps
+        in
+        part :: parts, cut_pt, idx
       in
-      let pt =
-        let a = travels.(idx)
-        and b = travels.(idx + 1) in
-        V.lerp
-          path.(idx)
-          path.(Util.index_wrap ~len (idx + 1))
-          ((distance -. a) /. (b -. a))
+      let parts, first_pt, start_idx = List.fold_left f ([], path.(0), 0) distances in
+      let last_part =
+        let n = len - start_idx - 1 in
+        let f i =
+          if i < n
+          then path.(i + start_idx + 1)
+          else if closed
+          then path.(0)
+          else path.(len - 1)
+        in
+        first_pt :: List.init n f
       in
-      let first = List.append (Array.sub path 0 (idx + 1) |> Array.to_list) [ pt ]
-      and second =
-        let rest = Array.sub path (idx + 1) (len - idx - 1) |> Array.to_list in
-        pt :: (if closed then List.append rest [ hd ] else rest)
-      in
-      first, second
+      List.rev (last_part :: parts)
+
+  let split ?closed ~distance path =
+    let distances =
+      match distance with
+      | `Abs d -> `Abs [ d ]
+      | `Rel d -> `Rel [ d ]
+    in
+    match cut ?closed ~distances path with
+    | [ a; b ] -> a, b
+    | _        -> failwith "impossible"
 
   let noncollinear_triple ?(eps = Util.epsilon) = function
     | [] | [ _ ] | [ _; _ ]   -> None
