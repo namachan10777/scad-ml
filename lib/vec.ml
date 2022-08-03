@@ -11,8 +11,8 @@ type v2 =
   ; y : float
   }
 
-let v2 x y = { x; y }
-let v3 x y z = { x; y; z }
+let[@inline] v2 x y = { x; y }
+let[@inline] v3 x y z = { x; y; z }
 
 module type S = sig
   type t

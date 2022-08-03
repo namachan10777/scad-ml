@@ -14,20 +14,20 @@ type bbox =
   }
 
 let zero = { x = 0.; y = 0. }
-let v = Vec.v2
+let[@inline] v x y = { x; y }
 let of_tup (x, y) = { x; y }
 let to_tup { x; y } = x, y
-let horizontal_op op a b = v (op a.x b.x) (op a.y b.y)
-let add = horizontal_op ( +. )
-let sub = horizontal_op ( -. )
-let mul = horizontal_op ( *. )
-let div = horizontal_op ( /. )
-let negate t = v (t.x *. -1.) (t.y *. -1.)
+let[@inline] horizontal_op op a b = v (op a.x b.x) (op a.y b.y)
+let[@inline] add a b = horizontal_op ( +. ) a b
+let[@inline] sub a b = horizontal_op ( -. ) a b
+let[@inline] mul a b = horizontal_op ( *. ) a b
+let[@inline] div a b = horizontal_op ( /. ) a b
+let[@inline] negate t = v (t.x *. -1.) (t.y *. -1.)
+let[@inline] sadd t s = v (t.x +. s) (t.y +. s)
+let[@inline] ssub t s = v (t.x -. s) (t.y -. s)
+let[@inline] smul t s = v (t.x *. s) (t.y *. s)
+let[@inline] sdiv t s = v (t.x /. s) (t.y /. s)
 let map f { x; y } = v (f x) (f y)
-let sadd t s = v (t.x +. s) (t.y +. s)
-let ssub t s = v (t.x -. s) (t.y -. s)
-let smul t s = v (t.x *. s) (t.y *. s)
-let sdiv t s = v (t.x /. s) (t.y /. s)
 let equal a b = Float.equal a.x b.x && Float.equal a.y b.y
 let norm { x; y } = Float.sqrt ((x *. x) +. (y *. y))
 let distance a b = norm (sub a b)
@@ -149,14 +149,14 @@ let to_vec2 t = t
 let to_string { x; y } = Printf.sprintf "[%f, %f]" x y
 let deg_of_rad t = map Math.deg_of_rad t
 let rad_of_deg t = map Math.rad_of_deg t
-let ( +@ ) = add
-let ( -@ ) = sub
-let ( *@ ) = mul
-let ( /@ ) = div
-let ( +$ ) = sadd
-let ( -$ ) = ssub
-let ( *$ ) = smul
-let ( /$ ) = sdiv
+let[@inline] ( +@ ) a b = add a b
+let[@inline] ( -@ ) a b = sub a b
+let[@inline] ( *@ ) a b = mul a b
+let[@inline] ( /@ ) a b = div a b
+let[@inline] ( +$ ) a b = sadd a b
+let[@inline] ( -$ ) a b = ssub a b
+let[@inline] ( *$ ) a b = smul a b
+let[@inline] ( /$ ) a b = sdiv a b
 let of_vec3 Vec.{ x; y; z = _ } = { x; y }
 let to_vec3 ?(z = 0.) { x; y } = Vec.v3 x y z
 

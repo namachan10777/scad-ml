@@ -15,20 +15,20 @@ type bbox =
   }
 
 let zero = { x = 0.; y = 0.; z = 0. }
-let v = Vec.v3
+let[@inline] v x y z = { x; y; z }
 let of_tup (x, y, z) = { x; y; z }
 let to_tup { x; y; z } = x, y, z
-let horizontal_op op a b = v (op a.x b.x) (op a.y b.y) (op a.z b.z)
-let add = horizontal_op ( +. )
-let sub = horizontal_op ( -. )
-let mul = horizontal_op ( *. )
-let div = horizontal_op ( /. )
-let negate t = v (t.x *. -1.) (t.y *. -1.) (t.z *. -1.)
+let[@inline] horizontal_op op a b = v (op a.x b.x) (op a.y b.y) (op a.z b.z)
+let[@inline] add a b = horizontal_op ( +. ) a b
+let[@inline] sub a b = horizontal_op ( -. ) a b
+let[@inline] mul a b = horizontal_op ( *. ) a b
+let[@inline] div a b = horizontal_op ( /. ) a b
+let[@inline] negate t = v (t.x *. -1.) (t.y *. -1.) (t.z *. -1.)
+let[@inline] sadd t s = v (t.x +. s) (t.y +. s) (t.z +. s)
+let[@inline] ssub t s = v (t.x -. s) (t.y -. s) (t.z -. s)
+let[@inline] smul t s = v (t.x *. s) (t.y *. s) (t.z *. s)
+let[@inline] sdiv t s = v (t.x /. s) (t.y /. s) (t.z /. s)
 let map f { x; y; z } = v (f x) (f y) (f z)
-let sadd t s = v (t.x +. s) (t.y +. s) (t.z +. s)
-let ssub t s = v (t.x -. s) (t.y -. s) (t.z -. s)
-let smul t s = v (t.x *. s) (t.y *. s) (t.z *. s)
-let sdiv t s = v (t.x /. s) (t.y /. s) (t.z /. s)
 let equal a b = Float.equal a.x b.x && Float.equal a.y b.y && Float.equal a.z b.z
 let norm { x; y; z } = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
 let distance a b = norm (sub a b)
@@ -123,14 +123,14 @@ let get_z { z; _ } = z
 let to_string { x; y; z } = Printf.sprintf "[%f, %f, %f]" x y z
 let deg_of_rad t = map (fun r -> 180.0 *. r /. Float.pi) t
 let rad_of_deg t = map (fun d -> d *. Float.pi /. 180.) t
-let ( +@ ) = add
-let ( -@ ) = sub
-let ( *@ ) = mul
-let ( /@ ) = div
-let ( +$ ) = sadd
-let ( -$ ) = ssub
-let ( *$ ) = smul
-let ( /$ ) = sdiv
+let[@inline] ( +@ ) a b = add a b
+let[@inline] ( -@ ) a b = sub a b
+let[@inline] ( *@ ) a b = mul a b
+let[@inline] ( /@ ) a b = div a b
+let[@inline] ( +$ ) a b = sadd a b
+let[@inline] ( -$ ) a b = ssub a b
+let[@inline] ( *$ ) a b = smul a b
+let[@inline] ( /$ ) a b = sdiv a b
 let to_vec2 { x; y; _ } = Vec.v2 x y
 let of_vec2 ?(z = 0.) ({ x; y } : Vec.v2) = { x; y; z }
 
