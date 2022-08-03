@@ -210,7 +210,7 @@ val slice_profiles
 
 (** [skin ?style ?endcaps ?refine ?mapping ~slices profiles]
 
-    Produce mesh that skins over two or more 3d [profiles] -- closed, ideally
+    Produce a mesh that skins over two or more 3d [profiles] -- closed, ideally
     coplanar (though some slight variation can be ok) paths. This works by
     linearly interpolating between neighbouring profiles with [slices] steps,
     and passing the profiles along to {!of_rows}, which generates faces to
@@ -229,7 +229,10 @@ val slice_profiles
     - [slices] and [mapping] can be provided as [`Flat _] to be applied to all
       transitions, or as [`Mix l], where [l] is a list with length equal to the
       number of profile transitions ([length profiles - 1], or [length profiles]
-      if [endcaps] is [`Loop]) *)
+      if [endcaps] is [`Loop])
+    - {b NOTE:} mixing mapping strategies can be fickle, and some combinations may
+      not work depending on the profiles. This may improve as kinks are worked
+      out, but maybe not *)
 val skin
   :  ?style:style
   -> ?endcaps:endcaps

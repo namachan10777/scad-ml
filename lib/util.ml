@@ -162,14 +162,6 @@ let value_map_opt ~default f = function
   | Some a -> f a
   | None   -> default
 
-let transpose_row_list l =
-  let m = Array.of_list (List.map Array.of_list l) in
-  let col_len = Array.length m
-  and row_len = Array.length m.(0) in
-  if Array.for_all (fun r -> Array.length r = row_len) m
-  then List.init row_len (fun c -> List.init col_len (fun r -> m.(r).(c)))
-  else invalid_arg "Input lists are ragged (not a matrix)."
-
 let unzip l =
   let rec loop l1 l2 = function
     | []             -> l1, l2

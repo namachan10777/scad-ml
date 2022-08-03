@@ -98,6 +98,10 @@ respectively.
 - {{!page-"rounded_prisms"} {b Continuous curvature rounded prisms}}
 - {{!page-"rounded_text"} {b Rounded extrusion of cairo imported polygonal font}}
 
+{2 Skins and Morphs}
+- {{!page-"profile_skinning"} {b Profile skinning}}
+- {{!page-"morphing_sweeps"} {b Morphing sweeps and extrusions}}
+
 {2 Function Plotting}
 - {{!page-"polar_rose"} {b Rose polar plot}}
 - {{!page-"cartesian_gravity_well"} {b Cartesian gravity well}}

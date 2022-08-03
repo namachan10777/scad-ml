@@ -14,7 +14,8 @@
   polyholes
   resampled_path
   default_vs_euler_sweeps
-  skins_and_morphs)
+  profile_skinning
+  morphing_sweeps)
  (libraries scad_ml))
 
 ; Convenience rule/alias for building and running examples (promoted to examples/scads diectory)

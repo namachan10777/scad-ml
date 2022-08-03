@@ -2,3 +2,7 @@ _build/
 _opam/
 .merlin
 _esy/
+
+examples/docs
+examples/pngs
+examples/scads
