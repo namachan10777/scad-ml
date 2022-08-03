@@ -12,8 +12,8 @@ let hello = PolyText.text ~center:true ~fn:5 ~size:5. ~font:"Ubuntu" "Hello!"
     off of the corners. You can expect some finickiness with applying
     roundovers to the polygons produced by {{!Scad_ml.PolyText.text}
     [PolyText.text]}, as the paths coming from Cairo may have some points quite
-    close together, leading to illegal paths when further roundover operations
-    are applied. *)
+    close together, and sharp corners, leading to illegal paths when further
+    roundover operations are applied. *)
 let caps =
   let spec = Mesh.Cap.(round ~mode:Delta @@ circ ~fn:5 (`Cut 0.025)) in
   Mesh.Cap.{ top = spec; bot = spec }
