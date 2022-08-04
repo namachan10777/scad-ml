@@ -70,6 +70,9 @@ let lerpn ?(endpoint = true) a b n =
 
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
+let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y) (Float.min a.z b.z)
+let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y) (Float.max a.z b.z)
+let bbox a b = { min = lower_bounds a b; max = upper_bounds a b }
 
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a

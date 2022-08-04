@@ -199,6 +199,21 @@ module type S = sig
    [(false, false)], indicating an infinite line in both directions.) *)
   val line_closest_point : ?bounds:bool * bool -> line:line -> t -> t
 
+  (** [lower_bounds a b]
+
+       Compute the lower bounds (minima of each dimension) of the vectors [a] and [b]. *)
+  val lower_bounds : t -> t -> t
+
+  (** [upper_bounds a b]
+
+       Compute the upper bounds (maxima of each dimension) of the vectors [a] and [b]. *)
+  val upper_bounds : t -> t -> t
+
+  (** [bbox a b]
+
+       Compute the bounding box that contains the vectors [a] and [b]. *)
+  val bbox : t -> t -> bbox
+
   (** {1 Utilities} *)
 
   val map : (float -> float) -> t -> t

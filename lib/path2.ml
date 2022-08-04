@@ -25,9 +25,9 @@ let is_simple ?eps ?closed path = APath2.is_simple ?eps ?closed (Array.of_list p
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
   | hd :: tl ->
-    let f (bb : Vec2.bbox) { x; y } =
-      let min = Float.{ x = min bb.min.x x; y = min bb.min.y y }
-      and max = Float.{ x = max bb.max.x x; y = max bb.max.y y } in
+    let f (bb : Vec2.bbox) p =
+      let min = Vec2.lower_bounds bb.min p
+      and max = Vec2.upper_bounds bb.max p in
       Vec2.{ min; max }
     in
     List.fold_left f { min = hd; max = hd } tl
