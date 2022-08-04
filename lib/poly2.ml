@@ -116,19 +116,23 @@ let ellipse ?fn ?fa ?fs radii = make @@ Path2.ellipse ?fn ?fa ?fs radii
 let star ~r1 ~r2 n = make (Path2.star ~r1 ~r2 n)
 
 let ring ?fn ?fa ?fs ~thickness radii =
-  if thickness.x < radii.x && thickness.y < radii.y
+  if thickness.x < radii.x
+     && thickness.y < radii.y
+     && thickness.x > 0.
+     && thickness.y > 0.
   then
     make
       ~holes:[ List.rev @@ Path2.ellipse ?fn ?fa ?fs (Vec2.sub radii thickness) ]
       (Path2.ellipse ?fn ?fa ?fs radii)
-  else invalid_arg "Ring thickness must be less than the outer radius."
+  else invalid_arg "Ring thickness must be less than the outer radius and above zero."
 
 let box ?center ~thickness dims =
-  if thickness.x < dims.x && thickness.y < dims.y
+  if thickness.x < dims.x && thickness.y < dims.y && thickness.x > 0. && thickness.y > 0.
   then (
     let holes = [ List.rev @@ Path2.square ?center (Vec2.sub dims thickness) ] in
     make ~holes (Path2.square ?center dims) )
-  else invalid_arg "Box thicknesses must be less than the outer dimensions."
+  else
+    invalid_arg "Box thicknesses must be less than the outer dimensions and above zero."
 
 let bbox { outer; _ } = Path2.bbox outer
 let centroid ?eps { outer; _ } = Path2.centroid ?eps outer
