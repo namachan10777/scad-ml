@@ -1,12 +1,13 @@
 ## v2.0.0
 
 - Extension of the `Scad.t` GADT to prevent 3d transformation of 2d shapes
+- Add `cone`, `surface`, `to_file`, `export`, and `snapshot` to `Scad` module
+- `Scad.offset` now takes a `?mode` parameter, rather than variant with value
+  payload (from ``Scad.offset (`Radius r)`` to ``Scad.offset ~mode:`Radius r``)
+- `Scad.to_string` performance improvement (specifically polygon and polyhedron points/faces)
 - `Vec3.t` (and now `Vec2.t`) types are records rather than tuples and have
   the respective modules have been extended with additional geometrical
   operations
-- Add `cone`, `to_file`, `export`, and `snapshot` to `Scad` module
-- `Scad.offset` now takes a `?mode` parameter, rather than variant with value
-  payload (from ``Scad.offset (`Radius r)`` to ``Scad.offset ~mode:`Radius r``)
 - New modules (`2` and `3` suffixes indicate dimensionality):
   * `Plane` -- normalized cartesian plane operations
   * `Path2`/`Path3` -- generation and manipulation of paths of points
