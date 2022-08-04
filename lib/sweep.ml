@@ -486,7 +486,7 @@ let morph
     ?check_valid
     ?merge
     ?winding
-    ?caps
+    ?(caps = { top = `Flat; bot = `Flat })
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
@@ -500,7 +500,7 @@ let morph
     ~style
     ?merge
     ?winding
-    ?caps
+    ~caps:(`Caps caps)
     ~progress:`AutoDist
     ~transforms
     (Morph { outer_map; hole_map; refine; ez; a; b })
@@ -803,7 +803,7 @@ let path_morph
     ?check_valid
     ?merge
     ?winding
-    ?caps
+    ?(caps = { top = `Flat; bot = `Flat })
     ?(outer_map = `Direct `ByLen)
     ?(hole_map = `Same)
     ?refine
@@ -822,7 +822,7 @@ let path_morph
     ?check_valid
     ?merge
     ?winding
-    ?caps
+    ~caps:(`Caps caps)
     ?euler
     ?scale_ez
     ?twist_ez

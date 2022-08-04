@@ -540,7 +540,7 @@ val morph
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?caps:Cap.t
+  -> ?caps:Cap.caps
   -> ?outer_map:mapping
   -> ?hole_map:[ `Same | `Flat of mapping | `Mix of mapping list ]
   -> ?refine:int
@@ -587,7 +587,7 @@ val path_morph
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
-  -> ?caps:Cap.t
+  -> ?caps:Cap.caps
   -> ?outer_map:mapping
   -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
