@@ -280,7 +280,7 @@ module type S = sig
 
   (** [t -$ s]
 
-    Scalar subtraction of the vector [t] from the scalar [s]. *)
+    Scalar subtraction of the scalar [s] from the vector [t]. *)
   val ( -$ ) : t -> float -> t
 
   (** [t *$ s]
