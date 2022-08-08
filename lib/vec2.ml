@@ -39,6 +39,7 @@ let normalize t =
 
 let dot a b = (a.x *. b.x) +. (a.y *. b.y)
 let cross a b = Vec.v3 0. 0. ((a.x *. b.y) -. (a.y *. b.x))
+let mid a b = v ((a.x +. b.x) /. 2.) ((a.y +. b.y) /. 2.)
 
 let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in

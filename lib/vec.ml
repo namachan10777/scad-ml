@@ -128,6 +128,11 @@ module type S = sig
     product is performed with an assumed z = 0. *)
   val cross : t -> t -> v3
 
+  (** [mid a b]
+
+      Compute the midpoint between the vectors [a] and [b]. *)
+  val mid : t -> t -> t
+
   (** [mean l]
 
     Calculate the mean / average of all vectors in [l]. *)

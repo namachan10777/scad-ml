@@ -264,7 +264,7 @@ module Make (V : Vec.S) = struct
         let mx = ref Float.min_float
         and p = Array.unsafe_get path in
         for i = 0 to n_segs - 2 do
-          let mid_point = V.sdiv (V.add (p i) (p (i + 2))) 2. in
+          let mid_point = V.mid (p i) (p (i + 2)) in
           mx := Float.max !mx (V.distance (p (i + 1)) mid_point)
         done;
         !mx

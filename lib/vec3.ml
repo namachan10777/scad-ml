@@ -48,6 +48,8 @@ let cross a b =
   and z = (a.x *. b.y) -. (a.y *. b.x) in
   { x; y; z }
 
+let mid a b = v ((a.x +. b.x) /. 2.) ((a.y +. b.y) /. 2.) ((a.z +. b.z) /. 2.)
+
 let mean l =
   let n, sum = List.fold_left (fun (i, s) t -> i + 1, add t s) (0, zero) l in
   sdiv sum (Int.to_float n)
