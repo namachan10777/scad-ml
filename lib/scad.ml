@@ -1,3 +1,5 @@
+open Vec
+
 type scad =
   | Cylinder of
       { r1 : float
@@ -41,8 +43,8 @@ type scad =
       }
   | Translate of Vec3.t * scad
   | Rotate of Vec3.t * scad
-  | VectorRotate of Vec3.t * float * scad
-  | MultMatrix of MultMatrix.t * scad
+  | AxisRotate of Vec3.t * float * scad
+  | MultMatrix of Affine3.t * scad
   | Union of scad list
   | Intersection of scad list
   | Difference of scad * scad list
@@ -99,21 +101,21 @@ type scad =
       ; convexity : int
       }
 
-type ('space, 'rot) t =
-  | D2 : scad -> (Vec2.t, float) t
-  | D3 : scad -> (Vec3.t, Vec3.t) t
+type ('space, 'rot, 'affine) t =
+  | D2 : scad -> (Vec2.t, float, Affine2.t) t
+  | D3 : scad -> (Vec3.t, Vec3.t, Affine3.t) t
 
-type d2 = (Vec2.t, float) t
-type d3 = (Vec3.t, Vec3.t) t
+type d2 = (Vec2.t, float, Affine2.t) t
+type d3 = (Vec3.t, Vec3.t, Affine3.t) t
 
 let d2 scad = D2 scad
 let d3 scad = D3 scad
 
-let unpack : type a b. (a, b) t -> scad = function
+let unpack : type s r a. (s, r, a) t -> scad = function
   | D2 scad -> scad
   | D3 scad -> scad
 
-let map : type a b. (scad -> scad) -> (a, b) t -> (a, b) t =
+let map : type s r a. (scad -> scad) -> (s, r, a) t -> (s, r, a) t =
  fun f -> function
   | D2 scad -> D2 (f scad)
   | D3 scad -> D3 (f scad)
@@ -145,30 +147,53 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
        ; fn
        }
 
-let translate (type a b) (p : a) : (a, b) t -> (a, b) t = function
+let translate (type s r a) (p : s) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ Translate (Vec3.of_vec2 p, scad)
   | D3 scad -> d3 @@ Translate (p, scad)
 
-let rotate (type a b) (r : b) : (a, b) t -> (a, b) t = function
-  | D2 scad -> d2 @@ Rotate ({ x = 0.; y = 0.; z = r }, scad)
-  | D3 scad -> d3 @@ Rotate (r, scad)
-
-let rotate_about_pt (type a b) (r : b) (p : a) (t : (a, b) t) : (a, b) t =
-  let p' : a =
-    match t with
-    | D2 _ -> Vec2.negate p
-    | D3 _ -> Vec3.negate p
+let rotate : type s r a. ?about:s -> r -> (s, r, a) t -> (s, r, a) t =
+ fun ?about r t ->
+  let aux : (s, r, a) t -> (s, r, a) t = function
+    | D2 scad -> d2 @@ Rotate ({ x = 0.; y = 0.; z = r }, scad)
+    | D3 scad -> d3 @@ Rotate (r, scad)
   in
-  translate p' t |> rotate r |> translate p
+  match about with
+  | Some p ->
+    let p' : s =
+      match t with
+      | D2 _ -> Vec2.negate p
+      | D3 _ -> Vec3.negate p
+    in
+    translate p' t |> aux |> translate p
+  | None   -> aux t
 
-let vector_rotate ax r (D3 scad) = d3 @@ VectorRotate (ax, r, scad)
+let[@inline] xrot ?about x t = rotate ?about (v3 x 0. 0.) t
+let[@inline] yrot ?about y t = rotate ?about (v3 0. y 0.) t
 
-let vector_rotate_about_pt ax r p t =
-  translate (Vec3.negate p) t |> vector_rotate ax r |> translate p
+let zrot : type s r a. ?about:s -> float -> (s, r, a) t -> (s, r, a) t =
+ fun ?about z t ->
+  match t with
+  | D2 _ -> rotate ?about z t
+  | D3 _ -> rotate ?about (v3 0. 0. z) t
 
-let multmatrix mat (D3 scad) = d3 @@ MultMatrix (mat, scad)
-let quaternion q (D3 scad) = d3 @@ MultMatrix (Quaternion.to_multmatrix q, scad)
-let quaternion_about_pt q p t = translate (Vec3.negate p) t |> quaternion q |> translate p
+let axis_rotate ?about ax r t =
+  let aux (D3 scad) = d3 @@ AxisRotate (ax, r, scad) in
+  match about with
+  | Some p -> translate (Vec3.negate p) t |> aux |> translate p
+  | None   -> aux t
+
+let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
+  | D2 scad -> d2 @@ MultMatrix (Affine2.lift m, scad)
+  | D3 scad -> d3 @@ MultMatrix (m, scad)
+
+let multmatrix = affine
+
+let quaternion ?about q t =
+  let aux (D3 scad) = d3 @@ MultMatrix (Quaternion.to_affine q, scad) in
+  match about with
+  | Some p -> translate (Vec3.negate p) t |> aux |> translate p
+  | None   -> aux t
+
 let union_2d ts = d2 @@ Union (List.map unpack ts)
 let union_3d ts = d3 @@ Union (List.map unpack ts)
 
@@ -179,7 +204,7 @@ let empty_exn n =
        n
        n )
 
-let union : type a b. (a, b) t list -> (a, b) t =
+let union : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> union_2d ts
@@ -189,7 +214,7 @@ let union : type a b. (a, b) t list -> (a, b) t =
 let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
 let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
 
-let minkowski : type a b. (a, b) t list -> (a, b) t =
+let minkowski : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> minkowski_2d ts
@@ -199,20 +224,20 @@ let minkowski : type a b. (a, b) t list -> (a, b) t =
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
 
-let hull : type a b. (a, b) t list -> (a, b) t =
+let hull : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> hull_2d ts
   | D3 _ :: _ -> hull_3d ts
   | []        -> empty_exn "hull"
 
-let difference (type a b) (t : (a, b) t) (sub : (a, b) t list) =
+let difference (type s r a) (t : (s, r, a) t) (sub : (s, r, a) t list) =
   map (fun scad -> Difference (scad, List.map unpack sub)) t
 
 let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
 let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
 
-let intersection : type a b. (a, b) t list -> (a, b) t =
+let intersection : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
   | D2 _ :: _ -> intersection_2d ts
@@ -222,7 +247,7 @@ let intersection : type a b. (a, b) t list -> (a, b) t =
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
 
-let mirror (type a b) (ax : a) : (a, b) t -> (a, b) t = function
+let mirror (type s r a) (ax : s) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ Mirror (Vec3.of_vec2 ax, scad)
   | D3 scad -> d3 @@ Mirror (ax, scad)
 
@@ -234,7 +259,7 @@ let linear_extrude
     ?(convexity = 10)
     ?twist
     ?(slices = 20)
-    ?(scale = Vec2.v 1. 1.)
+    ?(scale = v2 1. 1.)
     ?(fn = 16)
     (D2 scad)
   =
@@ -244,11 +269,11 @@ let linear_extrude
 let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
   d3 @@ RotateExtrude { scad; angle; convexity; fa; fs; fn }
 
-let scale (type a b) (factors : a) : (a, b) t -> (a, b) t = function
+let scale (type s r a) (factors : s) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ Scale (Vec3.of_vec2 factors, scad)
   | D3 scad -> d3 @@ Scale (factors, scad)
 
-let resize (type a b) (new_dims : a) : (a, b) t -> (a, b) t = function
+let resize (type s r a) (new_dims : s) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ Resize (Vec3.of_vec2 new_dims, scad)
   | D3 scad -> d3 @@ Resize (new_dims, scad)
 
@@ -382,7 +407,7 @@ let to_string t =
         indent
         (Vec3.to_string @@ Vec3.deg_of_rad r)
         (print (Printf.sprintf "%s\t" indent) scad)
-    | VectorRotate (axis, r, scad) ->
+    | AxisRotate (axis, r, scad) ->
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
@@ -393,7 +418,7 @@ let to_string t =
       Printf.sprintf
         "%smultmatrix(%s)\n%s"
         indent
-        (MultMatrix.to_string mat)
+        (Affine3.to_string mat)
         (print (Printf.sprintf "%s\t" indent) scad)
     | Union elements ->
       Printf.sprintf
@@ -529,7 +554,7 @@ let to_file path t =
   Printf.fprintf oc "%s" (to_string t);
   close_out oc
 
-let export (type a b) path (t : (a, b) t) =
+let export (type s r a) path (t : (s, r, a) t) =
   let space, allowed =
     match t with
     | D2 _ -> "2D", Export.d2_exts
@@ -548,7 +573,5 @@ let snapshot ?render ?colorscheme ?projection ?size ?camera out_path t =
   to_file temp t;
   Export.snapshot ?render ?colorscheme ?projection ?size ?camera out_path temp
 
-module Infix = struct
-  let ( |>> ) t p = translate p t
-  let ( |@> ) t r = rotate r t
-end
+let ( |>> ) t p = translate p t
+let ( |@> ) t r = rotate r t

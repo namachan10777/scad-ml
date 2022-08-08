@@ -57,8 +57,8 @@ respectively.
 {2 Vectors and transformations}
 - {{!Scad_ml.Vec2} [Vec2]} -- 2d vector operations
 - {{!Scad_ml.Vec3} [Vec3]} -- 3d vector operations
-- {{!Scad_ml.RotMatrix} [RotMatrix]} -- rotation matrices
-- {{!Scad_ml.MultMatrix} [MultMatrix]} -- affine transformation matrices
+- {{!Scad_ml.Affine2} [Affine2]} -- 2d affine transformation matrices
+- {{!Scad_ml.Affine3} [Affine3]} -- 3d affine transformation matrices
 - {{!Scad_ml.Quaternion} [Quaternion]} --
  {{:https://en.wikipedia.org/wiki/Quaternion} quaternion} manipulation andl application
 - {{!Scad_ml.Plane} [Plane]} -- normalized cartesian plane operations
@@ -87,7 +87,7 @@ respectively.
 {2 Paths and Sweeps}
 - {{!page-"offset_and_rounding"} {b Offset and roundovers}}
 - {{!page-"default_vs_euler_sweeps"} {b Default vs euler path transformation reference}}
-- {{!page-"bespoke_sweeps"} {b Bespoke sweep transforms (with direct multmatrix generation)}}
+- {{!page-"bespoke_sweeps"} {b Bespoke sweep transforms (with direct affine transform generation)}}
 - {{!page-"spline"} {b Cubic spline}}
 - {{!page-"arc_points"} {b Arcing paths}}
 - {{!page-"helices"} {b Helical paths and extrusions}}

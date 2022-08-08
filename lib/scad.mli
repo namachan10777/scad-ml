@@ -21,13 +21,13 @@ type scad
     - The ['rot] parameter corresponds to the axes rotation available to the
       scad. For 2d shapes, this is a [float] representing z-axis rotation, and
       for 3d shapes, xyz axes are available through {!Vec3.t}. *)
-type ('space, 'rot) t
+type ('space, 'rot, 'affine) t
 
 (** Two-dimensional shape *)
-type d2 = (Vec2.t, float) t
+type d2 = (Vec2.t, float, Affine2.t) t
 
 (** Three-dimensional shape *)
-type d3 = (Vec3.t, Vec3.t) t
+type d3 = (Vec3.t, Vec3.t, Affine3.t) t
 
 (** {1 A note on special facet parameters}
 
@@ -177,44 +177,57 @@ val text
 (** [translate p t]
 
     Moves [t] along the vector [p]. *)
-val translate : 's -> ('s, 'r) t -> ('s, 'r) t
+val translate : 's -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
-(** [rotate r t]
+(** [rotate ?about r t]
 
-    Performs an Euler rotation (x -> y -> z) if operating in 3d ([(r : Vec3.t) (t : d3)]),
+    Performs an Euler rotation (zyx) if operating in 3d ([(r : Vec3.t) (t : d3)]),
     otherwise ([(r : float) (t : d2)]), a single rotation around the z-axis is
-    performed. Angle(s) [r] are in radians. *)
-val rotate : 'r -> ('s, 'r) t -> ('s, 'r) t
+    performed. If it is provided, rotations are performed around the point [about],
+    otherwise rotation is about the origin. Angle(s) [r] are in radians. *)
+val rotate : ?about:'s -> 'r -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
-(** [rotate_about_pt r p t]
+(** [xrot ?about r t]
 
-    Translates [t] along the vector [p], rotating the resulting shape by [r]
-    (euler x -> y -> z for 3d, z only in 2d), and finally, moving back along the
-    vector [p]. Functionally, rotating about the point [p] (rather than the origin). *)
-val rotate_about_pt : 'r -> 's -> ('s, 'r) t -> ('s, 'r) t
+    Rotate the 3d shape [t] around the x-axis through the origin (or the point
+    [about] if provided) by [r] (in radians). *)
+val xrot : ?about:Vec3.t -> float -> d3 -> d3
+
+(** [yrot ?about r t]
+
+    Rotate the 3d shape [t] around the y-axis through the origin (or the point
+    [about] if provided) by [r] (in radians). *)
+val yrot : ?about:Vec3.t -> float -> d3 -> d3
+
+(** [zrot ?about r t]
+
+    Rotate the shape [t] (2d or 3d) around the z-axis through the origin (or the
+    point [about] if provided) by [r] (in radians). For 2d shapes, this is
+    equivalent to {!rotate}. *)
+val zrot : ?about:'s -> float -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [mirror ax t]
 
     Mirrors [t] on a plane through the origin, defined by the normal vector
     [ax]. *)
-val mirror : 's -> ('s, 'r) t -> ('s, 'r) t
+val mirror : 's -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [scale factors t]
 
     Scales [t] by the given [factors] in xyz. *)
-val scale : 's -> ('s, 'r) t -> ('s, 'r) t
+val scale : 's -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [resize dimensions t]
 
     Adjusts the size of [t] to match the given [dimensions]. *)
-val resize : 's -> ('s, 'r) t -> ('s, 'r) t
+val resize : 's -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [color ?alpha color t]
 
     Displays [t] with the specified [color] and [?alpha] value. This is only
     used for the F5 preview as CGAL and STL (F6, render) do not currently
     support color. Defaults to opaque (alpha = 1.0). *)
-val color : ?alpha:float -> Color.t -> ('s, 'r) t -> ('s, 'r) t
+val color : ?alpha:float -> Color.t -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [render ?convexity t]
 
@@ -223,44 +236,42 @@ val color : ?alpha:float -> Color.t -> ('s, 'r) t -> ('s, 'r) t
     Note that this does however remove any colouration applied previously with
     {!color}, or resulting from boolean operations such as {!difference}.
     Output rendering {b (F6)} performance is unaffected. *)
-val render : ?convexity:int -> ('s, 'r) t -> ('s, 'r) t
+val render : ?convexity:int -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** {1 3d Only Transformations}
 
     Each of these transformations cannot be restricted to the 2-dimensional xy
     plane, thus they are restricted to 3d shapes. *)
 
-(** [vector_rotate ax r t]
+(** [axis_rotate ?about ax r t]
 
-    Rotates [t] about the arbitrary axis [ax] by the angle [r]. *)
-val vector_rotate : Vec3.t -> float -> d3 -> d3
+    Rotates [t] about the arbitrary axis [ax] through the origin (or the point
+    [about] if provided) by the angle [r] (in radians). *)
+val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> d3 -> d3
 
-(** [vector_rotate_about_pt ax r p t]
+(** [affine mat t]
 
-    Translates [t] along the vector [p], rotating the resulting shape around
-    [ax] by angle [r], and finally, moving back along the vector [p].
-    Functionally, rotating about the point [p] (rather than the origin). *)
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> d3 -> d3
-
-(** [multmatrix mat t]
-
-    Multiplies the geometry [t] with the given 4x3 affine transformation matrix.
+    Transforms the geometry [t] with the given affine transformation matrix
+    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes).
     You can find a detailed explanation of how these are formed and interpreted
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
     here}. *)
-val multmatrix : MultMatrix.t -> d3 -> d3
+val affine : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
-(** [quaternion q t]
+(** [multmatrix mat t]
 
-    Applys the quaternion rotation [q] to [t]. *)
-val quaternion : Quaternion.t -> d3 -> d3
+    Transforms the geometry [t] with the given affine transformation matrix
+    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes).
+    You can find a detailed explanation of how these are formed and interpreted
+    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
+    here}. Alias of {!affine}. *)
+val multmatrix : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
-(** [quaternion_about_pt q p t]
+(** [quaternion ?about q t]
 
-    Translates [t] along the vector [p], rotating the resulting shape with the
-    quaternion [q], and finally, moving back along the vector [p]. Functionally,
-    rotating about the point [p] (rather than the origin). *)
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> d3 -> d3
+    Applys the quaternion rotation [q] around the origin (or the point [about]
+    if provided) to [t]. *)
+val quaternion : ?about:Vec3.t -> Quaternion.t -> d3 -> d3
 
 (** {1 2d Only Transformations} *)
 
@@ -319,7 +330,7 @@ val offset : ?mode:[ `Delta | `Radius | `Chamfer ] -> float -> d2 -> d2
              ; translate p (cube { x = 2. +. eps; y = 2.; z = 2. })
              ]
    ]} *)
-val union : ('s, 'r) t list -> ('s, 'r) t
+val union : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 val union_2d : d2 list -> d2
 val union_3d : d3 list -> d3
@@ -329,7 +340,7 @@ val union_3d : d3 list -> d3
     Displays the minkowski sum of [ts]. Throws an exception if [ts] is empty,
     use {!minkowski_2d} or {!minkowski_3d} if you would like empty minkowski
     sums to pass silently. *)
-val minkowski : ('s, 'r) t list -> ('s, 'r) t
+val minkowski : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 val minkowski_2d : d2 list -> d2
 val minkowski_3d : d3 list -> d3
@@ -338,7 +349,7 @@ val minkowski_3d : d3 list -> d3
 
     Displays the convex hull of [ts]. Throws an exception if [ts] is empty, use
     {!hull_2d} or {!hull_3d} if you would like empty hulls to pass silently. *)
-val hull : ('s, 'r) t list -> ('s, 'r) t
+val hull : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 val hull_2d : d2 list -> d2
 val hull_3d : d3 list -> d3
@@ -354,7 +365,7 @@ val hull_3d : d3 list -> d3
     in non-manifold render warnings or the removal of pieces from the render
     output. See the description above in union for why this is required and an
     example of how to do this by this using a small epsilon value. *)
-val difference : ('s, 'r) t -> ('s, 'r) t list -> ('s, 'r) t
+val difference : ('s, 'r, 'a) t -> ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 (** [intersection ts]
 
@@ -363,7 +374,7 @@ val difference : ('s, 'r) t -> ('s, 'r) t list -> ('s, 'r) t
     are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
     or {!intersection_3d} if you would like empty intersections to pass
     silently. *)
-val intersection : ('s, 'r) t list -> ('s, 'r) t
+val intersection : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 val intersection_2d : d2 list -> d2
 val intersection_3d : d3 list -> d3
@@ -478,13 +489,13 @@ val surface : ?convexity:int -> ?center:bool -> ?invert:bool -> string -> d3
 (** [to_string t]
 
     Convert the scad [t] to a string in the OpenSCAD language. *)
-val to_string : ('s, 'r) t -> string
+val to_string : ('s, 'r, 'a) t -> string
 
 (** [to_file path t]
 
     Write the scad [t] to a file at the given [path], as an OpenSCAD script
     (using {!to_string}). *)
-val to_file : string -> ('s, 'r) t -> unit
+val to_file : string -> ('s, 'r, 'a) t -> unit
 
 (** [export path t]
 
@@ -494,7 +505,7 @@ val to_file : string -> ('s, 'r) t -> unit
     errors). Compatible extensions:
     - {b 2D}: [.dxf], [.svg], [.csg]
     - {b 3D}: [.stl], [.off], [.amf], [.3mf], [.csg], [.wrl] *)
-val export : string -> ('s, 'r) t -> (unit, string) result
+val export : string -> ('s, 'r, 'a) t -> (unit, string) result
 
 (** [snapshot ?render ?colorscheme ?projection ?size ?camera path t]
 
@@ -517,19 +528,17 @@ val snapshot
   -> ?size:int * int
   -> ?camera:Export.camera
   -> string
-  -> ('s, 'r) t
+  -> ('s, 'r, 'a) t
   -> (unit, string) result
 
 (** {1 Infix Operators} *)
 
-module Infix : sig
-  (** [t |>> p]
+(** [t |>> p]
 
     Infix {!translate} *)
-  val ( |>> ) : ('s, 'r) t -> 's -> ('s, 'r) t
+val ( |>> ) : ('s, 'r, 'a) t -> 's -> ('s, 'r, 'a) t
 
-  (** [t |@> r]
+(** [t |@> r]
 
     Infix {!rotate} *)
-  val ( |@> ) : ('s, 'r) t -> 'r -> ('s, 'r) t
-end
+val ( |@> ) : ('s, 'r, 'a) t -> 'r -> ('s, 'r, 'a) t

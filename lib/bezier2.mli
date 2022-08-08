@@ -2,7 +2,7 @@
     Including {!of_path}, which produces a bezier spline function that passes
     through all points of the given path. *)
 
-include Bezier.S with type vec := Vec2.t
+include Bezier.S with type vec := Vec2.t (** @inline *)
 
 (** {1 2d specific functionality} *)
 
@@ -15,12 +15,11 @@ val line_intersection : line:Vec2.line -> Vec2.t list -> float list
 (** {1 Basic Transfomations} *)
 
 val translate : Vec2.t -> t -> t
-val rotate : float -> t -> t
-val rotate_about_pt : float -> Vec2.t -> t -> t
+val rotate : ?about:Vec2.t -> float -> t -> t
+val zrot : ?about:Vec2.t -> float -> t -> t
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
-val multmatrix : MultMatrix.t -> t -> float -> Vec3.t
-val quaternion : Quaternion.t -> t -> float -> Vec3.t
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> float -> Vec3.t
-val vector_rotate : Vec3.t -> float -> t -> float -> Vec3.t
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> float -> Vec3.t
+val affine : Affine2.t -> t -> t
+val affine3 : Affine3.t -> t -> float -> Vec3.t
+val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> float -> Vec3.t
+val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> float -> Vec3.t

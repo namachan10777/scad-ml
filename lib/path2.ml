@@ -115,18 +115,17 @@ include
 let offset = Offset.offset
 let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)
-let rotate r = List.map (Vec2.rotate r)
-let rotate_about_pt r p = List.map (Vec2.rotate_about_pt r p)
+let rotate ?about r = List.map (Vec2.rotate ?about r)
+let[@inline] zrot ?about r t = rotate ?about r t
 let scale s = List.map (Vec2.scale s)
 let mirror ax = List.map (Vec2.mirror ax)
-let multmatrix m = List.map (fun { x; y } -> MultMatrix.transform m (v3 x y 0.))
-let quaternion q = List.map (fun { x; y } -> Quaternion.rotate_vec3 q (v3 x y 0.))
+let affine a = List.map (Affine2.transform a)
+let affine3 m = List.map (fun { x; y } -> Affine3.transform m (v3 x y 0.))
 
-let quaternion_about_pt q p =
-  List.map (fun { x; y } -> Quaternion.rotate_vec3_about_pt q p (v3 x y 0.))
+let quaternion ?about q =
+  List.map (fun { x; y } -> Quaternion.transform ?about q (v3 x y 0.))
 
-let vector_rotate ax r = quaternion (Quaternion.make ax r)
-let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
+let axis_rotate ?about ax r = quaternion ?about (Quaternion.make ax r)
 
 let circle ?fn ?fa ?fs r =
   let fn = Util.helical_fragments ?fn ?fa ?fs r in

@@ -150,10 +150,11 @@ let offset ?fn ?fs ?fa ?check_valid ?mode d =
   map (Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid ?mode d)
 
 let translate p = map (Path2.translate p)
-let rotate r = map (Path2.rotate r)
-let rotate_about_pt r p = map (Path2.rotate_about_pt r p)
+let rotate ?about r = map (Path2.rotate ?about r)
+let[@inline] zrot ?about r t = rotate ?about r t
 let scale s = map (Path2.scale s)
 let mirror ax = map (Path2.mirror ax)
+let affine m = map (Path2.affine m)
 
 let to_scad ?convexity { outer; holes } =
   match holes with

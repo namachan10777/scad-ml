@@ -81,43 +81,34 @@ let v3 : float -> float -> float -> v3 = Vec.v3
     ({i e.g.} {!Path2.t} and {!Poly2.t}) to be manipulated in
     similar fashion to 2d OpenSCAD shapes ({!Scad.d2}). *)
 module Vec2 = struct
-  include Vec2
+  include Vec2 (** @inline *)
+
+  (** [affine m t]
+
+      Apply 2d affine transformation matrix [m] to the vector [t]. *)
+  let affine m t = Affine2.transform m t
 
   (** {1 2d to 3d transformations} *)
 
-  (** [multmatrix m t]
+  (** [affine3 m t]
 
-      Apply affine transformation matrix [m] to the vector [t], taking it into
+      Apply 3d affine transformation matrix [m] to the vector [t], taking it into
       the 3rd dimension. *)
-  let multmatrix m { x; y } = MultMatrix.transform m (v3 x y 0.)
+  let affine3 m { x; y } = Affine3.transform m (v3 x y 0.)
 
-  (** [quaternion q t]
+  (** [quaternion ?about q t]
 
-      Rotate [t] with the quaternion [q], taking it into the 3rd dimension. *)
-  let quaternion q { x; y } = Quaternion.rotate_vec3 q (v3 x y 0.)
+      Rotate [t] with the quaternion [q] around the origin (or the point [about]
+      if provided), taking it into the 3rd dimension. *)
+  let quaternion ?about q { x; y } = Quaternion.transform ?about q (v3 x y 0.)
 
-  (** [quaternion_about_pt q p t]
+  (** [axis_rotate ?about ax a t]
 
-      Translates [t] along the 3d vector [-p] taking it out off the 2d plane,
-      rotating the resulting vector with the quaternion [q], and finally, moving
-      back along the vector [p]. Functionally, rotating about the point [p]
-      (rather than the origin). *)
-  let quaternion_about_pt q p { x; y } = Quaternion.rotate_vec3_about_pt q p (v3 x y 0.)
-
-  (** [vector_rotate ax a t]
-
-      Rotates the vector [t] around the axis [ax] by the angle [a], taking it
-      into the third dimension. *)
-  let vector_rotate ax a { x; y } = Quaternion.(rotate_vec3 (make ax a) (v3 x y 0.))
-
-  (** [vector_rotate_about_pt ax a p t]
-
-      Translates [t] along the 3d vector [-p] taking it off the 2d plane,
-      rotating the resulting vector around the axis [ax] by the angle [a], and
-      finally, moving back along the vector [p]. Functionally, rotating about the
-      point [p] (rather than the origin). *)
-  let vector_rotate_about_pt ax a p { x; y } =
-    Quaternion.(rotate_vec3_about_pt (make ax a) p (v3 x y 0.))
+      Rotates the vector [t] around the axis [ax] through the origin (or the
+      point [about] if provided) by the angle [a], taking it into the third
+      dimension. *)
+  let axis_rotate ?about ax a { x; y } =
+    Quaternion.(transform ?about (make ax a) (v3 x y 0.))
 end
 
 (** 3-dimensional vector type, including basic mathematical/geometrical
@@ -126,75 +117,62 @@ end
     ({i e.g.} {!Path3.t}, {!Poly3.t}, and {!Mesh.t}) to be manipulated in
     similar fashion to 3d OpenSCAD shapes ({!Scad.d3}). *)
 module Vec3 = struct
-  include Vec3
+  include Vec3 (** @inline *)
 
   (** {1 Additional 3d transformations} *)
 
-  (** [multmatrix m t]
+  (** [affine m t]
 
       Apply affine transformation matrix [m] to the vector [t]. *)
-  let multmatrix = MultMatrix.transform
+  let[@inline] affine m t = Affine3.transform m t
 
-  (** [quaternion q t]
+  (** [quaternion ?about q t]
 
-      Rotate [t] with the quaternion [q]. *)
-  let quaternion = Quaternion.rotate_vec3
+      Rotate [t] with the quaternion [q] around the origin (or the point [about]
+      if provided). *)
+  let[@inline] quaternion ?about q t = Quaternion.transform ?about q t
 
-  (** [quaternion_about_pt q p t]
+  (** [axis_rotate ax a t]
 
-      Translates [t] along the vector [-p], rotating the resulting vector with
-      the quaternion [q], and finally, moving back along the vector [p].
-      Functionally, rotating about the point [p] (rather than the origin). *)
-  let quaternion_about_pt = Quaternion.rotate_vec3_about_pt
-
-  (** [vector_rotate ax a t]
-
-      Rotates the vector [t] around the axis [ax] by the angle [a]. *)
-  let vector_rotate ax a = Quaternion.(rotate_vec3 (make ax a))
-
-  (** [vector_rotate_about_pt ax a p t]
-
-      Translates [t] along the vector [-p], rotating the resulting vector around
-      the axis [ax] by the angle [a], and finally, moving back along the vector
-      [p]. Functionally, rotating about the point [p] (rather than the origin). *)
-  let vector_rotate_about_pt ax a p = Quaternion.(rotate_vec3_about_pt (make ax a) p)
+      Rotates the vector [t] around the axis [ax] through the origin (or the
+      point [about] if provided) by the angle [a]. *)
+  let axis_rotate ?about ax a = Quaternion.(transform ?about (make ax a))
 end
 
 (** {1 Transformations} *)
 
-(** Rotation matrices providing an additional means of rotating 3d vectors
-   ({!Vec3.t}), and by way of {!MultMatrix.t}, 3d OpenSCAD shapes ({!Scad.t}). *)
-module RotMatrix = struct
-  include RotMatrix
-
-  (** [align a b]
-
-    Calculate a rotation matrix that would bring [a] into alignment with [b]. *)
-  let align a b = Quaternion.(to_rotmatrix @@ alignment a b)
-end
+module Affine2 = Affine2
 
 (** Affine transformation matrices for transforming 3d vectors ({!Vec3.t}), and
    3d shapes ({!Scad.t}) via OpenSCAD's own
    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
    (see {!Scad.multmatrix}). *)
-module MultMatrix = struct
-  include MultMatrix
+module Affine3 = struct
+  include Affine3 (** @inline *)
 
-  (** [rotation r]
+  (** {1 Conversions} *)
 
-    Create an affine transformation matrix from the euler angle vector [r]. *)
-  let rotation r = Quaternion.(to_multmatrix @@ of_euler r)
+  (** [project t]
 
-  (** [vector_rotation ax r]
-
-    Create an affine transformation matrix representing a rotation of the angle
-    [r] around the axis [ax]. *)
-  let vector_rotation ax r = Quaternion.(to_multmatrix @@ make ax r)
+      Project [t] down into a 2d affine transformation matrix (z axis components
+      dropped). *)
+  let project (t : t) =
+    Affine2.
+      { r0c0 = t.r0c0
+      ; r0c1 = t.r0c1
+      ; r0c2 = t.r0c3
+      ; r1c0 = t.r1c0
+      ; r1c1 = t.r1c1
+      ; r1c2 = t.r1c3
+      ; r2c0 = 0.
+      ; r2c1 = 0.
+      ; r2c2 = t.r3c3
+      }
 
   (** [of_quaternion q]
 
     Create an affine transformation matrix equivalent to the quaternion [q]. *)
-  let of_quaternion q = Quaternion.to_multmatrix q
+  let of_quaternion ?trans q = Quaternion.to_affine ?trans q
 end
 
 module Quaternion = Quaternion

@@ -1,33 +1,18 @@
 (** Provides functions for the creation of and operations between
     {{:https://en.wikipedia.org/wiki/Quaternion} quaternions}. These can be used
     to create composable and interpolatable rotations to be applied to 3d vectors
-    ({!Vec3.t}) directly, and {!Scad.t} through {!MultMatrix.t}. *)
+    ({!Vec3.t}) directly, and {!Scad.t} through {!Affine3.t}. *)
 
 type t
 
-(** The identity quaternion: [(0., 0., 0., 1.)] *)
+(** The identity quaternion: [{ x = 0.; y = 0.; z = 0.; w = 1. }] *)
 val id : t
-
-(** [coefficients t]
-
-    Returns the imaginary (xyz) and real (w) parts which describe the quaternion [t]. *)
-val coefficients : t -> float * float * float * float
 
 (** [make ax angle]
 
     Create a quaternion representing a rotation of [angle] (in radians) around
     the vector [ax]. *)
 val make : Vec3.t -> float -> t
-
-(** [of_euler v]
-
-    Create a quaternion equivalent to the Euler angle rotations represented by [v]. *)
-val of_euler : Vec3.t -> t
-
-(** [to_euler t]
-
-    Convert the quaternion [t] to equivalent Euler angles. *)
-val to_euler : t -> Vec3.t
 
 (** {1 Basic Arithmetic} *)
 
@@ -108,24 +93,38 @@ val conj : t -> t
     and [b]. *)
 val distance : t -> t -> float
 
-(** {1 Matrix Conversions} *)
+(** Conversions *)
 
-val of_rotmatrix : RotMatrix.t -> t
-val to_rotmatrix : t -> RotMatrix.t
+(** [of_euler v]
 
-(** [to_multmatrix ?trans t]
+    Create a quaternion equivalent to the Euler angle rotations represented by [v]. *)
+val of_euler : Vec3.t -> t
 
-    Convert quaternion [t] into a {!MultMatrix.t}, optionally providing a
+(** [to_euler t]
+
+    Convert the quaternion [t] to equivalent Euler angles. *)
+val to_euler : t -> Vec3.t
+
+(** [to_affine ?trans t]
+
+    Convert quaternion [t] into an {!Affine3.t}, optionally providing a
     translation vector [trans] to tack on. *)
-val to_multmatrix : ?trans:Vec3.t -> t -> MultMatrix.t
+val to_affine : ?trans:Vec3.t -> t -> Affine3.t
+
+(** {1 Vector Transformations} *)
+
+(** [align a b]
+
+    Calculate a quaternion that would bring [a] into alignment with [b]. *)
+val align : Vec3.t -> Vec3.t -> t
+
+(** [transform ?about t v]
+
+    Rotate [v] with the quaternion [t] around the origin (or the point [about]
+    if provided). *)
+val transform : ?about:Vec3.t -> t -> Vec3.t -> Vec3.t
 
 (** {1 Utilities} *)
-
-val to_string : t -> string
-val get_x : t -> float
-val get_y : t -> float
-val get_z : t -> float
-val get_w : t -> float
 
 (** [slerp a b step]
 
@@ -133,21 +132,4 @@ val get_w : t -> float
     {{:https://github.com/KieranWynn/pyquaternion} pyquaternion}. *)
 val slerp : t -> t -> float -> t
 
-(** {1 Vector Transformations} *)
-
-(** [rotate_vec3 t v]
-
-    Rotate [v] with the quaternion [t]. *)
-val rotate_vec3 : t -> Vec3.t -> Vec3.t
-
-(** [rotate_vec3_about_pt t p v]
-
-    Translates [v] along the vector [-p], rotating the resulting vector with the
-    quaternion [t], and finally, moving back along the vector [p]. Functionally,
-    rotating about the point [p] (rather than the origin). *)
-val rotate_vec3_about_pt : t -> Vec3.t -> Vec3.t -> Vec3.t
-
-(** [alignment a b]
-
-    Calculate a quaternion that would bring [a] into alignment with [b]. *)
-val alignment : Vec3.t -> Vec3.t -> t
+val to_string : t -> string

@@ -17,6 +17,9 @@ let[@inline] v3 x y z = { x; y; z }
 module type S = sig
   type t
 
+  (** Zero vector *)
+  val zero : t
+
   (** A line segment between two points. *)
   type line =
     { a : t
@@ -29,8 +32,7 @@ module type S = sig
     ; max : t
     }
 
-  (** Zero vector *)
-  val zero : t
+  (** {1 Comparison} *)
 
   (** [equal a b]
 
@@ -145,6 +147,17 @@ module type S = sig
 
     Calculate the angle between the points [a], [b], and [c]. *)
   val angle_points : t -> t -> t -> float
+
+  (** [ccw_theta t]
+
+       Calculate the angle in radians counter-clockwise [t] is from the positive
+       x-axis along the xy plane. *)
+  val ccw_theta : t -> float
+
+  (** [vector_axis a b]
+
+       Compute the vector perpendicular to the vectors [a] and [b]. *)
+  val vector_axis : t -> t -> v3
 
   (** [clockwise_sign ?eps a b c]
 

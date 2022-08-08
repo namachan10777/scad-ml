@@ -6,7 +6,7 @@ open Scad_ml
     {{!Scad_ml.Mesh.path_extrude} [Mesh.path_extrude]}) provide. For instance, as
     demonstrated below with the {{!wavey} wavey cylinder}, when non-monotonic
     scaling throughout a sweep is desired. In those scenarios,
-    generating/composing lists of {{!Scad_ml.MultMatrix.t} [MultMatrix.t]} by
+    generating/composing lists of {{!Scad_ml.Affine3.t} [Affine3.t]} by
     other means and giving those to {{!Scad_ml.Mesh.sweep} [Mesh.sweep]} is an
     option. *)
 
@@ -20,10 +20,10 @@ let transforms =
   let step = 0.001 in
   let f i =
     let t = Float.of_int i *. step in
-    MultMatrix.(
+    Affine3.(
       mul
-        (vector_rotation (v3 0. 0. 1.) (t *. Float.pi *. 40.))
-        (translation (v3 (10. +. (500. *. t)) 0. 0.)))
+        (axis_rotate (v3 0. 0. 1.) (t *. Float.pi *. 40.))
+        (translate (v3 (10. +. (500. *. t)) 0. 0.)))
   in
   List.init (Int.of_float (1. /. step) + 1) f
 
@@ -48,10 +48,10 @@ let () =
   and rad d = d *. Float.pi /. 180. in
   let f i =
     let t = Float.of_int i *. step in
-    MultMatrix.(
+    Affine3.(
       mul
-        (mul (rotation (v3 (rad 90.) 0. (rad t))) (translation (v3 r 0. 0.)))
-        (scaling (v3 1. (h +. (s *. Float.sin (rad (t *. 6.)))) 1.)))
+        (mul (rotate (v3 (rad 90.) 0. (rad t))) (translate (v3 r 0. 0.)))
+        (scale (v3 1. (h +. (s *. Float.sin (rad (t *. 6.)))) 1.)))
   in
   Mesh.sweep ~transforms:(List.init ((360 / 4) + 1) f) (Poly2.square (v2 2. 1.))
   |> Mesh.to_scad

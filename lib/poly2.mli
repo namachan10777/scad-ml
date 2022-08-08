@@ -179,10 +179,11 @@ val offset
 val map : (Path2.t -> Path2.t) -> t -> t
 
 val translate : Vec2.t -> t -> t
-val rotate : float -> t -> t
-val rotate_about_pt : float -> Vec2.t -> t -> t
+val rotate : ?about:Vec2.t -> float -> t -> t
+val zrot : ?about:Vec2.t -> float -> t -> t
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
+val affine : Affine2.t -> t -> t
 
 (** {1 Output} *)
 

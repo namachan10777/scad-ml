@@ -1,10 +1,9 @@
+(** 3d vector *)
 type t = Vec.v3 =
   { x : float
   ; y : float
   ; z : float
   }
-
-include Vec.S with type t := t
 
 (** [v x y z]
 
@@ -21,38 +20,37 @@ val of_tup : float * float * float -> t
     Convert the vector [t] to a tuple of xyz coordinates. *)
 val to_tup : t -> float * float * float
 
+include Vec.S with type t := t (** @inline *)
+
 (** {1 Transformations}
 
     Equivalent to those found in {!module:Scad}. Quaternion operations are
     provided when this module is included in {!module:Scad_ml}. *)
 
-(** [rotate_x theta t]
+(** [xrot ?about theta t]
 
-    Rotate [t] by [theta] radians about the x-axis. *)
-val rotate_x : float -> t -> t
+    Rotate [t] by [theta] radians in around the x-axis through the origin (or
+    the point [about] if provided). *)
+val xrot : ?about:t -> float -> t -> t
 
-(** [rotate_y theta t]
+(** [yrot ?about theta t]
 
-    Rotate [t] by [theta] radians about the y-ayis. *)
-val rotate_y : float -> t -> t
+    Rotate [t] by [theta] radians in around the y-axis through the origin (or
+    the point [about] if provided). *)
+val yrot : ?about:t -> float -> t -> t
 
-(** [rotate_z theta t]
+(** [zrot ?about theta t]
 
-    Rotate [t] by [theta] radians about the z-azis. *)
-val rotate_z : float -> t -> t
+    Rotate [t] by [theta] radians in around the z-axis through the origin (or
+    the point [about] if provided). *)
+val zrot : ?about:t -> float -> t -> t
 
-(** [rotate r t]
+(** [rotate ?about r t]
 
-    Euler (xyz) rotation of [t] by the angles in [theta]. Equivalent to
-    [rotate_x rx t |> rotate_y ry |> rotate_z rz], where [(rx, ry, rz) = r]. *)
-val rotate : t -> t -> t
-
-(** [rotate_about_pt r pivot t]
-
-    Translates [t] along the vector [-pivot], euler rotating the resulting vector
-    with [r], and finally, moving back along the vector [pivot]. Functionally,
-    rotating about the point [pivot], (rather than the origin). *)
-val rotate_about_pt : t -> t -> t -> t
+    Euler (zyx) rotation of [t] by the [r] (in radians) around the origin (or
+    the point [about] if provided). Equivalent to [xrot x t |> yrot y |> zrot z],
+    where [{x; y; z} = r]. *)
+val rotate : ?about:t -> t -> t -> t
 
 (** [translate p t]
 

@@ -3,8 +3,6 @@ type t = Vec.v2 =
   ; y : float
   }
 
-include Vec.S with type t := t
-
 (** [v x y]
 
     Construct a vector from [x] and [y] coordinates. *)
@@ -19,6 +17,8 @@ val of_tup : float * float -> t
 
     Convert the vector [t] to a tuple of xy coordinates. *)
 val to_tup : t -> float * float
+
+include Vec.S with type t := t (** @inline *)
 
 (** [left_of_line ?eps ~line t]
 
@@ -51,17 +51,17 @@ val line_normal : t -> t -> t
     Equivalent to those found in {!module:Scad}. Quaternion operations are
     provided when this module is included in {!module:Scad_ml}. *)
 
-(** [rotate r t]
+(** [rotate ?about r t]
 
-    Rotation of [t] about the origin by [r] (in radians). *)
-val rotate : float -> t -> t
+    Rotation of [t] by [r] (in radians) around the origin (or the point [about]
+    if provided). *)
+val rotate : ?about:t -> float -> t -> t
 
-(** [rotate_about_pt r pivot t]
+(** [zrot ?about r t]
 
-    Translates [t] along the vector [pivot], rotating the resulting vector
-    with [r], and finally, moving back along the vector [pivot]. Functionally,
-    rotating about the point [pivot] (rather than the origin). *)
-val rotate_about_pt : float -> t -> t -> t
+    Rotation of [t] by [r] (in radians) around the origin (or the point [about]
+    if provided). Alias to {!rotate}. *)
+val zrot : ?about:t -> float -> t -> t
 
 (** [translate p t]
 

@@ -27,16 +27,16 @@ let yz = { a = 1.; b = 0.; c = 0.; d = 0. }
 let project { a; b; c; d } =
   let n = v3 a b c in
   let cp = Vec3.(sdiv (smul n d) (dot n n)) in
-  let rot = Quaternion.(to_multmatrix @@ alignment n (v3 0. 0. 1.)) in
-  let m = MultMatrix.(mul rot (translation (Vec3.negate cp))) in
-  fun p -> Vec3.to_vec2 @@ MultMatrix.transform m p
+  let rot = Quaternion.(to_affine @@ align n (v3 0. 0. 1.)) in
+  let m = Affine3.(mul rot (translate (Vec3.negate cp))) in
+  fun p -> Vec3.to_vec2 @@ Affine3.transform m p
 
 let lift { a; b; c; d } =
   let n = v3 a b c in
   let cp = Vec3.(sdiv (smul n d) (dot n n)) in
-  let rot = Quaternion.(to_multmatrix @@ alignment (v3 0. 0. 1.) n) in
-  let m = MultMatrix.(mul (translation cp) rot) in
-  fun p -> MultMatrix.transform m (Vec3.of_vec2 p)
+  let rot = Quaternion.(to_affine @@ align (v3 0. 0. 1.) n) in
+  let m = Affine3.(mul (translate cp) rot) in
+  fun p -> Affine3.transform m (Vec3.of_vec2 p)
 
 let normal { a; b; c; _ } = Vec3.normalize (v3 a b c)
 let offset { a; b; c; d } = d /. Vec3.norm (v3 a b c)

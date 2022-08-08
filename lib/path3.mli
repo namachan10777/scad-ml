@@ -2,6 +2,7 @@
    (including roundovers (see {!module:Round}), and conversion to sweeping
    transformations with {!to_transforms}), and measurement. *)
 
+(** @inline *)
 include Path.S with type vec := Vec3.t and type line := Vec3.line
 
 (** {1 Search} *)
@@ -182,7 +183,7 @@ val helix
     {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding}
     module. *)
 
-include Rounding.S with type vec := Vec3.t
+include Rounding.S with type vec := Vec3.t (** @inline *)
 
 (** {1 Geometry} *)
 
@@ -224,7 +225,7 @@ val bbox : t -> Vec3.bbox
     transformation matrix for interpolating from [{x = 1.; y = 1.}] at [0.] to
     [scale] by [1.]. If provided, the pair of handle points [ez] will be used to
     ease the scaling (see {!Easing.make}). *)
-val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> MultMatrix.t
+val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> Affine3.t
 
 (** [twister ?ez angle]
 
@@ -232,12 +233,12 @@ val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> MultMatrix.t
     transformation matrix for interpolating from [0.] (no rotation) at [0.] to
     [angle] by [1.]. If provided, the pair of handle points [ez] will be used to
     ease the scaling (see {!Easing.make}). *)
-val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> MultMatrix.t
+val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> Affine3.t
 
 (** [to_transforms ?euler ?scale_ez ?twist_ez ?scale ?twist t]
 
    Generate list of transformations that can be applied to three-dimensional
-   vectors ({!Vec3.t} via {!MultMatrix.transform}) or shapes ({!Scad.d3} via
+   vectors ({!Vec3.t} via {!Affine3.transform}) or shapes ({!Scad.d3} via
    {!Scad.multmatrix}), to move them along the path [t] (intended to be applied
    to the vector/shape from its original position each time).
 
@@ -264,7 +265,7 @@ val to_transforms
   -> ?scale:Vec2.t
   -> ?twist:float
   -> t
-  -> MultMatrix.t list
+  -> Affine3.t list
 
 (** [helical_transforms ?fn ?fs ?fa ?scale_ez ?twist_ez ?scale ?twist
      ?left ~n_turns ~pitch ?r2 r1]
@@ -286,7 +287,7 @@ val helical_transforms
   -> pitch:float
   -> ?r2:float
   -> float
-  -> MultMatrix.t list
+  -> Affine3.t list
 
 (** {1 Path Matching / Vertex Association}
 
@@ -298,18 +299,18 @@ val helical_transforms
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
   skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
 
-include PathMatch.S with type vec := Vec3.t
+include PathMatch.S with type vec := Vec3.t (** @inline *)
 
 (** {1 Basic Transfomations} *)
 
 val translate : Vec3.t -> t -> t
-val rotate : Vec3.t -> t -> t
-val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
-val quaternion : Quaternion.t -> t -> t
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
-val vector_rotate : Vec3.t -> float -> t -> t
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
-val multmatrix : MultMatrix.t -> t -> t
+val rotate : ?about:Vec3.t -> Vec3.t -> t -> t
+val xrot : ?about:Vec3.t -> float -> t -> t
+val yrot : ?about:Vec3.t -> float -> t -> t
+val zrot : ?about:Vec3.t -> float -> t -> t
+val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> t
+val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> t
+val affine : Affine3.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
 

@@ -433,13 +433,13 @@ let enforce_winding w shape =
   if reverse then List.rev shape else shape
 
 let translate p t = { t with points = Path3.translate p t.points }
-let rotate r t = { t with points = Path3.rotate r t.points }
-let rotate_about_pt r p t = { t with points = Path3.rotate_about_pt r p t.points }
-let quaternion q t = { t with points = Path3.quaternion q t.points }
-let quaternion_about_pt q p t = { t with points = Path3.quaternion_about_pt q p t.points }
-let vector_rotate ax r = quaternion (Quaternion.make ax r)
-let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
-let multmatrix m t = { t with points = Path3.multmatrix m t.points }
+let rotate ?about r t = { t with points = Path3.rotate ?about r t.points }
+let xrot ?about r t = { t with points = Path3.xrot ?about r t.points }
+let yrot ?about r t = { t with points = Path3.yrot ?about r t.points }
+let zrot ?about r t = { t with points = Path3.zrot ?about r t.points }
+let quaternion ?about q t = { t with points = Path3.quaternion ?about q t.points }
+let axis_rotate ?about ax r = quaternion ?about (Quaternion.make ax r)
+let affine m t = { t with points = Path3.affine m t.points }
 let scale s t = { t with points = Path3.scale s t.points }
 let mirror ax t = rev_faces { t with points = Path3.mirror ax t.points }
 let show_points f t = Scad.union (List.mapi (fun i p -> Scad.translate p (f i)) t.points)

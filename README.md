@@ -64,7 +64,7 @@ the `Scad.t`, along with their corresponding vector (`Vec2.t` or `Vec3.t`) types
   - Original author of core DSL
 - [@geoffder](https://github.com/geoffder)
   - Overhauled DSL with dimensional types
-  - Addional vector transformation modules (*e.g.* MultMatrix, Quaternion)
+  - Additional vector transformation modules (*e.g.* `Affine3`, `Quaternion`, `Plane`)
   - Modules implementing 2d/3d vector point representations of shapes and
     utilities operating upon them to enable sweeps, roundovers, etc.
 

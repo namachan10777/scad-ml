@@ -61,6 +61,8 @@ let lerpn ?(endpoint = true) a b n =
       lerp a b u )
 
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
+let ccw_theta { x; y } = Float.atan2 y x
+let vector_axis a b = cross a b
 let angle_points a b c = angle (sub a b) (sub c b)
 let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y)
 let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y)
@@ -162,15 +164,20 @@ let[@inline] ( *$ ) a b = smul a b
 let[@inline] ( /$ ) a b = sdiv a b
 let of_vec3 Vec.{ x; y; z = _ } = { x; y }
 let to_vec3 ?(z = 0.) { x; y } = Vec.v3 x y z
+let translate = add
 
-let rotate theta { x; y } =
+let rotate ?about theta t =
   let s = Float.sin theta
   and c = Float.cos theta in
-  let x' = (x *. c) -. (y *. s)
-  and y' = (y *. c) +. (x *. s) in
-  v x' y'
+  let rot { x; y } =
+    let x = (x *. c) -. (y *. s)
+    and y = (y *. c) +. (x *. s) in
+    { x; y }
+  in
+  match about with
+  | Some p -> sub t p |> rot |> add p
+  | None   -> rot t
 
-let rotate_about_pt r pivot t = sub t pivot |> rotate r |> add pivot
-let translate = add
+let[@inline] zrot ?about theta t = rotate ?about theta t
 let scale = mul
 let mirror ax t = sub t (smul ax (2. *. (dot t ax /. dot ax ax)))

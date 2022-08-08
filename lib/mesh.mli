@@ -441,7 +441,7 @@ val sweep
   -> ?merge:bool
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
-  -> transforms:MultMatrix.t list
+  -> transforms:Affine3.t list
   -> Poly2.t
   -> t
 
@@ -545,7 +545,7 @@ val morph
   -> ?hole_map:[ `Same | `Flat of mapping | `Mix of mapping list ]
   -> ?refine:int
   -> ?ez:Vec2.t * Vec2.t
-  -> transforms:MultMatrix.t list
+  -> transforms:Affine3.t list
   -> Poly2.t
   -> Poly2.t
   -> t
@@ -824,13 +824,13 @@ val centroid : ?eps:float -> t -> Vec3.t
 (** {1 Basic Transfomations} *)
 
 val translate : Vec3.t -> t -> t
-val rotate : Vec3.t -> t -> t
-val rotate_about_pt : Vec3.t -> Vec3.t -> t -> t
-val quaternion : Quaternion.t -> t -> t
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> t
-val vector_rotate : Vec3.t -> float -> t -> t
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> t
-val multmatrix : MultMatrix.t -> t -> t
+val rotate : ?about:Vec3.t -> Vec3.t -> t -> t
+val xrot : ?about:Vec3.t -> float -> t -> t
+val yrot : ?about:Vec3.t -> float -> t -> t
+val zrot : ?about:Vec3.t -> float -> t -> t
+val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> t
+val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> t
+val affine : Affine3.t -> t -> t
 val scale : Vec3.t -> t -> t
 val mirror : Vec3.t -> t -> t
 

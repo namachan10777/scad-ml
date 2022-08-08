@@ -51,7 +51,7 @@ let scaler ?ez dims =
       fun u -> Vec2.lerp (v2 1. 1.) dims (ez u)
     | None          -> Vec2.lerp (v2 1. 1.) dims
   in
-  fun u -> MultMatrix.scaling @@ Vec3.of_vec2 ~z:1. @@ f u
+  fun u -> Affine3.scale @@ Vec3.of_vec2 ~z:1. @@ f u
 
 let twister ?ez rot =
   let f =
@@ -61,12 +61,12 @@ let twister ?ez rot =
       fun u -> ez u *. rot
     | None          -> ( *. ) rot
   in
-  fun u -> Quaternion.(to_multmatrix @@ make (v3 0. 0. 1.) (f u))
+  fun u -> Quaternion.(to_affine @@ make (v3 0. 0. 1.) (f u))
 
 let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
-  and id _ = MultMatrix.id in
+  and id _ = Affine3.id in
   let rel_pos =
     if Option.(is_some scale || is_some twist)
     then (
@@ -78,14 +78,12 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
     else Fun.const 0.
   in
   if len < 2 then invalid_arg "Invalid path (too few points).";
-  let scale = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
-  and twist = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist
-  and transform =
+  let scaler = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
+  and twister = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist
+  and transformer =
     if euler
     then (
-      let m =
-        Quaternion.(to_multmatrix @@ of_euler Float.(v3 (pi /. 2.) 0. (pi /. 2.)))
-      in
+      let m = Quaternion.(to_affine @@ of_euler Float.(v3 (pi /. 2.) 0. (pi /. 2.))) in
       fun i ->
         let { x = dx; y = dy; z = dz } =
           if i = 0
@@ -97,14 +95,14 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
         let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
         and az = Float.atan2 dy dx in
         let q = Quaternion.of_euler (v3 0. (-.ay) az) in
-        MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) q) m )
+        Affine3.(m %> Quaternion.(to_affine ~trans:p.(i) q)) )
     else (
       let accum_qs =
         let local i =
           let p1 = p.(i)
           and p2 = p.(i + 1)
           and p3 = p.(i + 2) in
-          Quaternion.alignment Vec3.(normalize (p2 -@ p1)) Vec3.(normalize (p3 -@ p2))
+          Quaternion.align Vec3.(normalize (p2 -@ p1)) Vec3.(normalize (p3 -@ p2))
         in
         match List.init (len - 2) local with
         | []       -> [| Quaternion.id |]
@@ -145,21 +143,14 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
           | _         -> v3 0. 0. sgn_z
         in
         let d = Vec3.normalize Vec3.(p.(1) -@ p.(0)) in
-        MultMatrix.mul
-          Quaternion.(to_multmatrix @@ alignment cardinal d)
-          Quaternion.(to_multmatrix @@ alignment (v3 0. 0. 1.) cardinal)
+        Quaternion.(to_affine @@ mul (align cardinal d) (align (v3 0. 0. 1.) cardinal))
       in
       fun i ->
         if i = 0
-        then MultMatrix.(mul (translation p.(0)) init)
-        else MultMatrix.mul Quaternion.(to_multmatrix ~trans:p.(i) accum_qs.(i - 1)) init
-      )
+        then Affine3.(init %> translate p.(0))
+        else Affine3.(init %> Quaternion.(to_affine ~trans:p.(i) accum_qs.(i - 1))) )
   in
-  let f i =
-    scale (rel_pos i)
-    |> MultMatrix.mul (twist (rel_pos i))
-    |> MultMatrix.mul (transform i)
-  in
+  let f i = Affine3.(scaler (rel_pos i) %> twister (rel_pos i) %> transformer i) in
   List.init len f
 
 let helical_transforms
@@ -186,7 +177,7 @@ let helical_transforms
   in
   let path = helix ?fn ?fa ?fs ~left ~n_turns ~pitch ~r2 r1 in
   let len = List.length path
-  and id _ = MultMatrix.id in
+  and id _ = Affine3.id in
   let rel_pos =
     if Option.(is_some scale || is_some twist)
     then (
@@ -197,13 +188,14 @@ let helical_transforms
       Array.get a )
     else Fun.const 0.
   in
-  let scale = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
-  and twist = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist in
+  let scaler = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
+  and twister = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist in
   let f i trans =
     let eul = v3 ax 0. (a_step *. Float.of_int i) in
-    scale (rel_pos i)
-    |> MultMatrix.mul (twist (rel_pos i))
-    |> MultMatrix.mul Quaternion.(to_multmatrix ~trans (of_euler eul))
+    Affine3.(
+      scaler (rel_pos i)
+      %> twister (rel_pos i)
+      %> Quaternion.(to_affine ~trans (of_euler eul)))
   in
   List.mapi f path
 
@@ -270,13 +262,13 @@ include
     end)
 
 let translate p = List.map (Vec3.translate p)
-let rotate r = List.map (Vec3.rotate r)
-let rotate_about_pt r p = List.map (Vec3.rotate_about_pt r p)
-let quaternion q = List.map (Quaternion.rotate_vec3 q)
-let quaternion_about_pt q p = List.map (Quaternion.rotate_vec3_about_pt q p)
-let vector_rotate ax r = quaternion (Quaternion.make ax r)
-let vector_rotate_about_pt ax r = quaternion_about_pt (Quaternion.make ax r)
-let multmatrix m = List.map (MultMatrix.transform m)
+let rotate ?about r = List.map (Vec3.rotate ?about r)
+let xrot ?about r = List.map (Vec3.xrot ?about r)
+let yrot ?about r = List.map (Vec3.yrot ?about r)
+let zrot ?about r = List.map (Vec3.zrot ?about r)
+let quaternion ?about q = List.map (Quaternion.transform ?about q)
+let axis_rotate ?about ax r = quaternion ?about (Quaternion.make ax r)
+let affine m = List.map (Affine3.transform m)
 let scale s = List.map (Vec3.scale s)
 let mirror ax = List.map (Vec3.mirror ax)
 let show_points f t = Scad.union (List.mapi (fun i p -> Scad.translate p (f i)) t)

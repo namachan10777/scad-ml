@@ -185,7 +185,7 @@ let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
     | Some l -> l
     | None   -> List.length shape
   and z_dir = if flip then -1. else 1.
-  and lift ~z m = List.map (fun p -> MultMatrix.transform m @@ Vec2.to_vec3 ~z p) in
+  and lift ~z m = List.map (fun p -> Affine3.transform m @@ Vec2.to_vec3 ~z p) in
   let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
     let mode, fn, fs, fa =
       match offset_mode with
@@ -346,7 +346,7 @@ let sweep'
                    n_trans;
             Array.get prog
           | Some `AutoDist | None ->
-            let pts = List.map (fun m -> MultMatrix.transform m Vec3.zero) transforms in
+            let pts = List.map (fun m -> Affine3.transform m Vec3.zero) transforms in
             let dists = Path3.cummulative_length pts |> Array.of_list in
             for i = 0 to n_trans - 1 do
               dists.(i) <- dists.(i) /. dists.(n_trans - 1)
@@ -407,16 +407,14 @@ let sweep'
     in
     match transforms with
     | []       ->
-      let bot_lid, bot = cap `Bot ~m:MultMatrix.id bot_shape
-      and top_lid, top = cap `Top ~m:MultMatrix.id top_shape in
+      let bot_lid, bot = cap `Bot ~m:Affine3.id bot_shape
+      and top_lid, top = cap `Top ~m:Affine3.id top_shape in
       bot_lid, top_lid, Mesh0.join [ bot; top ]
     | hd :: tl ->
       let _, mid, last_transform =
         let f (i, acc, _last) m =
           ( i + 1
-          , List.map
-              (fun { x; y } -> MultMatrix.transform m { x; y; z = 0. })
-              (get_shape i)
+          , List.map (fun { x; y } -> Affine3.transform m { x; y; z = 0. }) (get_shape i)
             :: acc
           , m )
         in
@@ -439,7 +437,7 @@ let sweep'
       | Fixed Poly2.{ outer; holes } ->
         let f ~winding path =
           let path = Mesh0.enforce_winding winding path in
-          List.map (fun m -> Path2.multmatrix m path) transforms
+          List.map (fun m -> Path2.affine3 m path) transforms
           |> Mesh0.of_rows ?style ~endcaps:`Loop
         in
         Mesh0.join (f ~winding:outer_wind outer :: List.map (f ~winding:hole_wind) holes)

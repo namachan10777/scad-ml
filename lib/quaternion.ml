@@ -6,7 +6,6 @@ type t =
   }
 
 let id = { x = 0.; y = 0.; z = 0.; w = 1. }
-let coefficients { x; y; z; w } = x, y, z, w
 
 let make ax angle =
   let Vec.{ x; y; z } = Vec3.normalize ax in
@@ -40,38 +39,6 @@ let dot a b = (a.x *. b.x) +. (a.y *. b.y) +. (a.z *. b.z) +. (a.w *. b.w)
 let conj t = { x = -.t.x; y = -.t.y; z = -.t.z; w = t.w }
 let distance a b = norm (sub a b)
 
-let of_rotmatrix m =
-  let g = RotMatrix.get m in
-  match RotMatrix.trace m with
-  | tr when tr > 0. ->
-    let s = Float.sqrt (tr +. 1.) *. 2. in
-    let w = 0.25 *. s
-    and x = (g 2 1 -. g 1 2) /. s
-    and y = (g 0 2 -. g 2 0) /. s
-    and z = (g 1 0 -. g 0 1) /. s in
-    { x; y; z; w }
-  | _ when g 0 0 > g 1 1 && g 0 0 > g 2 2 ->
-    let s = Float.sqrt (1. +. g 0 0 -. g 1 1 -. g 2 2) *. 2. in
-    let w = (g 2 1 -. g 1 2) /. s
-    and x = 0.25 *. s
-    and y = (g 0 1 +. g 1 0) /. s
-    and z = (g 0 2 +. g 2 0) /. s in
-    { x; y; z; w }
-  | _ when g 1 1 > g 2 2 ->
-    let s = Float.sqrt (1. +. g 1 1 -. g 0 0 -. g 2 2) *. 2. in
-    let w = (g 0 2 -. g 2 0) /. s
-    and x = (g 0 1 +. g 1 0) /. s
-    and y = 0.25 *. s
-    and z = (g 1 2 +. g 2 1) /. s in
-    { x; y; z; w }
-  | _ ->
-    let s = Float.sqrt (1. +. g 2 2 -. g 0 0 -. g 1 1) *. 2. in
-    let w = (g 1 0 -. g 0 1) /. s
-    and x = (g 0 2 +. g 2 0) /. s
-    and y = (g 1 2 +. g 2 1) /. s
-    and z = 0.25 *. s in
-    { x; y; z; w }
-
 let of_euler Vec.{ x = roll; y = pitch; z = yaw } =
   let open Float in
   let cy = cos (yaw *. 0.5)
@@ -86,7 +53,24 @@ let of_euler Vec.{ x = roll; y = pitch; z = yaw } =
   and z = (cr *. cp *. sy) -. (sr *. sp *. cy) in
   { x; y; z; w }
 
-let to_rotmatrix { x; y; z; w } =
+let to_euler { x; y; z; w } =
+  let xx = x *. x
+  and yy = y *. y
+  and zz = z *. z
+  and ww = w *. w
+  and wx = w *. x
+  and wy = w *. y
+  and wz = w *. z
+  and zx = z *. x
+  and zy = z *. y
+  and xy = x *. y in
+  Vec3.
+    { x = Float.atan2 (2. *. (zy +. wx)) (ww -. xx -. yy +. zz)
+    ; y = Float.asin (-2. *. (zx -. wy))
+    ; z = Float.atan2 (2. *. (xy +. wz)) (ww +. xx -. yy -. zz)
+    }
+
+let to_affine ?(trans = Vec3.zero) { x; y; z; w } =
   let s =
     let len_sqr = (x *. x) +. (y *. y) +. (z *. z) +. (w *. w) in
     if len_sqr != 0. then 2. /. len_sqr else 0.
@@ -96,19 +80,24 @@ let to_rotmatrix { x; y; z; w } =
   let Vec.{ x = xsx; y = ysx; z = zsx } = Vec3.smul xyzs x
   and Vec.{ y = ysy; z = zsy; _ } = Vec3.smul xyzs y
   and zsz = z *. zs in
-  RotMatrix.of_row_list_exn
-    [ 1. -. ysy -. zsz, ysx -. zsw, zsx +. ysw
-    ; ysx +. zsw, 1. -. xsx -. zsz, zsy -. xsw
-    ; zsx -. ysw, zsy +. xsw, 1. -. xsx -. ysy
-    ]
-
-let to_euler t = RotMatrix.to_euler (to_rotmatrix t)
-let to_multmatrix ?(trans = Vec3.zero) t = MultMatrix.of_rotmatrix (to_rotmatrix t) trans
-let to_string { x; y; z; w } = Printf.sprintf "[%f, %f, %f, %f]" x y z w
-let get_x t = t.x
-let get_y t = t.y
-let get_z t = t.z
-let get_w t = t.w
+  Affine3.
+    { r0c0 = 1. -. ysy -. zsz
+    ; r0c1 = ysx -. zsw
+    ; r0c2 = zsx +. ysw
+    ; r0c3 = trans.x
+    ; r1c0 = ysx +. zsw
+    ; r1c1 = 1. -. xsx -. zsz
+    ; r1c2 = zsy -. xsw
+    ; r1c3 = trans.y
+    ; r2c0 = zsx -. ysw
+    ; r2c1 = zsy +. xsw
+    ; r2c2 = 1. -. xsx -. ysy
+    ; r2c3 = trans.z
+    ; r3c0 = 0.
+    ; r3c1 = 0.
+    ; r3c2 = 0.
+    ; r3c3 = 1.
+    }
 
 let slerp a b =
   let a = normalize a
@@ -131,13 +120,17 @@ let slerp a b =
     | d when d > 0.9995 -> add a (smul (sub b a) v) |> normalize
     | d -> compute a b d
 
-let rotate_vec3 t Vec.{ x; y; z } =
-  let r = { x; y; z; w = 0. } in
-  mul (mul t r) (conj t) |> fun { x; y; z; _ } -> Vec.{ x; y; z }
+let transform ?about t v =
+  let aux Vec.{ x; y; z } =
+    let r = { x; y; z; w = 0. } in
+    let { x; y; z; _ } = mul (mul t r) (conj t) in
+    Vec.{ x; y; z }
+  in
+  match about with
+  | Some p -> Vec3.sub v p |> aux |> Vec3.add p
+  | None   -> aux v
 
-let rotate_vec3_about_pt t p vec = Vec3.add (rotate_vec3 t (Vec3.sub vec p)) p
-
-let alignment v1 v2 =
+let align v1 v2 =
   let dp = Vec3.dot v1 v2 in
   if dp > 0.999999 (* already parallel *)
   then id
@@ -153,3 +146,5 @@ let alignment v1 v2 =
     let Vec.{ x; y; z } = Vec3.(cross v1 v2) in
     let w = Vec3.((norm v1 *. norm v2) +. dot v1 v2) in
     normalize { x; y; z; w } )
+
+let to_string { x; y; z; w } = Printf.sprintf "[%f, %f, %f, %f]" x y z w

@@ -70,6 +70,7 @@ let lerpn ?(endpoint = true) a b n =
 
 let angle a b = Float.acos (Math.clamp ~min:(-1.) ~max:1. (dot a b /. (norm a *. norm b)))
 let angle_points a b c = angle (sub a b) (sub c b)
+let ccw_theta { x; y; _ } = Float.atan2 y x
 let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y) (Float.min a.z b.z)
 let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y) (Float.max a.z b.z)
 let bbox a b = { min = lower_bounds a b; max = upper_bounds a b }
@@ -85,6 +86,19 @@ let collinear p1 p2 p3 =
   and b = distance p2 p3
   and c = distance p3 p1 in
   a +. b < c || b +. c < a || c +. a < b
+
+let vector_axis a b =
+  let eps = 1e-6
+  and a = normalize a
+  and b = normalize b in
+  let c =
+    if norm (sub a b) > eps && norm (add a b) > eps
+    then b
+    else if norm Float.{ x = abs b.x; y = abs b.y; z = abs b.z } > eps
+    then v 0. 0. 1.
+    else v 1. 0. 0.
+  in
+  normalize (cross a c)
 
 let distance_to_vector p v = norm (sub p (smul v (dot p v)))
 
@@ -137,29 +151,47 @@ let[@inline] ( /$ ) a b = sdiv a b
 let to_vec2 { x; y; _ } = Vec.v2 x y
 let of_vec2 ?(z = 0.) ({ x; y } : Vec.v2) = { x; y; z }
 
-let rotate_x theta { x; y; z } =
-  let s = Float.sin theta
-  and c = Float.cos theta in
-  let y' = (y *. c) -. (z *. s)
-  and z' = (z *. c) +. (y *. s) in
-  v x y' z'
+let xrot ?about theta t =
+  let rot { x; y; z } =
+    let s = Float.sin theta
+    and c = Float.cos theta in
+    let y' = (y *. c) -. (z *. s)
+    and z' = (z *. c) +. (y *. s) in
+    v x y' z'
+  in
+  match about with
+  | Some p -> sub t p |> rot |> add p
+  | None   -> rot t
 
-let rotate_y theta { x; y; z } =
-  let s = Float.sin theta
-  and c = Float.cos theta in
-  let x' = (x *. c) +. (z *. s)
-  and z' = (z *. c) -. (x *. s) in
-  v x' y z'
+let yrot ?about theta t =
+  let rot { x; y; z } =
+    let s = Float.sin theta
+    and c = Float.cos theta in
+    let x' = (x *. c) +. (z *. s)
+    and z' = (z *. c) -. (x *. s) in
+    v x' y z'
+  in
+  match about with
+  | Some p -> sub t p |> rot |> add p
+  | None   -> rot t
 
-let rotate_z theta { x; y; z } =
-  let s = Float.sin theta
-  and c = Float.cos theta in
-  let x' = (x *. c) -. (y *. s)
-  and y' = (y *. c) +. (x *. s) in
-  v x' y' z
+let zrot ?about theta t =
+  let rot { x; y; z } =
+    let s = Float.sin theta
+    and c = Float.cos theta in
+    let x' = (x *. c) -. (y *. s)
+    and y' = (y *. c) +. (x *. s) in
+    v x' y' z
+  in
+  match about with
+  | Some p -> sub t p |> rot |> add p
+  | None   -> rot t
 
-let rotate { x; y; z } t = rotate_x x t |> rotate_y y |> rotate_z z
-let rotate_about_pt r pivot t = sub t pivot |> rotate r |> add pivot
+let rotate ?about { x; y; z } t =
+  match about with
+  | Some p -> sub t p |> xrot x |> yrot y |> zrot z |> add p
+  | None   -> xrot x t |> yrot y |> zrot z
+
 let translate = add
 let scale = mul
 let mirror ax t = sub t (smul ax (2. *. (dot t ax /. dot ax ax)))

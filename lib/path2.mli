@@ -1,6 +1,7 @@
 (** 2d path generation (including arcs and basic shapes), manipulation
    (including offset and roundovers (see {!module:Round}), and measurement. *)
 
+(** @inline *)
 include Path.S with type vec := Vec2.t and type line := Vec2.line
 
 (** {1 Search} *)
@@ -202,7 +203,7 @@ val offset
   -> t
   -> t
 
-include Rounding.S with type vec := Vec2.t
+include Rounding.S with type vec := Vec2.t (** @inline *)
 
 (** {1 Geometry } *)
 
@@ -277,18 +278,17 @@ val point_inside
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
   skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
 
-include PathMatch.S with type vec := Vec2.t
+include PathMatch.S with type vec := Vec2.t (** @inline *)
 
 (** {1 Basic Transfomations} *)
 
 val translate : Vec2.t -> t -> t
-val rotate : float -> t -> t
-val rotate_about_pt : float -> Vec2.t -> t -> t
-val multmatrix : MultMatrix.t -> t -> Vec3.t list
-val quaternion : Quaternion.t -> t -> Vec3.t list
-val quaternion_about_pt : Quaternion.t -> Vec3.t -> t -> Vec3.t list
-val vector_rotate : Vec3.t -> float -> t -> Vec3.t list
-val vector_rotate_about_pt : Vec3.t -> float -> Vec3.t -> t -> Vec3.t list
+val rotate : ?about:Vec2.t -> float -> t -> t
+val zrot : ?about:Vec2.t -> float -> t -> t
+val affine : Affine2.t -> t -> t
+val affine3 : Affine3.t -> t -> Vec3.t list
+val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> Vec3.t list
+val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> Vec3.t list
 val scale : Vec2.t -> t -> t
 val mirror : Vec2.t -> t -> t
 
