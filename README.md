@@ -47,8 +47,11 @@ viewer](https://openscad.org/downloads.html) as you normally would.
 
 ## Documentation
 
-Online documentation is available
-[here](https://geoffder.github.io/scad-ml/scad_ml/index.html).
+Documentation is available
+[online](https://geoffder.github.io/scad-ml/scad_ml/index.html), covering the
+[API](https://geoffder.github.io/scad-ml/scad_ml/index.html#api)
+as well as some walkthrough style
+[examples](https://geoffder.github.io/scad-ml/scad_ml/index.html#examples).
 
 ## Companion PPX
 
