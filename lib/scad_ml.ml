@@ -146,7 +146,7 @@ module Affine2 = Affine2
 (** Affine transformation matrices for transforming 3d vectors ({!Vec3.t}), and
    3d shapes ({!Scad.t}) via OpenSCAD's own
    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
-   (see {!Scad.multmatrix}). *)
+   (see {!Scad.affine}). *)
 module Affine3 = struct
   include Affine3 (** @inline *)
 

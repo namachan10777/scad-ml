@@ -239,7 +239,7 @@ val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> Affine3.t
 
    Generate list of transformations that can be applied to three-dimensional
    vectors ({!Vec3.t} via {!Affine3.transform}) or shapes ({!Scad.d3} via
-   {!Scad.multmatrix}), to move them along the path [t] (intended to be applied
+   {!Scad.affine}), to move them along the path [t] (intended to be applied
    to the vector/shape from its original position each time).
 
    Tangents are used to estimate appropriate rotations for each translation,

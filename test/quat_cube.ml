@@ -6,7 +6,7 @@ let quat_cube =
   and angle = Float.pi /. 4.
   and ax = v3 1. 1. 0. in
   let a = Scad.axis_rotate ax angle box
-  and b = Scad.multmatrix Quaternion.(to_affine (make ax angle)) box in
+  and b = Scad.affine Quaternion.(to_affine (make ax angle)) box in
   Scad.union_3d [ a; b ]
 
 let () = print_string (Scad.to_string quat_cube)

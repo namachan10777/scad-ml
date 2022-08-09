@@ -2,7 +2,7 @@
 
     To be used with OpenSCADs
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
-    which is applied in this library with {!Scad.multmatrix}. *)
+    which is applied in this library with {!Scad.affine}. *)
 
 type row = float * float * float * float
 

@@ -20,7 +20,11 @@ type scad
       dimensions over which the scad can be transformed.
     - The ['rot] parameter corresponds to the axes rotation available to the
       scad. For 2d shapes, this is a [float] representing z-axis rotation, and
-      for 3d shapes, xyz axes are available through {!Vec3.t}. *)
+      for 3d shapes, xyz axes are available through {!Vec3.t}.
+    - The ['affine] parameter can be {!Affine2.t} or {!Affine3.t}, specifying
+      the affine transformation matrix to use for the {!affine} function (which
+      maps down to {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
+      multmatrix} in OpenSCAD). *)
 type ('space, 'rot, 'affine) t
 
 (** Two-dimensional shape *)
@@ -252,20 +256,10 @@ val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> d3 -> d3
 (** [affine mat t]
 
     Transforms the geometry [t] with the given affine transformation matrix
-    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes).
-    You can find a detailed explanation of how these are formed and interpreted
+    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes) via the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
-    here}. *)
+    multmatrix} operation in OpenSCAD. *)
 val affine : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
-
-(** [multmatrix mat t]
-
-    Transforms the geometry [t] with the given affine transformation matrix
-    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes).
-    You can find a detailed explanation of how these are formed and interpreted
-    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
-    here}. Alias of {!affine}. *)
-val multmatrix : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [quaternion ?about q t]
 
@@ -335,6 +329,41 @@ val union : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 val union_2d : d2 list -> d2
 val union_3d : d3 list -> d3
 
+(** [add a b]
+
+    Union the shapes [a] and [b]. Equivalent to [union [a; b]]. *)
+val add : ('s, 'r, 'a) t -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
+
+(** [difference t sub]
+
+    Subracts the shapes of [sub] from [t] (logical {b and not }).
+
+    {b Note: } It is mandatory that surfaces that are to be removed by a
+    difference operation have an overlap, and that the negative piece being
+    removed extends fully outside of the volume it is removing that surface
+    from. Failure to follow this rule can cause preview artifacts and can result
+    in non-manifold render warnings or the removal of pieces from the render
+    output. See the description above in union for why this is required and an
+    example of how to do this by this using a small epsilon value. *)
+val difference : ('s, 'r, 'a) t -> ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
+
+(** [sub a b]
+
+    Subtract the shape [b] from [a]. Equivalent to [difference a [b]]. *)
+val sub : ('s, 'r, 'a) t -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
+
+(** [intersection ts]
+
+    Creates an in intersection of [ts]. This keeps the overlapping portion
+    (logical {b and }). Only the area which is common or shared by {b all } shapes
+    are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
+    or {!intersection_3d} if you would like empty intersections to pass
+    silently. *)
+val intersection : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
+
+val intersection_2d : d2 list -> d2
+val intersection_3d : d3 list -> d3
+
 (** [minkowski ts]
 
     Displays the minkowski sum of [ts]. Throws an exception if [ts] is empty,
@@ -353,31 +382,6 @@ val hull : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
 val hull_2d : d2 list -> d2
 val hull_3d : d3 list -> d3
-
-(** [difference t sub]
-
-    Subracts the shapes of [sub] from [t] (logical {b and not }).
-
-    {b Note: } It is mandatory that surfaces that are to be removed by a
-    difference operation have an overlap, and that the negative piece being
-    removed extends fully outside of the volume it is removing that surface
-    from. Failure to follow this rule can cause preview artifacts and can result
-    in non-manifold render warnings or the removal of pieces from the render
-    output. See the description above in union for why this is required and an
-    example of how to do this by this using a small epsilon value. *)
-val difference : ('s, 'r, 'a) t -> ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
-
-(** [intersection ts]
-
-    Creates an in intersection of [ts]. This keeps the overlapping portion
-    (logical {b and }). Only the area which is common or shared by {b all } shapes
-    are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
-    or {!intersection_3d} if you would like empty intersections to pass
-    silently. *)
-val intersection : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
-
-val intersection_2d : d2 list -> d2
-val intersection_3d : d3 list -> d3
 
 (** {1 3d to 2d} *)
 
