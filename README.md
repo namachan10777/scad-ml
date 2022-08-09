@@ -48,10 +48,10 @@ viewer](https://openscad.org/downloads.html) as you normally would.
 ## Documentation
 
 Documentation is available
-[online](https://geoffder.github.io/scad-ml/scad_ml/index.html), covering the
-[API](https://geoffder.github.io/scad-ml/scad_ml/index.html#api)
+[online](https://namachan10777.github.io/scad-ml/scad_ml/index.html), covering the
+[API](https://namachan10777.github.io/scad-ml/scad_ml/index.html#api)
 as well as some walkthrough style
-[examples](https://geoffder.github.io/scad-ml/scad_ml/index.html#examples).
+[examples](https://namachan10777.github.io/scad-ml/scad_ml/index.html#examples).
 
 ## Companion PPX
 
@@ -68,8 +68,8 @@ the `Scad.t`, along with their corresponding vector (`Vec2.t` or `Vec3.t`) types
 - [@geoffder](https://github.com/geoffder)
   - Overhauled DSL with dimensional types
   - Additional vector transformation modules (*e.g.* `Affine3`, `Quaternion`, `Plane`)
-  - Modules implementing 2d/3d vector point representations of shapes and
-    utilities operating upon them to enable sweeps, roundovers, etc.
+  - Modules implementing 2d/3d vector point representations of paths and shapes
+    along with utilities operating upon them to enable sweeps, roundovers, etc.
 
 ## License
 

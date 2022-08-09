@@ -62,7 +62,7 @@ let greatest_distance t ps =
   in
   let min_norm, max_norm = List.fold_left f (Float.max_float, Float.min_float) ps in
   (* Negate offset and norm products to check distance from negative plane [t].
-      Without this, non-zero distances can be retured for points that should be
+      Without this, non-zero distances can be returned for points that should be
       on the plane. *)
   Float.min
     (Float.max (max_norm -. d) (d -. min_norm))
