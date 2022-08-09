@@ -23,7 +23,7 @@ let self_intersections ?(eps = Util.epsilon) ?(closed = false) path =
       let l1 = Vec2.{ a = path.(i); b = path.(i + 1) } in
       let seg_normal =
         let d = Vec2.sub l1.b l1.a in
-        Vec2.(normalize (v2 (-.d.y) d.x))
+        Vec2.(normalize (v (-.d.y) d.x))
       in
       let ref_v = Vec2.dot path.(i) seg_normal
       and last_signal = ref 0

@@ -68,12 +68,12 @@ type v2 = Vec.v2 =
 (** [v2 x y]
 
     Construct a 2d vector from [x] and [y] coordinates. *)
-let v2 : float -> float -> v2 = Vec.v2
+let[@inline] v2 x y = { x; y }
 
 (** [v3 x y z]
 
     Construct a 3d vector from [x], [y], and [z] coordinates. *)
-let v3 : float -> float -> float -> v3 = Vec.v3
+let[@inline] v3 x y z = { x; y; z }
 
 (** 2-dimensional vector type, including basic mathematical/geometrical
     operations and transformations mirroring those found in {!module:Scad},
