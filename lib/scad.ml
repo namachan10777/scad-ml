@@ -186,8 +186,6 @@ let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ MultMatrix (Affine2.lift m, scad)
   | D3 scad -> d3 @@ MultMatrix (m, scad)
 
-let multmatrix = affine
-
 let quaternion ?about q t =
   let aux (D3 scad) = d3 @@ MultMatrix (Quaternion.to_affine q, scad) in
   match about with
@@ -211,15 +209,21 @@ let union : type s r a. (s, r, a) t list -> (s, r, a) t =
   | D3 _ :: _ -> union_3d ts
   | []        -> empty_exn "union"
 
-let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
-let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
+let add a b = union [ a; b ]
 
-let minkowski : type s r a. (s, r, a) t list -> (s, r, a) t =
+let difference (type s r a) (t : (s, r, a) t) (sub : (s, r, a) t list) =
+  map (fun scad -> Difference (scad, List.map unpack sub)) t
+
+let sub a b = difference a [ b ]
+let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
+let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
+
+let intersection : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> minkowski_2d ts
-  | D3 _ :: _ -> minkowski_3d ts
-  | []        -> empty_exn "minkowski"
+  | D2 _ :: _ -> intersection_2d ts
+  | D3 _ :: _ -> intersection_3d ts
+  | []        -> empty_exn "intersection"
 
 let hull_2d ts = d2 @@ Hull (List.map unpack ts)
 let hull_3d ts = d3 @@ Hull (List.map unpack ts)
@@ -231,18 +235,15 @@ let hull : type s r a. (s, r, a) t list -> (s, r, a) t =
   | D3 _ :: _ -> hull_3d ts
   | []        -> empty_exn "hull"
 
-let difference (type s r a) (t : (s, r, a) t) (sub : (s, r, a) t list) =
-  map (fun scad -> Difference (scad, List.map unpack sub)) t
+let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
+let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
 
-let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
-let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
-
-let intersection : type s r a. (s, r, a) t list -> (s, r, a) t =
+let minkowski : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> intersection_2d ts
-  | D3 _ :: _ -> intersection_3d ts
-  | []        -> empty_exn "intersection"
+  | D2 _ :: _ -> minkowski_2d ts
+  | D3 _ :: _ -> minkowski_3d ts
+  | []        -> empty_exn "minkowski"
 
 let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }

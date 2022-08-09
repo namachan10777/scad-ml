@@ -20,7 +20,7 @@ let () =
   Poly2.offset ~mode:`Radius (-0.5) poly
   |> Poly2.to_scad
   |> Scad.linear_extrude ~height:1.
-  |> (fun rounded -> Scad.union [ rounded; pointy ])
+  |> Scad.add pointy
   |> Scad.to_file "offset_poly.scad"
 
 (** {%html:
@@ -45,7 +45,7 @@ let shape_spec =
 let () =
   Scad.polygon (Path2.roundover ~fn:60 shape_spec)
   |> Scad.linear_extrude ~height:1.
-  |> (fun rounded -> Scad.union [ rounded; pointy ])
+  |> Scad.add pointy
   |> Scad.to_file "circular_rounding.scad"
 
 (** {%html:
