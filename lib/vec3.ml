@@ -76,6 +76,13 @@ let ccw_theta { x; y; _ } = Float.atan2 y x
 let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y) (Float.min a.z b.z)
 let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y) (Float.max a.z b.z)
 let bbox a b = { min = lower_bounds a b; max = upper_bounds a b }
+let bbox_centroid bb = mid bb.min bb.max
+
+let bbox_area bb =
+  let x = bb.max.x -. bb.min.x
+  and y = bb.max.y -. bb.min.y
+  and z = bb.max.z -. bb.min.z in
+  2. *. ((x *. y) +. (x *. z) +. (y *. z))
 
 let bbox_intersect a b =
   let open Float in

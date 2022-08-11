@@ -237,6 +237,16 @@ module type S = sig
       Compute the intersect of the bounding boxes [a] and [b]. *)
   val bbox_intersect : bbox -> bbox -> bbox
 
+  (** [bbox_area bb]
+
+      Compute the area of the bounding box [bb]. *)
+  val bbox_area : bbox -> float
+
+  (** [bbox_centroid bb]
+
+      Compute the centroid of the bounding box [bb]. *)
+  val bbox_centroid : bbox -> t
+
   (** {1 Utilities} *)
 
   val map : (float -> float) -> t -> t

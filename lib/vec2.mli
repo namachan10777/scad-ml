@@ -20,11 +20,6 @@ val to_tup : t -> float * float
 
 include Vec.S with type t := t (** @inline *)
 
-(** [bbox_area bb]
-
-    Compute the area of the bounding box [bb]. *)
-val bbox_area : bbox -> float
-
 (** [left_of_line ?eps ~line t]
 
     Return [1.] if [t] is left of [line], [-1.] if it is to the right, and [0.]
