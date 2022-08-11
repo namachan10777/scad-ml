@@ -7,7 +7,7 @@ open Scad_ml
    {{!Scad_ml.Bezier3.curve} [Bezier3.curve]}. *)
 
 let control =
-  Vec3.[ v 5. 5. 12.; v 0. 20. 20.; v 30. 30. 0.; v 50. 20. 5.; v 35. (-10.) 15. ]
+  V3.[ v 5. 5. 12.; v 0. 20. 20.; v 30. 30. 0.; v 50. 20. 5.; v 35. (-10.) 15. ]
 
 let path = Bezier3.curve ~fn:30 @@ Bezier3.of_path control
 

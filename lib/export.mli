@@ -46,15 +46,15 @@ type view =
 type camera =
   | Auto (** Automatically positon to view all of the object, and point at it's centre. *)
   | Gimbal of
-      { translation : Vec3.t (** origin shift vector *)
-      ; rotation : Vec3.t (** euler rotation vector (about translated origin) *)
+      { translation : V3.t (** origin shift vector *)
+      ; rotation : V3.t (** euler rotation vector (about translated origin) *)
       ; distance : [ `Auto | `D of float ]
             (** vertical distance of camera above shifted origin before rotation
                    (auto moves far enough away to bring object fully into frame) *)
       }
   | Eye of
-      { lens : Vec3.t (** lens position vector *)
-      ; center : Vec3.t (** center position vector (which lens points towards) *)
+      { lens : V3.t (** lens position vector *)
+      ; center : V3.t (** center position vector (which lens points towards) *)
       ; view_all : bool (** override vector distance to ensure all object is visible *)
       }
 
@@ -64,18 +64,18 @@ val auto : camera
 (** [gimbal ?translation ?rotation d]
 
     Position and orient the camera as in the OpenSCAD GUI with [translation], and
-    euler [rotation] vectors a (defaulting to {!Vec3.zero}). The focal point is
+    euler [rotation] vectors a (defaulting to {!V3.zero}). The focal point is
     moved from the origin by [translation], then the camera is positioned the
     distance [d] (manually, or far enough back to get the whole object into
     frame) straight upward in z before applying the euler [rotation]. *)
-val gimbal : ?translation:Vec.v3 -> ?rotation:Vec.v3 -> [ `Auto | `D of float ] -> camera
+val gimbal : ?translation:V.v3 -> ?rotation:V.v3 -> [ `Auto | `D of float ] -> camera
 
 (** [eye ?view_all ?center lens]
 
     Position the camera at [lens], and point it at [center]. If [view_all] is
     [true], then the camera will be moved along the difference vector to bring
     the whole object into the frame. *)
-val eye : ?view_all:bool -> ?center:Vec.v3 -> Vec.v3 -> camera
+val eye : ?view_all:bool -> ?center:V.v3 -> V.v3 -> camera
 
 (** [snapshot ?render ?colorscheme ?view ?projection ?size ?camera out_path in_path]
 

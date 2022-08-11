@@ -1,7 +1,7 @@
 (** Provides functions for the creation of and operations between
     {{:https://en.wikipedia.org/wiki/Quaternion} quaternions}. These can be used
     to create composable and interpolatable rotations to be applied to 3d vectors
-    ({!Vec3.t}) directly, and {!Scad.t} through {!Affine3.t}. *)
+    ({!V3.t}) directly, and {!Scad.t} through {!Affine3.t}. *)
 
 type t
 
@@ -12,7 +12,7 @@ val id : t
 
     Create a quaternion representing a rotation of [angle] (in radians) around
     the vector [ax]. *)
-val make : Vec3.t -> float -> t
+val make : V3.t -> float -> t
 
 (** {1 Basic Arithmetic} *)
 
@@ -98,31 +98,31 @@ val distance : t -> t -> float
 (** [of_euler v]
 
     Create a quaternion equivalent to the Euler angle rotations represented by [v]. *)
-val of_euler : Vec3.t -> t
+val of_euler : V3.t -> t
 
 (** [to_euler t]
 
     Convert the quaternion [t] to equivalent Euler angles. *)
-val to_euler : t -> Vec3.t
+val to_euler : t -> V3.t
 
 (** [to_affine ?trans t]
 
     Convert quaternion [t] into an {!Affine3.t}, optionally providing a
     translation vector [trans] to tack on. *)
-val to_affine : ?trans:Vec3.t -> t -> Affine3.t
+val to_affine : ?trans:V3.t -> t -> Affine3.t
 
 (** {1 Vector Transformations} *)
 
 (** [align a b]
 
     Calculate a quaternion that would bring [a] into alignment with [b]. *)
-val align : Vec3.t -> Vec3.t -> t
+val align : V3.t -> V3.t -> t
 
 (** [transform ?about t v]
 
     Rotate [v] with the quaternion [t] around the origin (or the point [about]
     if provided). *)
-val transform : ?about:Vec3.t -> t -> Vec3.t -> Vec3.t
+val transform : ?about:V3.t -> t -> V3.t -> V3.t
 
 (** {1 Utilities} *)
 

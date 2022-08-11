@@ -55,8 +55,8 @@ respectively.
 - {{!Scad_ml.Color} [Color]} -- {{!Scad_ml.Scad.color} [Scad.color]} configuration type
 
 {2 Vectors and transformations}
-- {{!Scad_ml.Vec2} [Vec2]} -- 2d vector operations
-- {{!Scad_ml.Vec3} [Vec3]} -- 3d vector operations
+- {{!Scad_ml.V2} [V2]} -- 2d vector operations
+- {{!Scad_ml.V3} [V3]} -- 3d vector operations
 - {{!Scad_ml.Affine2} [Affine2]} -- 2d affine transformation matrices
 - {{!Scad_ml.Affine3} [Affine3]} -- 3d affine transformation matrices
 - {{!Scad_ml.Quaternion} [Quaternion]} --
@@ -112,5 +112,5 @@ respectively.
 There is a companion ppx, {{:https://github.com/geoffder/ppx_deriving_scad} \[@@deriving scad\]}
 for generating transformation functions for user-defined records and abstract
 types made up of the {{!Scad_ml.Scad.t} [Scad.t]}, along with their
-corresponding vector ({{!Scad_ml.Vec2.t} [Vec2.t]} or {{!Scad_ml.Vec3.t} [Vec3.t]})
+corresponding vector ({{!Scad_ml.V2.t} [V2.t]} or {{!Scad_ml.V3.t} [V3.t]})
 types (and those composed of them) provided in this library.

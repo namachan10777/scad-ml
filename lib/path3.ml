@@ -1,23 +1,23 @@
-open Vec
-include Path.Make (Vec3)
-include PathSearch.Make (Vec3) (BallTree3) (PathSearch.TangentSign3)
+open V
+include Path.Make (V3)
+include PathSearch.Make (V3) (BallTree3) (PathSearch.TangentSign3)
 include Arc3
-include Rounding.Make (Vec3) (Arc3)
-module Bez2 = Bezier.Make (Vec2)
+include Rounding.Make (V3) (Arc3)
+module Bez2 = Bezier.Make (V2)
 
-let of_tups = List.map Vec3.of_tup
+let of_tups = List.map V3.of_tup
 let of_path2 ?(plane = Plane.xy) = Path2.lift plane
 let to_path2 ?(plane = Plane.xy) = List.map (Plane.project plane)
 
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
   | hd :: tl ->
-    let f (bb : Vec3.bbox) p =
-      let min = Vec3.lower_bounds bb.min p
-      and max = Vec3.upper_bounds bb.max p in
-      Vec3.{ min; max }
+    let f (bb : V3.bbox) p =
+      let min = V3.lower_bounds bb.min p
+      and max = V3.upper_bounds bb.max p in
+      V3.{ min; max }
     in
-    List.fold_left f Vec3.{ min = hd; max = hd } tl
+    List.fold_left f V3.{ min = hd; max = hd } tl
 
 let circle ?fn ?fa ?fs ?(plane = Plane.xy) r =
   Path2.lift plane (Path2.circle ?fn ?fa ?fs r)
@@ -48,10 +48,10 @@ let scaler ?ez dims =
     match ez with
     | Some (p1, p2) ->
       let ez = Easing.make p1 p2 in
-      fun u -> Vec2.lerp (v2 1. 1.) dims (ez u)
-    | None          -> Vec2.lerp (v2 1. 1.) dims
+      fun u -> V2.lerp (v2 1. 1.) dims (ez u)
+    | None          -> V2.lerp (v2 1. 1.) dims
   in
-  fun u -> Affine3.scale @@ Vec3.of_vec2 ~z:1. @@ f u
+  fun u -> Affine3.scale @@ V3.of_vec2 ~z:1. @@ f u
 
 let twister ?ez rot =
   let f =
@@ -87,10 +87,10 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
       fun i ->
         let { x = dx; y = dy; z = dz } =
           if i = 0
-          then Vec3.(p.(1) -@ p.(0))
+          then V3.(p.(1) -@ p.(0))
           else if i = len - 1
-          then Vec3.(p.(i) -@ p.(i - 1))
-          else Vec3.(p.(i + 1) -@ p.(i - 1))
+          then V3.(p.(i) -@ p.(i - 1))
+          else V3.(p.(i + 1) -@ p.(i - 1))
         in
         let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
         and az = Float.atan2 dy dx in
@@ -102,7 +102,7 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
           let p1 = p.(i)
           and p2 = p.(i + 1)
           and p3 = p.(i + 2) in
-          Quaternion.align Vec3.(normalize (p2 -@ p1)) Vec3.(normalize (p3 -@ p2))
+          Quaternion.align V3.(normalize (p2 -@ p1)) V3.(normalize (p3 -@ p2))
         in
         match List.init (len - 2) local with
         | []       -> [| Quaternion.id |]
@@ -121,8 +121,8 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
                  (from normal of {x = 0.; y = 0.; z = 1.}), BEFORE alignment
                  with the initial tangent of the path. Adjust for sign of major
                  axes to prevent inconsistent flipping. *)
-          let similarity a b = Vec3.dot a b /. Vec3.(norm a *. norm b)
-          and n = Vec3.(normalize (p.(1) -@ p.(0))) in
+          let similarity a b = V3.dot a b /. V3.(norm a *. norm b)
+          and n = V3.(normalize (p.(1) -@ p.(0))) in
           let z = similarity n (v3 0. 0. 1.)
           and x = similarity n (v3 1. 0. 0.)
           and y = similarity n (v3 0. 1. 0.) in
@@ -142,7 +142,7 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
           | 0, _, _   -> v3 0. sgn_y 0. (* xy equal, roughly following plane *)
           | _         -> v3 0. 0. sgn_z
         in
-        let d = Vec3.normalize Vec3.(p.(1) -@ p.(0)) in
+        let d = V3.normalize V3.(p.(1) -@ p.(0)) in
         Quaternion.(to_affine @@ mul (align cardinal d) (align (v3 0. 0. 1.) cardinal))
       in
       fun i ->
@@ -203,12 +203,12 @@ let normal = function
   | p0 :: p1 :: p2 :: poly ->
     let area_vec =
       let f (sum, last) p =
-        let c = Vec3.(cross (sub last p0) (sub p last)) in
-        Vec3.add c sum, p
+        let c = V3.(cross (sub last p0) (sub p last)) in
+        V3.add c sum, p
       in
-      fst @@ List.fold_left f (f (Vec3.zero, p1) p2) poly
+      fst @@ List.fold_left f (f (V3.zero, p1) p2) poly
     in
-    Vec3.(normalize @@ negate area_vec)
+    V3.(normalize @@ negate area_vec)
   | _                      -> invalid_arg "Too few points to calculate path normal."
 
 let coplanar ?eps t =
@@ -235,13 +235,13 @@ let centroid ?(eps = Util.epsilon) = function
     then invalid_arg "Polygon must be coplanar.";
     let n = Plane.normal plane in
     let f (area_sum, p_sum, p1) p2 =
-      let area = Vec3.(dot (cross (sub p2 p0) (sub p1 p0)) n) in
-      area +. area_sum, Vec3.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
+      let area = V3.(dot (cross (sub p2 p0) (sub p1 p0)) n) in
+      area +. area_sum, V3.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
     in
-    let area_sum, p_sum, _ = List.fold_left f (0., Vec3.zero, p1) tl in
+    let area_sum, p_sum, _ = List.fold_left f (0., V3.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec3.(sdiv p_sum (area_sum *. 3.))
+    V3.(sdiv p_sum (area_sum *. 3.))
 
 let area ?(signed = false) = function
   | [] | [ _ ] | [ _; _ ] -> 0.
@@ -249,29 +249,29 @@ let area ?(signed = false) = function
     let plane = to_plane t in
     if not @@ Plane.are_points_on plane t then invalid_arg "Polygon must be coplanar.";
     let n = Plane.normal plane in
-    let f (area, p1) p2 = (area +. Vec3.(dot (cross (sub p1 p0) (sub p2 p0)) n)), p2 in
+    let f (area, p1) p2 = (area +. V3.(dot (cross (sub p1 p0) (sub p2 p0)) n)), p2 in
     let area, _ = List.fold_left f (0., p1) tl in
     if signed then area else Float.abs area
 
 include
   PathMatch.Make
-    (Vec3)
+    (V3)
     (struct
       let centroid = centroid
       let closest_tangent = closest_tangent
     end)
 
-let translate p = List.map (Vec3.translate p)
-let xtrans x = List.map (Vec3.xtrans x)
-let ytrans y = List.map (Vec3.ytrans y)
-let ztrans z = List.map (Vec3.ztrans z)
-let rotate ?about r = List.map (Vec3.rotate ?about r)
-let xrot ?about r = List.map (Vec3.xrot ?about r)
-let yrot ?about r = List.map (Vec3.yrot ?about r)
-let zrot ?about r = List.map (Vec3.zrot ?about r)
+let translate p = List.map (V3.translate p)
+let xtrans x = List.map (V3.xtrans x)
+let ytrans y = List.map (V3.ytrans y)
+let ztrans z = List.map (V3.ztrans z)
+let rotate ?about r = List.map (V3.rotate ?about r)
+let xrot ?about r = List.map (V3.xrot ?about r)
+let yrot ?about r = List.map (V3.yrot ?about r)
+let zrot ?about r = List.map (V3.zrot ?about r)
 let quaternion ?about q = List.map (Quaternion.transform ?about q)
 let axis_rotate ?about ax r = quaternion ?about (Quaternion.make ax r)
 let affine m = List.map (Affine3.transform m)
-let scale s = List.map (Vec3.scale s)
-let mirror ax = List.map (Vec3.mirror ax)
+let scale s = List.map (V3.scale s)
+let mirror ax = List.map (V3.mirror ax)
 let show_points f t = Scad.union (List.mapi (fun i p -> Scad.translate p (f i)) t)

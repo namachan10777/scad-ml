@@ -1,10 +1,10 @@
-open Vec
-include Path.Make (Vec2)
-include PathSearch.Make (Vec2) (BallTree2) (PathSearch.TangentSign2)
+open V
+include Path.Make (V2)
+include PathSearch.Make (V2) (BallTree2) (PathSearch.TangentSign2)
 include Arc2
-include Rounding.Make (Vec2) (Arc2)
+include Rounding.Make (V2) (Arc2)
 
-let of_tups = List.map Vec2.of_tup
+let of_tups = List.map V2.of_tup
 let of_path3 ?(plane = Plane.xy) = List.map (Plane.project plane)
 let to_path3 ?(plane = Plane.xy) = List.map (Plane.lift plane)
 
@@ -25,10 +25,10 @@ let is_simple ?eps ?closed path = APath2.is_simple ?eps ?closed (Array.of_list p
 let bbox = function
   | []       -> invalid_arg "Cannot calculate bbox for empty path."
   | hd :: tl ->
-    let f (bb : Vec2.bbox) p =
-      let min = Vec2.lower_bounds bb.min p
-      and max = Vec2.upper_bounds bb.max p in
-      Vec2.{ min; max }
+    let f (bb : V2.bbox) p =
+      let min = V2.lower_bounds bb.min p
+      and max = V2.upper_bounds bb.max p in
+      V2.{ min; max }
     in
     List.fold_left f { min = hd; max = hd } tl
 
@@ -36,20 +36,18 @@ let centroid ?(eps = Util.epsilon) = function
   | [] | [ _ ] | [ _; _ ] -> invalid_arg "Polygon must have more than two points."
   | p0 :: p1 :: tl        ->
     let f (area_sum, p_sum, p1) p2 =
-      let { z = area; _ } = Vec2.(cross (sub p2 p0) (sub p1 p0)) in
-      area +. area_sum, Vec2.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
+      let { z = area; _ } = V2.(cross (sub p2 p0) (sub p1 p0)) in
+      area +. area_sum, V2.(add p_sum (smul (p0 +@ p1 +@ p2) area)), p2
     in
-    let area_sum, p_sum, _ = List.fold_left f (0., Vec2.zero, p1) tl in
+    let area_sum, p_sum, _ = List.fold_left f (0., V2.zero, p1) tl in
     if Math.approx ~eps area_sum 0.
     then invalid_arg "The polygon is self-intersecting, or its points are collinear.";
-    Vec2.(sdiv p_sum (area_sum *. 3.))
+    V2.(sdiv p_sum (area_sum *. 3.))
 
 let area ?(signed = false) = function
   | [] | [ _ ] | [ _; _ ] -> 0.
   | p0 :: p1 :: tl        ->
-    let f (area, p1) p2 =
-      (area +. Vec2.(Vec3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2
-    in
+    let f (area, p1) p2 = (area +. V2.(V3.get_z (cross (sub p1 p0) (sub p2 p0)))), p2 in
     let area, _ = List.fold_left f (0., p1) tl in
     (if signed then area else Float.abs area) /. 2.
 
@@ -64,9 +62,9 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
     let segs = segment ~closed:true t in
     let exception OnBorder in
     if try
-         let f (s : Vec2.line) =
-           if Vec2.distance s.a s.b > eps
-              && Vec2.point_on_line ~eps ~bounds:(true, true) ~line:s p
+         let f (s : V2.line) =
+           if V2.distance s.a s.b > eps
+              && V2.point_on_line ~eps ~bounds:(true, true) ~line:s p
            then raise OnBorder
          in
          List.iter f segs;
@@ -76,13 +74,13 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
     then `OnBorder
     else if nonzero
     then (
-      let f sum (s : Vec2.line) =
-        let p0 = Vec2.sub s.a p
-        and p1 = Vec2.sub s.b p in
+      let f sum (s : V2.line) =
+        let p0 = V2.sub s.a p
+        and p1 = V2.sub s.b p in
         let w =
-          if Vec2.distance p0 p1 > eps
+          if V2.distance p0 p1 > eps
           then (
-            let c = (Vec2.cross p0 (Vec2.sub p1 p0)).z in
+            let c = (V2.cross p0 (V2.sub p1 p0)).z in
             if p0.y <= 0.
             then if p1.y > 0. && c > 0. then 1 else 0
             else if p1.y <= 0. && c < 0.
@@ -94,9 +92,9 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
       in
       if List.fold_left f 0 segs <> 0 then `Inside else `Outside )
     else (
-      let f crossings (s : Vec2.line) =
-        let p0 = Vec2.sub s.a p
-        and p1 = Vec2.sub s.b p in
+      let f crossings (s : V2.line) =
+        let p0 = V2.sub s.a p
+        and p1 = V2.sub s.b p in
         if ((p1.y > eps && p0.y <= eps) || (p1.y <= eps && p0.y > eps))
            && -.eps < p0.x -. (p0.y *. (p1.x -. p0.x) /. (p1.y -. p0.y))
         then crossings + 1
@@ -106,7 +104,7 @@ let point_inside ?(eps = Util.epsilon) ?(nonzero = false) t p =
 
 include
   PathMatch.Make
-    (Vec2)
+    (V2)
     (struct
       let centroid = centroid
       let closest_tangent = closest_tangent
@@ -114,13 +112,13 @@ include
 
 let offset = Offset.offset
 let lift plane = to_path3 ~plane
-let translate p = List.map (Vec2.translate p)
-let xtrans x = List.map (Vec2.xtrans x)
-let ytrans y = List.map (Vec2.ytrans y)
-let rotate ?about r = List.map (Vec2.rotate ?about r)
+let translate p = List.map (V2.translate p)
+let xtrans x = List.map (V2.xtrans x)
+let ytrans y = List.map (V2.ytrans y)
+let rotate ?about r = List.map (V2.rotate ?about r)
 let[@inline] zrot ?about r t = rotate ?about r t
-let scale s = List.map (Vec2.scale s)
-let mirror ax = List.map (Vec2.mirror ax)
+let scale s = List.map (V2.scale s)
+let mirror ax = List.map (V2.mirror ax)
 let affine a = List.map (Affine2.transform a)
 let affine3 m = List.map (fun { x; y } -> Affine3.transform m (v3 x y 0.))
 
@@ -143,8 +141,8 @@ let square ?(center = false) { x; y } =
   then (
     let x = x /. 2.
     and y = y /. 2. in
-    Vec2.[ v x (-.y); v (-.x) (-.y); v (-.x) y; v x y ] )
-  else Vec2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
+    V2.[ v x (-.y); v (-.x) (-.y); v (-.x) y; v x y ] )
+  else V2.[ v 0. y; v x y; v x 0.; v 0. 0. ]
 
 let ellipse ?fn ?fa ?fs { x; y } =
   let fn = Util.helical_fragments ?fn ?fa ?fs (Float.max x y) in
@@ -170,6 +168,6 @@ let star ~r1 ~r2 n =
 let cubic_spline ?boundary ~fn ps = CubicSpline.(interpolate_path ~fn (fit ?boundary ps))
 
 let show_points f t =
-  Scad.union (List.mapi (fun i p -> Scad.translate (Vec3.of_vec2 p) (f i)) t)
+  Scad.union (List.mapi (fun i p -> Scad.translate (V3.of_vec2 p) (f i)) t)
 
 let to_scad ?convexity t = Scad.polygon ?convexity t

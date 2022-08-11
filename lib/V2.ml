@@ -1,4 +1,4 @@
-type t = Vec.v2 =
+type t = V.v2 =
   { x : float
   ; y : float
   }
@@ -38,7 +38,7 @@ let normalize t =
   if n > 0. then sdiv t n else t
 
 let dot a b = (a.x *. b.x) +. (a.y *. b.y)
-let cross a b = Vec.v3 0. 0. ((a.x *. b.y) -. (a.y *. b.x))
+let cross a b = V.v3 0. 0. ((a.x *. b.y) -. (a.y *. b.x))
 let mid a b = v ((a.x +. b.x) /. 2.) ((a.y +. b.y) /. 2.)
 
 let mean l =
@@ -79,7 +79,7 @@ let bbox_intersect a b =
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a
   and cb = sub c b in
-  let Vec.{ z; _ } = cross ba cb in
+  let V.{ z; _ } = cross ba cb in
   if Float.abs z <= eps *. norm ba *. norm cb then 0. else Math.sign z
 
 let collinear p1 p2 p3 =
@@ -132,16 +132,16 @@ let line_intersection
   =
   let d1 = sub l1.a l1.b
   and d2 = sub l2.a l2.b in
-  let Vec.{ z = denominator; _ } = cross d1 d2 in
+  let V.{ z = denominator; _ } = cross d1 d2 in
   if Math.approx ~eps denominator 0.
   then None
   else (
     let v = sub l1.a l2.a in
     let a_frac =
-      let Vec.{ z = num; _ } = cross v d2 in
+      let V.{ z = num; _ } = cross v d2 in
       num /. denominator
     and b_frac =
-      let Vec.{ z = num; _ } = cross v d1 in
+      let V.{ z = num; _ } = cross v d1 in
       num /. denominator
     in
     let good =
@@ -170,8 +170,8 @@ let[@inline] ( +$ ) a b = sadd a b
 let[@inline] ( -$ ) a b = ssub a b
 let[@inline] ( *$ ) a b = smul a b
 let[@inline] ( /$ ) a b = sdiv a b
-let of_vec3 Vec.{ x; y; z = _ } = { x; y }
-let to_vec3 ?(z = 0.) { x; y } = Vec.v3 x y z
+let of_vec3 V.{ x; y; z = _ } = { x; y }
+let to_vec3 ?(z = 0.) { x; y } = V.v3 x y z
 let[@inline] translate a b = add a b
 let[@inline] xtrans d { x; y } = v (x +. d) y
 let[@inline] ytrans d { x; y } = v x (y +. d)

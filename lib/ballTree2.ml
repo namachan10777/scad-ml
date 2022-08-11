@@ -12,4 +12,4 @@
    searches of the same data. Below a certain number of points, it may be better
    to perform a direct search. *)
 
-include (BallTree.Make (Vec2) (BallTree.Proj2) : BallTree.S with type vec := Vec2.t)
+include (BallTree.Make (V2) (BallTree.Proj2) : BallTree.S with type vec := V2.t)

@@ -1,4 +1,4 @@
-open Vec
+open V
 
 type row = float * float * float
 
@@ -172,15 +172,15 @@ let rotate ?about r =
       }
     in
     match about with
-    | Some p -> translate (Vec2.negate p) %> rot %> translate p
+    | Some p -> translate (V2.negate p) %> rot %> translate p
     | None   -> rot )
 
 let[@inline] zrot ?about r = rotate ?about r
 
 let align a b =
-  let a = Vec2.normalize a
-  and b = Vec2.normalize b in
-  if Vec2.approx a b then id else zrot Vec2.(ccw_theta b -. ccw_theta a)
+  let a = V2.normalize a
+  and b = V2.normalize b in
+  if V2.approx a b then id else zrot V2.(ccw_theta b -. ccw_theta a)
 
 let scale { x; y } =
   { r0c0 = x
@@ -195,7 +195,7 @@ let scale { x; y } =
   }
 
 let mirror ax =
-  let { x; y } = Vec2.normalize ax in
+  let { x; y } = V2.normalize ax in
   let xx = 1. -. (2. *. x *. x)
   and xy = -2. *. x *. y
   and yy = 1. -. (2. *. y *. y) in

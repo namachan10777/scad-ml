@@ -1,4 +1,4 @@
-open Vec
+open V
 
 type boundary =
   [ `Quadratic
@@ -69,7 +69,7 @@ let rref m =
    https://github.com/Simsso/Online-Tools/blob/master/src/page/logic/cubic-spline-interpolation.js *)
 let fit ?(boundary = `Natural) ps =
   let ps =
-    let f (p1 : Vec2.t) (p2 : Vec2.t) = Float.compare p1.x p2.x in
+    let f (p1 : V2.t) (p2 : V2.t) = Float.compare p1.x p2.x in
     Array.of_list @@ List.sort_uniq f ps
   and row = ref 0 in
   let len = Array.length ps in

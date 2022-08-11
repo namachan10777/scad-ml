@@ -3,7 +3,7 @@
    transformations with {!to_transforms}), and measurement. *)
 
 (** @inline *)
-include Path.S with type vec := Vec3.t and type line := Vec3.line
+include Path.S with type vec := V3.t and type line := V3.line
 
 (** {1 Search} *)
 
@@ -18,7 +18,7 @@ include Path.S with type vec := Vec3.t and type line := Vec3.line
     plan to search for more than one target point, take care to apply this
     function in two steps to avoid repeated length checks and closure/tree
     generations. *)
-val nearby_idxs : ?min_tree_size:int -> ?radius:float -> Vec3.t list -> Vec3.t -> int list
+val nearby_idxs : ?min_tree_size:int -> ?radius:float -> V3.t list -> V3.t -> int list
 
 (** [nearby_points ?min_tree_size ?radius path]
 
@@ -31,25 +31,15 @@ val nearby_idxs : ?min_tree_size:int -> ?radius:float -> Vec3.t list -> Vec3.t -
     plan to search for more than one target point, take care to apply this
     function in two steps to avoid repeated length checks and closure/tree
     generations. *)
-val nearby_points
-  :  ?min_tree_size:int
-  -> ?radius:float
-  -> Vec3.t list
-  -> Vec3.t
-  -> Vec3.t list
+val nearby_points : ?min_tree_size:int -> ?radius:float -> V3.t list -> V3.t -> V3.t list
 
 (** [closest_tangent ?closed ?offset ~line t]
 
     Find the tangent segment (and its index) on the curved path [t] closest to [line]
-    after [offset] (default = [Vec3.zero]) is applied to the points of [t] (can
+    after [offset] (default = [V3.zero]) is applied to the points of [t] (can
     be used to centre the path relative to [line] to help in choosing the
     desired tangent). *)
-val closest_tangent
-  :  ?closed:bool
-  -> ?offset:Vec3.t
-  -> line:Vec3.line
-  -> t
-  -> int * Vec3.line
+val closest_tangent : ?closed:bool -> ?offset:V3.t -> line:V3.line -> t -> int * V3.line
 
 (** {1 Creation and 2d-3d Conversion} *)
 
@@ -93,13 +83,13 @@ val circle : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> float -> t
     Draw a rectangular path with xy [dims] (e.g. width and height) onto
     [plane] (default = {!Plane.xy}). If [center] is [true] then the path will be
     centred around the origin (default = [false]). *)
-val square : ?center:bool -> ?plane:Plane.t -> Vec2.t -> t
+val square : ?center:bool -> ?plane:Plane.t -> V2.t -> t
 
 (** [ellipse ?fn ?fa ?fs ?plane radii]
 
     Draw an ellipse with xy [radii] onto [plane] (default = {!Plane.xy}). The
     greater of the two radii is used for fragment/resolution calculation. *)
-val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> Vec2.t -> t
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> ?plane:Plane.t -> V2.t -> t
 
 (** [star ?plane ~r1 ~r2 n]
 
@@ -119,7 +109,7 @@ val arc
   -> ?fs:float
   -> ?plane:Plane.t
   -> ?wedge:bool
-  -> centre:Vec3.t
+  -> centre:V3.t
   -> radius:float
   -> start:float
   -> float
@@ -136,9 +126,9 @@ val arc_about_centre
   -> ?fs:float
   -> ?dir:[ `CW | `CCW ]
   -> ?wedge:bool
-  -> centre:Vec3.t
-  -> Vec3.t
-  -> Vec3.t
+  -> centre:V3.t
+  -> V3.t
+  -> V3.t
   -> t
 
 (** [arc_through ?rev ?fn ?fa ?fs ?wedge p1 p2 p3]
@@ -150,9 +140,9 @@ val arc_through
   -> ?fa:float
   -> ?fs:float
   -> ?wedge:bool
-  -> Vec3.t
-  -> Vec3.t
-  -> Vec3.t
+  -> V3.t
+  -> V3.t
+  -> V3.t
   -> t
 
 (** [helix ?fn ?fa ?fs ?left ~n_turns ~pitch ?r2 r1]
@@ -183,7 +173,7 @@ val helix
     {{:https://github.com/revarbat/BOSL2/blob/master/rounding.scad} rounding}
     module. *)
 
-include Rounding.S with type vec := Vec3.t (** @inline *)
+include Rounding.S with type vec := V3.t (** @inline *)
 
 (** {1 Geometry} *)
 
@@ -191,14 +181,14 @@ include Rounding.S with type vec := Vec3.t (** @inline *)
 
    Calculate the normal vector of the path [t]. An [Invalid_argument] exception
    is raised if there are fewer than three points in [t]. *)
-val normal : t -> Vec3.t
+val normal : t -> V3.t
 
 (** [centroid ?eps t]
 
     Compute the centroid of the path [t]. If [t] is collinear or
    self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
    is raised. *)
-val centroid : ?eps:float -> t -> Vec3.t
+val centroid : ?eps:float -> t -> V3.t
 
 (** [area ?signed t]
 
@@ -215,7 +205,7 @@ val coplanar : ?eps:float -> t -> bool
 (** [bbox t]
 
     Compute the 3d bounding box of the path [t]. *)
-val bbox : t -> Vec3.bbox
+val bbox : t -> V3.bbox
 
 (** {1 Sweeping Transform Helpers} *)
 
@@ -225,7 +215,7 @@ val bbox : t -> Vec3.bbox
     transformation matrix for interpolating from [{x = 1.; y = 1.}] at [0.] to
     [scale] by [1.]. If provided, the pair of handle points [ez] will be used to
     ease the scaling (see {!Easing.make}). *)
-val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> Affine3.t
+val scaler : ?ez:V2.t * V2.t -> V2.t -> float -> Affine3.t
 
 (** [twister ?ez angle]
 
@@ -233,12 +223,12 @@ val scaler : ?ez:Vec2.t * Vec2.t -> Vec2.t -> float -> Affine3.t
     transformation matrix for interpolating from [0.] (no rotation) at [0.] to
     [angle] by [1.]. If provided, the pair of handle points [ez] will be used to
     ease the scaling (see {!Easing.make}). *)
-val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> Affine3.t
+val twister : ?ez:V2.t * V2.t -> float -> float -> Affine3.t
 
 (** [to_transforms ?euler ?scale_ez ?twist_ez ?scale ?twist t]
 
    Generate list of transformations that can be applied to three-dimensional
-   vectors ({!Vec3.t} via {!Affine3.transform}) or shapes ({!Scad.d3} via
+   vectors ({!V3.t} via {!Affine3.transform}) or shapes ({!Scad.d3} via
    {!Scad.affine}), to move them along the path [t] (intended to be applied
    to the vector/shape from its original position each time).
 
@@ -260,9 +250,9 @@ val twister : ?ez:Vec2.t * Vec2.t -> float -> float -> Affine3.t
    {!scaler} and {!twister}). *)
 val to_transforms
   :  ?euler:bool
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> t
   -> Affine3.t list
@@ -278,9 +268,9 @@ val helical_transforms
   :  ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> ?left:bool
   -> n_turns:int
@@ -299,23 +289,23 @@ val helical_transforms
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
   skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
 
-include PathMatch.S with type vec := Vec3.t (** @inline *)
+include PathMatch.S with type vec := V3.t (** @inline *)
 
 (** {1 Basic Transfomations} *)
 
-val translate : Vec3.t -> t -> t
+val translate : V3.t -> t -> t
 val xtrans : float -> t -> t
 val ytrans : float -> t -> t
 val ztrans : float -> t -> t
-val rotate : ?about:Vec3.t -> Vec3.t -> t -> t
-val xrot : ?about:Vec3.t -> float -> t -> t
-val yrot : ?about:Vec3.t -> float -> t -> t
-val zrot : ?about:Vec3.t -> float -> t -> t
-val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> t
-val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> t
+val rotate : ?about:V3.t -> V3.t -> t -> t
+val xrot : ?about:V3.t -> float -> t -> t
+val yrot : ?about:V3.t -> float -> t -> t
+val zrot : ?about:V3.t -> float -> t -> t
+val quaternion : ?about:V3.t -> Quaternion.t -> t -> t
+val axis_rotate : ?about:V3.t -> V3.t -> float -> t -> t
 val affine : Affine3.t -> t -> t
-val scale : Vec3.t -> t -> t
-val mirror : Vec3.t -> t -> t
+val scale : V3.t -> t -> t
+val mirror : V3.t -> t -> t
 
 (** {1 Debugging helpers} *)
 

@@ -1,12 +1,12 @@
-open Vec
+open V
 
 exception SelfIntersection of int
 exception CrossIntersection of int * int
 exception DuplicatePoints
 
 type t =
-  { outer : Vec2.t list
-  ; holes : Vec2.t list list
+  { outer : V2.t list
+  ; holes : V2.t list list
   }
 
 let validation ?(eps = Util.epsilon) = function
@@ -27,30 +27,30 @@ let validation ?(eps = Util.epsilon) = function
       while !i < len_p1 - 1 do
         let a = p1.(!i)
         and b = p1.(Util.index_wrap ~len:len_p1 (!i + 1)) in
-        let diff = Vec2.sub b a in
-        let dist = Vec2.norm diff in
+        let diff = V2.sub b a in
+        let dist = V2.norm diff in
         if dist > eps
         then (
-          let s1 = Vec2.{ a; b } in
+          let s1 = V2.{ a; b } in
           let s1_normal = { x = -.diff.y /. dist; y = diff.x /. dist } in
-          let ref_v = Vec2.dot s1.a s1_normal
+          let ref_v = V2.dot s1.a s1_normal
           and p2_idx = ref (!p1_idx + 1) in
           while !p2_idx < n do
             let last_signal = ref 0
             and p2 = paths.(!p2_idx) in
             let len_p2 = Array.length p2 in
             for j = 0 to len_p2 - 1 do
-              let v = Vec2.dot p2.(j) s1_normal -. ref_v in
+              let v = V2.dot p2.(j) s1_normal -. ref_v in
               if Float.abs v >= eps
               then (
                 let signal = Int.of_float @@ Math.sign v in
                 if signal * !last_signal < 0
-                   && Vec2.line_intersection
+                   && V2.line_intersection
                         ~eps
                         ~bounds1:(true, true)
                         ~bounds2:(true, true)
                         s1
-                        Vec2.{ a = p2.(j); b = p2.(Util.index_wrap ~len:len_p2 (j + 1)) }
+                        V2.{ a = p2.(j); b = p2.(Util.index_wrap ~len:len_p2 (j + 1)) }
                       |> Option.is_some
                 then raise (CrossIntersection (!p1_idx, !p2_idx));
                 last_signal := signal )
@@ -68,7 +68,7 @@ let validation ?(eps = Util.epsilon) = function
     then
       for i = 0 to len - 2 do
         for j = i + 1 to len - 1 do
-          if Vec2.approx ~eps pts.(i) pts.(j) then raise DuplicatePoints
+          if V2.approx ~eps pts.(i) pts.(j) then raise DuplicatePoints
         done
       done
     else (
@@ -122,14 +122,14 @@ let ring ?fn ?fa ?fs ~thickness radii =
      && thickness.y > 0.
   then
     make
-      ~holes:[ List.rev @@ Path2.ellipse ?fn ?fa ?fs (Vec2.sub radii thickness) ]
+      ~holes:[ List.rev @@ Path2.ellipse ?fn ?fa ?fs (V2.sub radii thickness) ]
       (Path2.ellipse ?fn ?fa ?fs radii)
   else invalid_arg "Ring thickness must be less than the outer radius and above zero."
 
 let box ?center ~thickness dims =
   if thickness.x < dims.x && thickness.y < dims.y && thickness.x > 0. && thickness.y > 0.
   then (
-    let holes = [ List.rev @@ Path2.square ?center (Vec2.sub dims thickness) ] in
+    let holes = [ List.rev @@ Path2.square ?center (V2.sub dims thickness) ] in
     make ~holes (Path2.square ?center dims) )
   else
     invalid_arg "Box thicknesses must be less than the outer dimensions and above zero."

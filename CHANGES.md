@@ -1,8 +1,8 @@
 ## v2.0.0
 
 - Extension of the `Scad.t` GADT to prevent 3d transformation of 2d shapes
-- Add `xrot`, `yrot`, `zrot`, `add`, `sub`, `cone`, `surface`, `to_file`, `export`, and
-  `snapshot` to `Scad` module
+- Add `xtrans`, `ytrans`, `ztrans`, `xrot`, `yrot`, `zrot`, `add`, `sub`,
+  `cone`, `surface`, `to_file`, `export`, and `snapshot` to `Scad` module
 - `Scad.offset` now takes a `?mode` parameter, rather than variant with value
   payload (from ``Scad.offset (`Radius r)`` to ``Scad.offset ~mode:`Radius r``)
 - `Scad.vector_rotate` renamed to `axis_rotate`
@@ -11,7 +11,7 @@
 - `Scad.multmatrix` is replaced with `Scad.affine` to match with the replacement
   of `MultMatrix` with `Affine3`, and the addition of `Affine2`
 - `Scad.to_string` performance improvement (specifically polygon and polyhedron points/faces)
-- `Vec3.t` (and now `Vec2.t`) types are records rather than tuples and have
+- `V3.t` (and now `V2.t`) types are records rather than tuples and have
   the respective modules have been extended with additional geometrical
   operations
 - New modules (`2` and `3` suffixes indicate dimensionality):

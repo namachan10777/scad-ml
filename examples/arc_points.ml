@@ -51,7 +51,7 @@ let () =
     Path3.arc
       ~fn:5
       ~plane:(Plane.of_normal (v3 0. (-0.6) 0.4))
-      ~centre:Vec3.zero
+      ~centre:V3.zero
       ~radius:10.
       ~start:0.
       (Float.pi *. 1.5)

@@ -11,7 +11,7 @@ open Scad_ml
 let () =
   let path =
     let control =
-      Vec3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 20. 10.; v 30. 0. 10. ]
+      V3.[ v 0. 0. 2.; v 0. 20. 20.; v 40. 20. 10.; v 30. 0. 10. ]
       |> Path3.quaternion (Quaternion.make (v3 1. 1. 0.) (Float.pi /. -5.))
     in
     Bezier3.curve ~fn:60 @@ Bezier3.of_path ~size:(`FlatRel 0.3) control

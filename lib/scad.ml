@@ -1,4 +1,4 @@
-open Vec
+open V
 
 type scad =
   | Cylinder of
@@ -11,7 +11,7 @@ type scad =
       ; fn : int option
       }
   | Cube of
-      { size : Vec3.t
+      { size : V3.t
       ; center : bool
       }
   | Sphere of
@@ -21,7 +21,7 @@ type scad =
       ; fn : int option
       }
   | Square of
-      { size : Vec2.t
+      { size : V2.t
       ; center : bool
       }
   | Circle of
@@ -31,7 +31,7 @@ type scad =
       ; fn : int option
       }
   | Polygon of
-      { points : Vec2.t list
+      { points : V2.t list
       ; paths : int list list option
       ; convexity : int
       }
@@ -41,9 +41,9 @@ type scad =
       ; color : Color.t
       ; alpha : float option
       }
-  | Translate of Vec3.t * scad
-  | Rotate of Vec3.t * scad
-  | AxisRotate of Vec3.t * float * scad
+  | Translate of V3.t * scad
+  | Rotate of V3.t * scad
+  | AxisRotate of V3.t * float * scad
   | MultMatrix of Affine3.t * scad
   | Union of scad list
   | Intersection of scad list
@@ -51,11 +51,11 @@ type scad =
   | Minkowski of scad list
   | Hull of scad list
   | Polyhedron of
-      { points : Vec3.t list
+      { points : V3.t list
       ; faces : int list list
       ; convexity : int
       }
-  | Mirror of Vec3.t * scad
+  | Mirror of V3.t * scad
   | Projection of
       { scad : scad
       ; cut : bool
@@ -67,7 +67,7 @@ type scad =
       ; convexity : int
       ; twist : int option
       ; slices : int
-      ; scale : Vec2.t
+      ; scale : V2.t
       ; fn : int
       }
   | RotateExtrude of
@@ -78,8 +78,8 @@ type scad =
       ; fs : float option
       ; fn : int option
       }
-  | Scale of Vec3.t * scad
-  | Resize of Vec3.t * scad
+  | Scale of V3.t * scad
+  | Resize of V3.t * scad
   | Offset of
       { scad : scad
       ; mode : [ `Radius | `Delta | `Chamfer ]
@@ -102,11 +102,11 @@ type scad =
       }
 
 type ('space, 'rot, 'affine) t =
-  | D2 : scad -> (Vec2.t, float, Affine2.t) t
-  | D3 : scad -> (Vec3.t, Vec3.t, Affine3.t) t
+  | D2 : scad -> (V2.t, float, Affine2.t) t
+  | D3 : scad -> (V3.t, V3.t, Affine3.t) t
 
-type d2 = (Vec2.t, float, Affine2.t) t
-type d3 = (Vec3.t, Vec3.t, Affine3.t) t
+type d2 = (V2.t, float, Affine2.t) t
+type d3 = (V3.t, V3.t, Affine3.t) t
 
 let d2 scad = D2 scad
 let d3 scad = D3 scad
@@ -148,7 +148,7 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
        }
 
 let translate (type s r a) (p : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Translate (Vec3.of_vec2 p, scad)
+  | D2 scad -> d2 @@ Translate (V3.of_vec2 p, scad)
   | D3 scad -> d3 @@ Translate (p, scad)
 
 let xtrans (type s r a) x : (s, r, a) t -> (s, r, a) t = function
@@ -171,8 +171,8 @@ let rotate : type s r a. ?about:s -> r -> (s, r, a) t -> (s, r, a) t =
   | Some p ->
     let p' : s =
       match t with
-      | D2 _ -> Vec2.negate p
-      | D3 _ -> Vec3.negate p
+      | D2 _ -> V2.negate p
+      | D3 _ -> V3.negate p
     in
     translate p' t |> aux |> translate p
   | None   -> aux t
@@ -189,7 +189,7 @@ let zrot : type s r a. ?about:s -> float -> (s, r, a) t -> (s, r, a) t =
 let axis_rotate ?about ax r t =
   let aux (D3 scad) = d3 @@ AxisRotate (ax, r, scad) in
   match about with
-  | Some p -> translate (Vec3.negate p) t |> aux |> translate p
+  | Some p -> translate (V3.negate p) t |> aux |> translate p
   | None   -> aux t
 
 let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
@@ -199,7 +199,7 @@ let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
 let quaternion ?about q t =
   let aux (D3 scad) = d3 @@ MultMatrix (Quaternion.to_affine q, scad) in
   match about with
-  | Some p -> translate (Vec3.negate p) t |> aux |> translate p
+  | Some p -> translate (V3.negate p) t |> aux |> translate p
   | None   -> aux t
 
 let union_2d ts = d2 @@ Union (List.map unpack ts)
@@ -259,7 +259,7 @@ let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
 
 let mirror (type s r a) (ax : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Mirror (Vec3.of_vec2 ax, scad)
+  | D2 scad -> d2 @@ Mirror (V3.of_vec2 ax, scad)
   | D3 scad -> d3 @@ Mirror (ax, scad)
 
 let projection ?(cut = false) (D3 scad) = d2 @@ Projection { scad; cut }
@@ -281,11 +281,11 @@ let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
   d3 @@ RotateExtrude { scad; angle; convexity; fa; fs; fn }
 
 let scale (type s r a) (factors : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Scale (Vec3.of_vec2 factors, scad)
+  | D2 scad -> d2 @@ Scale (V3.of_vec2 factors, scad)
   | D3 scad -> d3 @@ Scale (factors, scad)
 
 let resize (type s r a) (new_dims : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Resize (Vec3.of_vec2 new_dims, scad)
+  | D2 scad -> d2 @@ Resize (V3.of_vec2 new_dims, scad)
   | D3 scad -> d3 @@ Resize (new_dims, scad)
 
 let offset ?(mode = `Delta) d (D2 scad) = d2 @@ Offset { scad; mode; d }
@@ -338,13 +338,13 @@ let to_string t =
     buf_add_list b f l;
     b
   and buf_add_idxs b = buf_add_list b (fun b' i -> Buffer.add_string b' (Int.to_string i))
-  and buf_add_vec2 b Vec.{ x; y } =
+  and buf_add_vec2 b V.{ x; y } =
     Buffer.add_char b '[';
     Buffer.add_string b (Float.to_string x);
     Buffer.add_char b ',';
     Buffer.add_string b (Float.to_string y);
     Buffer.add_char b ']'
-  and buf_add_vec3 b Vec.{ x; y; z } =
+  and buf_add_vec3 b V.{ x; y; z } =
     Buffer.add_char b '[';
     Buffer.add_string b (Float.to_string x);
     Buffer.add_char b ',';
@@ -410,20 +410,20 @@ let to_string t =
       Printf.sprintf
         "%stranslate(%s)\n%s"
         indent
-        (Vec3.to_string p)
+        (V3.to_string p)
         (print (Printf.sprintf "%s\t" indent) scad)
     | Rotate (r, scad) ->
       Printf.sprintf
         "%srotate(%s)\n%s"
         indent
-        (Vec3.to_string @@ Vec3.deg_of_rad r)
+        (V3.to_string @@ V3.deg_of_rad r)
         (print (Printf.sprintf "%s\t" indent) scad)
     | AxisRotate (axis, r, scad) ->
       Printf.sprintf
         "%srotate(a=%f, v=%s)\n%s"
         indent
         (Math.deg_of_rad r)
-        (Vec3.to_string axis)
+        (V3.to_string axis)
         (print (Printf.sprintf "%s\t" indent) scad)
     | MultMatrix (mat, scad) ->
       Printf.sprintf
@@ -512,13 +512,13 @@ let to_string t =
       Printf.sprintf
         "%sscale(%s)\n%s"
         indent
-        (Vec3.to_string p)
+        (V3.to_string p)
         (print (Printf.sprintf "%s\t" indent) scad)
     | Resize (p, scad) ->
       Printf.sprintf
         "%sresize(%s)\n%s"
         indent
-        (Vec3.to_string p)
+        (V3.to_string p)
         (print (Printf.sprintf "%s\t" indent) scad)
     | Offset { scad; mode; d } ->
       Printf.sprintf

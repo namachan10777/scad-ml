@@ -78,30 +78,30 @@ type projection =
 type camera =
   | Auto
   | Gimbal of
-      { translation : Vec3.t
-      ; rotation : Vec3.t
+      { translation : V3.t
+      ; rotation : V3.t
       ; distance : [ `Auto | `D of float ]
       }
   | Eye of
-      { lens : Vec3.t
-      ; center : Vec3.t
+      { lens : V3.t
+      ; center : V3.t
       ; view_all : bool
       }
 
 let auto = Auto
 
-let gimbal ?(translation = Vec3.zero) ?(rotation = Vec3.zero) distance =
+let gimbal ?(translation = V3.zero) ?(rotation = V3.zero) distance =
   Gimbal { translation; rotation; distance }
 
-let eye ?(view_all = false) ?(center = Vec3.zero) lens = Eye { lens; center; view_all }
+let eye ?(view_all = false) ?(center = V3.zero) lens = Eye { lens; center; view_all }
 
 let camera_to_args = function
   | Auto -> [| "--autocenter" |]
   | Gimbal { translation = t; rotation = r; distance = `D d } ->
-    let r = Vec3.deg_of_rad r in
+    let r = V3.deg_of_rad r in
     [| "--camera"; Printf.sprintf "%f,%f,%f,%f,%f,%f,%f" t.x t.y t.z r.x r.y r.z d |]
   | Gimbal { translation = t; rotation = r; distance = `Auto } ->
-    let r = Vec3.deg_of_rad r in
+    let r = V3.deg_of_rad r in
     [| "--camera"
      ; Printf.sprintf "%f,%f,%f,%f,%f,%f,%f" t.x t.y t.z r.x r.y r.z 0.
      ; "--viewall"

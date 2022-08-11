@@ -160,7 +160,7 @@ module type S' = sig
   val prune_collinear' : vec array -> vec array
 end
 
-module Make (V : Vec.S) = struct
+module Make (V : V.S) = struct
   type vec = V.t
   type line = V.line
   type t = vec list

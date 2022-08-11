@@ -44,7 +44,7 @@ val of_row_matrix : float array array -> (t, string) result
 (** [translation v]
 
     Create a 2d affine transformation matrix from the xy translation vector [v]. *)
-val translate : Vec2.t -> t
+val translate : V2.t -> t
 
 (** [xtrans x]
 
@@ -62,31 +62,31 @@ val ytrans : float -> t
 
     Create an affine transformation matrix that applies a rotation of [r]
     radians around the origin (or the point [about] if provided). *)
-val rotate : ?about:Vec2.t -> float -> t
+val rotate : ?about:V2.t -> float -> t
 
 (** [zrot ?about r]
 
     Create an affine transformation matrix that applies a rotation of [r]
     radians around the origin (or the point [about] if provided). Alias of
     {!rotate}. *)
-val zrot : ?about:Vec2.t -> float -> t
+val zrot : ?about:V2.t -> float -> t
 
 (** [align a b]
 
     Compute an affine transformation matrix that would bring the vector [a] into
     alignment with [b]. *)
-val align : Vec2.t -> Vec2.t -> t
+val align : V2.t -> V2.t -> t
 
 (** [scaling v]
 
     Create a 2d affine transformation matrix from the xyz scaling vector [v]. *)
-val scale : Vec2.t -> t
+val scale : V2.t -> t
 
 (** [mirror ax]
 
     Create an affine transformation matrix that applies a reflection across the
     axis [ax]. *)
-val mirror : Vec2.t -> t
+val mirror : V2.t -> t
 
 (** [skew xa ya]
 
@@ -100,7 +100,7 @@ val skew : float -> float -> t
 (** [transform t v]
 
     Apply the 2d affine transformation matrix [t] to the vector [v]. *)
-val transform : t -> Vec2.t -> Vec2.t
+val transform : t -> V2.t -> V2.t
 
 (** {1 Conversions} *)
 

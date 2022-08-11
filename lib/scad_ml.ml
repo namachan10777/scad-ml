@@ -53,14 +53,14 @@ module Color = Color
     be mapped into {!Scad.t}. *)
 
 (** 3-dimensional vector *)
-type v3 = Vec.v3 =
+type v3 = V.v3 =
   { x : float
   ; y : float
   ; z : float
   }
 
 (** 2-dimensional vector *)
-type v2 = Vec.v2 =
+type v2 = V.v2 =
   { x : float
   ; y : float
   }
@@ -80,8 +80,8 @@ let[@inline] v3 x y z = { x; y; z }
     allowing for points in 2d space, and higher level types composed of them
     ({i e.g.} {!Path2.t} and {!Poly2.t}) to be manipulated in
     similar fashion to 2d OpenSCAD shapes ({!Scad.d2}). *)
-module Vec2 = struct
-  include Vec2 (** @inline *)
+module V2 = struct
+  include V2 (** @inline *)
 
   (** [affine m t]
 
@@ -116,8 +116,8 @@ end
     allowing for points in 3d space, and higher level types composed of them
     ({i e.g.} {!Path3.t}, {!Poly3.t}, and {!Mesh.t}) to be manipulated in
     similar fashion to 3d OpenSCAD shapes ({!Scad.d3}). *)
-module Vec3 = struct
-  include Vec3 (** @inline *)
+module V3 = struct
+  include V3 (** @inline *)
 
   (** {1 Additional 3d transformations} *)
 
@@ -143,7 +143,7 @@ end
 
 module Affine2 = Affine2
 
-(** Affine transformation matrices for transforming 3d vectors ({!Vec3.t}), and
+(** Affine transformation matrices for transforming 3d vectors ({!V3.t}), and
    3d shapes ({!Scad.t}) via OpenSCAD's own
    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}multmatrix},
    (see {!Scad.affine}). *)

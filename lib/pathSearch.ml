@@ -5,23 +5,23 @@ module type TANGENTSIGN = sig
 end
 
 module TangentSign2 = struct
-  open Vec2
+  open V2
 
   let tangent_sign (l1 : line) (l2 : line) =
     let a = sub l1.a l1.b
     and b = sub l2.a l2.b in
-    let Vec.{ z; _ } = cross a b in
+    let V.{ z; _ } = cross a b in
     if Float.abs z <= Util.epsilon *. norm a *. norm b then 0. else Math.sign z
 end
 
 module TangentSign3 = struct
-  let tangent_sign (l1 : Vec3.line) (l2 : Vec3.line) =
+  let tangent_sign (l1 : V3.line) (l2 : V3.line) =
     let plane = Plane.make l1.a l1.b l2.b in
     Math.sign @@ Plane.line_angle plane l2
 end
 
 module Make
-    (V : Vec.S)
+    (V : V.S)
     (BT : BallTree.S with type vec := V.t)
     (TS : TANGENTSIGN with type line := V.line) =
 struct

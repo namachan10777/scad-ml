@@ -51,12 +51,12 @@ val of_row_matrix : float array array -> (t, string) result
 (** [scale v]
 
     Create an affine transformation matrix from the xyz scaling vector [v]. *)
-val scale : Vec3.t -> t
+val scale : V3.t -> t
 
 (** [translate v]
 
     Create an affine transformation matrix from the xyz translation vector [v]. *)
-val translate : Vec3.t -> t
+val translate : V3.t -> t
 
 (** [xtrans x]
 
@@ -80,43 +80,43 @@ val ztrans : float -> t
 
     Create an affine transformation matrix that applies a reflection across the
     axis [ax]. *)
-val mirror : Vec3.t -> t
+val mirror : V3.t -> t
 
 (** [xrot ?about r]
 
     Create an affine transformation matrix that applies a x-axis rotation of [r]
     radians around the origin (or the point [about] if provided). *)
-val xrot : ?about:Vec3.t -> float -> t
+val xrot : ?about:V3.t -> float -> t
 
 (** [yrot ?about r]
 
     Create an affine transformation matrix that applies a y-axis rotation of [r]
     radians around the origin (or the point [about] if provided). *)
-val yrot : ?about:Vec3.t -> float -> t
+val yrot : ?about:V3.t -> float -> t
 
 (** [zrot ?about r]
 
     Create an affine transformation matrix that applies a z-axis rotation of [r]
     radians around the origin (or the point [about] if provided). *)
-val zrot : ?about:Vec3.t -> float -> t
+val zrot : ?about:V3.t -> float -> t
 
 (** [rotate ?about r]
 
     Create an affine transformation matrix that applies the euler (zyx) rotation
     represented by [r] radians around the origin (or the point [about] if provided). *)
-val rotate : ?about:Vec3.t -> Vec3.t -> t
+val rotate : ?about:V3.t -> V3.t -> t
 
 (** [axis_rotate ?about ax r]
 
     Create an affine transfomation matrix that applies a rotation of [r] radians
     around the axis [ax] through the origin (or the point [about] if provided). *)
-val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t
+val axis_rotate : ?about:V3.t -> V3.t -> float -> t
 
 (** [align a b]
 
     Compute an affine transformation matrix that would bring the vector [a] into
     alignment with [b]. *)
-val align : Vec3.t -> Vec3.t -> t
+val align : V3.t -> V3.t -> t
 
 (** [skew ?xy ?xz ?yx ?yz ?zx ?zy ()]
 
@@ -170,7 +170,7 @@ val skew_yz : float -> float -> t
 (** [transform t v]
 
     Apply the affine transformation matrix [t] to the vector [v]. *)
-val transform : t -> Vec3.t -> Vec3.t
+val transform : t -> V3.t -> V3.t
 
 (** {1 Output} *)
 

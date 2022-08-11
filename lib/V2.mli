@@ -1,4 +1,4 @@
-type t = Vec.v2 =
+type t = V.v2 =
   { x : float
   ; y : float
   }
@@ -18,7 +18,7 @@ val of_tup : float * float -> t
     Convert the vector [t] to a tuple of xy coordinates. *)
 val to_tup : t -> float * float
 
-include Vec.S with type t := t (** @inline *)
+include V.S with type t := t (** @inline *)
 
 (** [left_of_line ?eps ~line t]
 
@@ -93,10 +93,10 @@ val mirror : t -> t -> t
 (** [of_vec3 v]
 
     Drop the z coordinate from [v] to create a 2d vector. *)
-val of_vec3 : Vec.v3 -> t
+val of_vec3 : V.v3 -> t
 
 (** [to_vec3 ?z v]
 
     Create a 3d vector from the 2d vector [v] by adding a [z] coordinate
     (default = [0.]) *)
-val to_vec3 : ?z:float -> t -> Vec.v3
+val to_vec3 : ?z:float -> t -> V.v3

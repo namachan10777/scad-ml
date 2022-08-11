@@ -2,7 +2,7 @@
    (including offset and roundovers (see {!module:Round}), and measurement. *)
 
 (** @inline *)
-include Path.S with type vec := Vec2.t and type line := Vec2.line
+include Path.S with type vec := V2.t and type line := V2.line
 
 (** {1 Search} *)
 
@@ -17,7 +17,7 @@ include Path.S with type vec := Vec2.t and type line := Vec2.line
     plan to search for more than one target point, take care to apply this
     function in two steps to avoid repeated length checks and closure/tree
     generations. *)
-val nearby_idxs : ?min_tree_size:int -> ?radius:float -> Vec2.t list -> Vec2.t -> int list
+val nearby_idxs : ?min_tree_size:int -> ?radius:float -> V2.t list -> V2.t -> int list
 
 (** [nearby_points ?min_tree_size ?radius path]
 
@@ -30,25 +30,15 @@ val nearby_idxs : ?min_tree_size:int -> ?radius:float -> Vec2.t list -> Vec2.t -
     plan to search for more than one target point, take care to apply this
     function in two steps to avoid repeated length checks and closure/tree
     generations. *)
-val nearby_points
-  :  ?min_tree_size:int
-  -> ?radius:float
-  -> Vec2.t list
-  -> Vec2.t
-  -> Vec2.t list
+val nearby_points : ?min_tree_size:int -> ?radius:float -> V2.t list -> V2.t -> V2.t list
 
 (** [closest_tangent ?closed ?offset ~line t]
 
     Find the tangent segment (and its index) on the curved path [t] closest to [line]
-    after [offset] (default = [Vec2.zero]) is applied to the points of [t] (can
+    after [offset] (default = [V2.zero]) is applied to the points of [t] (can
     be used to centre the path relative to [line] to help in choosing the
     desired tangent). *)
-val closest_tangent
-  :  ?closed:bool
-  -> ?offset:Vec2.t
-  -> line:Vec2.line
-  -> t
-  -> int * Vec2.line
+val closest_tangent : ?closed:bool -> ?offset:V2.t -> line:V2.line -> t -> int * V2.line
 
 (** {1 Creation and 2d-3d conversion} *)
 
@@ -60,17 +50,17 @@ val of_tups : (float * float) list -> t
 (** [of_path3 p]
 
     Project the 3d path [p] onto the given [plane] (default = {!Plane.xy}). *)
-val of_path3 : ?plane:Plane.t -> Vec3.t list -> t
+val of_path3 : ?plane:Plane.t -> V3.t list -> t
 
 (** [to_path3 t]
 
     Lift the 2d path [p] onto the given [plane] (default = {!Plane.xy}). *)
-val to_path3 : ?plane:Plane.t -> t -> Vec3.t list
+val to_path3 : ?plane:Plane.t -> t -> V3.t list
 
 (** [lift plane t]
 
     Lift the 2d path [t] onto the 3d [plane]. *)
-val lift : Plane.t -> t -> Vec3.t list
+val lift : Plane.t -> t -> V3.t list
 
 (** {1 Basic Shapes} *)
 
@@ -84,13 +74,13 @@ val circle : ?fn:int -> ?fa:float -> ?fs:float -> float -> t
     Create a rectangular path with xy [dims] (e.g. width and height). If
     [center] is [true] then the path will be centred around the origin (default
     = [false]). *)
-val square : ?center:bool -> Vec2.t -> t
+val square : ?center:bool -> V2.t -> t
 
 (** [ellipse ?fn ?fa ?fs radii]
 
     Draw an ellipse with xy [radii]. The greater of the two radii is used for
     fragment/resolution calculation. *)
-val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> Vec2.t -> t
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> V2.t -> t
 
 (** [star ~r1 ~r2 n]
 
@@ -111,7 +101,7 @@ val arc
   -> ?fa:float
   -> ?fs:float
   -> ?wedge:bool
-  -> centre:Vec2.t
+  -> centre:V2.t
   -> radius:float
   -> start:float
   -> float
@@ -133,9 +123,9 @@ val arc_about_centre
   -> ?fs:float
   -> ?dir:[ `CW | `CCW ]
   -> ?wedge:bool
-  -> centre:Vec2.t
-  -> Vec2.t
-  -> Vec2.t
+  -> centre:V2.t
+  -> V2.t
+  -> V2.t
   -> t
 
 (** [arc_through ?rev ?fn ?fa ?fs ?wedge p1 p2 p3]
@@ -151,9 +141,9 @@ val arc_through
   -> ?fa:float
   -> ?fs:float
   -> ?wedge:bool
-  -> Vec2.t
-  -> Vec2.t
-  -> Vec2.t
+  -> V2.t
+  -> V2.t
+  -> V2.t
   -> t
 
 (** [cubic_spline ?boundary ~fn ps]
@@ -203,7 +193,7 @@ val offset
   -> t
   -> t
 
-include Rounding.S with type vec := Vec2.t (** @inline *)
+include Rounding.S with type vec := V2.t (** @inline *)
 
 (** {1 Geometry } *)
 
@@ -237,14 +227,14 @@ val is_simple : ?eps:float -> ?closed:bool -> t -> bool
 (** [bbox t]
 
     Compute the 2d bounding box of the path [t]. *)
-val bbox : t -> Vec2.bbox
+val bbox : t -> V2.bbox
 
 (** [centroid ?eps t]
 
     Compute the centroid of the path [t]. If [t] is collinear or
     self-intersecting (within [eps] tolerance), an [Invalid_argument] exception
     is raised. *)
-val centroid : ?eps:float -> t -> Vec2.t
+val centroid : ?eps:float -> t -> V2.t
 
 (** [area ?signed t]
 
@@ -265,7 +255,7 @@ val point_inside
   :  ?eps:float
   -> ?nonzero:bool
   -> t
-  -> Vec2.t
+  -> V2.t
   -> [> `Inside | `OnBorder | `Outside ]
 
 (** {1 Path Matching / Vertex Association}
@@ -278,21 +268,21 @@ val point_inside
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}
   skin} module of the {{:https://github.com/revarbat/BOSL2} BOSL2} OpenSCAD library. *)
 
-include PathMatch.S with type vec := Vec2.t (** @inline *)
+include PathMatch.S with type vec := V2.t (** @inline *)
 
 (** {1 Basic Transfomations} *)
 
-val translate : Vec2.t -> t -> t
+val translate : V2.t -> t -> t
 val xtrans : float -> t -> t
 val ytrans : float -> t -> t
-val rotate : ?about:Vec2.t -> float -> t -> t
-val zrot : ?about:Vec2.t -> float -> t -> t
+val rotate : ?about:V2.t -> float -> t -> t
+val zrot : ?about:V2.t -> float -> t -> t
 val affine : Affine2.t -> t -> t
-val affine3 : Affine3.t -> t -> Vec3.t list
-val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> Vec3.t list
-val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> Vec3.t list
-val scale : Vec2.t -> t -> t
-val mirror : Vec2.t -> t -> t
+val affine3 : Affine3.t -> t -> V3.t list
+val quaternion : ?about:V3.t -> Quaternion.t -> t -> V3.t list
+val axis_rotate : ?about:V3.t -> V3.t -> float -> t -> V3.t list
+val scale : V2.t -> t -> t
+val mirror : V2.t -> t -> t
 
 (** {1 Debugging helpers} *)
 

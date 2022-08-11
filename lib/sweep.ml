@@ -1,6 +1,6 @@
 open Util
-open Vec
-module R2 = Rounding.Make (Vec2) (Arc2)
+open V
+module R2 = Rounding.Make (V2) (Arc2)
 
 module Cap = struct
   type offset =
@@ -132,7 +132,7 @@ module Cap = struct
           ~fn:(Int.max 1 fn + 2)
           ~curv
           ~spec:(`Joint joint)
-          Vec2.zero
+          V2.zero
           (v2 0. (Float.abs joint))
           (v2 (-.joint) (Float.abs joint))
       |> List.tl
@@ -185,7 +185,7 @@ let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
     | Some l -> l
     | None   -> List.length shape
   and z_dir = if flip then -1. else 1.
-  and lift ~z m = List.map (fun p -> Affine3.transform m @@ Vec2.to_vec3 ~z p) in
+  and lift ~z m = List.map (fun p -> Affine3.transform m @@ V2.to_vec3 ~z p) in
   let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
     let mode, fn, fs, fa =
       match offset_mode with
@@ -227,7 +227,7 @@ type poly_morph =
       { outer_map : Skin.mapping
       ; hole_map : [ `Same | `Flat of Skin.mapping | `Mix of Skin.mapping list ]
       ; refine : int option
-      ; ez : (Vec2.t * Vec2.t) option
+      ; ez : (V2.t * V2.t) option
       ; a : Poly2.t
       ; b : Poly2.t
       }
@@ -261,7 +261,7 @@ let sweep'
         } ->
       let wrap m a b =
         let same =
-          try List.for_all2 Vec2.approx a b with
+          try List.for_all2 V2.approx a b with
           | Invalid_argument _ -> false
         in
         if same then `Fixed a else `Morph (m, a, b)
@@ -346,7 +346,7 @@ let sweep'
                    n_trans;
             Array.get prog
           | Some `AutoDist | None ->
-            let pts = List.map (fun m -> Affine3.transform m Vec3.zero) transforms in
+            let pts = List.map (fun m -> Affine3.transform m V3.zero) transforms in
             let dists = Path3.cummulative_length pts |> Array.of_list in
             for i = 0 to n_trans - 1 do
               dists.(i) <- dists.(i) /. dists.(n_trans - 1)
@@ -363,7 +363,7 @@ let sweep'
           let ez =
             Util.value_map_opt ~default:Fun.id (fun (p1, p2) -> Easing.make p1 p2) ez
           in
-          fun i -> List.map2 (fun a b -> Vec2.lerp a b (ez @@ prog i)) a b
+          fun i -> List.map2 (fun a b -> V2.lerp a b (ez @@ prog i)) a b
         and bot, len_bot, top, len_top =
           (* use the original shapes for caps if there has been point
                  duplication as repeated points will cause offset to fail (rounded caps) *)

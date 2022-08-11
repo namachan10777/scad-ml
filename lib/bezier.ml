@@ -198,7 +198,7 @@ module type S' = sig
   val patch_curve' : ?fn:int -> (float -> t) -> vec array array
 end
 
-module Make (V : Vec.S) = struct
+module Make (V : V.S) = struct
   type t = float -> V.t
 
   module P = Path.Make (V)

@@ -1,5 +1,5 @@
 (** 3d vector *)
-type t = Vec.v3 =
+type t = V.v3 =
   { x : float
   ; y : float
   ; z : float
@@ -20,7 +20,7 @@ val of_tup : float * float * float -> t
     Convert the vector [t] to a tuple of xyz coordinates. *)
 val to_tup : t -> float * float * float
 
-include Vec.S with type t := t (** @inline *)
+include V.S with type t := t (** @inline *)
 
 (** [bbox_volume bb]
 
@@ -99,4 +99,4 @@ val projection : t -> t
 
     Create a 3d vector from the 2d vector [v] by adding a [z] coordinate
     (default = [0.]) *)
-val of_vec2 : ?z:float -> Vec.v2 -> t
+val of_vec2 : ?z:float -> V.v2 -> t

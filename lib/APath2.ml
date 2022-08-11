@@ -1,6 +1,6 @@
-open Vec
+open V
 
-let clockwise_sign ?(eps = Util.epsilon) (ps : Vec2.t array) =
+let clockwise_sign ?(eps = Util.epsilon) (ps : V2.t array) =
   let len = Array.length ps
   and sum = ref 0. in
   for i = 0 to len - 1 do
@@ -20,29 +20,24 @@ let self_intersections ?(eps = Util.epsilon) ?(closed = false) path =
     let intersects = ref []
     and w = Util.index_wrap ~len in
     for i = 0 to len - if closed then 3 else 4 do
-      let l1 = Vec2.{ a = path.(i); b = path.(i + 1) } in
+      let l1 = V2.{ a = path.(i); b = path.(i + 1) } in
       let seg_normal =
-        let d = Vec2.sub l1.b l1.a in
-        Vec2.(normalize (v (-.d.y) d.x))
+        let d = V2.sub l1.b l1.a in
+        V2.(normalize (v (-.d.y) d.x))
       in
-      let ref_v = Vec2.dot path.(i) seg_normal
+      let ref_v = V2.dot path.(i) seg_normal
       and last_signal = ref 0
       and start = i + 2 in
       for j = 0 to len - start - if closed then 1 else 2 do
-        let v = Vec2.dot path.(j + start) seg_normal -. ref_v in
+        let v = V2.dot path.(j + start) seg_normal -. ref_v in
         if Float.abs v >= eps
         then (
           let signal = Int.of_float @@ Math.sign v in
           if signal * !last_signal < 0
           then (
-            let l2 = Vec2.{ a = path.(j + start); b = path.(w (j + start + 1)) } in
+            let l2 = V2.{ a = path.(j + start); b = path.(w (j + start + 1)) } in
             let intersect =
-              Vec2.line_intersection
-                ~eps
-                ~bounds1:(true, true)
-                ~bounds2:(true, true)
-                l1
-                l2
+              V2.line_intersection ~eps ~bounds1:(true, true) ~bounds2:(true, true) l1 l2
             in
             Option.iter (fun p -> intersects := p :: !intersects) intersect );
           last_signal := signal )
@@ -59,9 +54,9 @@ let is_simple ?eps ?(closed = false) path =
     and i = ref 0
     and last = len - if closed then 1 else 2 in
     while (not !reversal) && !i < last do
-      let v1 = Vec2.sub path.(!i + 1) path.(!i)
-      and v2 = Vec2.sub path.(Util.index_wrap ~len (!i + 2)) path.(!i + 1) in
-      reversal := Math.approx Vec2.(dot v1 v2 /. norm v1 /. norm v2) (-1.);
+      let v1 = V2.sub path.(!i + 1) path.(!i)
+      and v2 = V2.sub path.(Util.index_wrap ~len (!i + 2)) path.(!i + 1) in
+      reversal := Math.approx V2.(dot v1 v2 /. norm v1 /. norm v2) (-1.);
       incr i
     done;
     if !reversal then false else List.length (self_intersections ?eps path) = 0 )

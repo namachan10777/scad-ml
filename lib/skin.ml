@@ -29,7 +29,7 @@ let is_duplicator = function
 let linear_transition ~fn ~init a b =
   let step = 1. /. Float.of_int fn
   and lerps =
-    try List.map2 Vec3.lerp a b with
+    try List.map2 V3.lerp a b with
     | Invalid_argument _ -> invalid_arg "Profiles must have equal length."
   in
   let f j acc =

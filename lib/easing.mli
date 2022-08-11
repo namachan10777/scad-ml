@@ -11,4 +11,4 @@
     [Bezier2.make [{ x = 0.; y = 0.}; p1; p2; { x = 1.; y =1.}]]. Raises
     [Invalid_argument] if the x values of [p1] and [p2] do not fall in the [0.]
     to [1.] interval. *)
-val make : Vec2.t -> Vec2.t -> float -> float
+val make : V2.t -> V2.t -> float -> float

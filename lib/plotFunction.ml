@@ -1,4 +1,4 @@
-open Vec
+open V
 open Mesh0
 
 let cartesian_plot ~min_x ~x_steps ~max_x ~min_y ~y_steps ~max_y plot =

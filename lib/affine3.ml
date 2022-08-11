@@ -1,7 +1,7 @@
 (* Float record implementation (replacing the private float array arrays used
     previously) inspired by dbuenzli's gg library [https://github.com/dbuenzli/gg]. *)
 
-open Vec
+open V
 
 type row = float * float * float * float
 
@@ -317,7 +317,7 @@ let xrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (Vec3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.negate p) %> rot %> translate p
     | None   -> rot )
 
 let yrot ?about r =
@@ -346,7 +346,7 @@ let yrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (Vec3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.negate p) %> rot %> translate p
     | None   -> rot )
 
 let zrot ?about r =
@@ -375,7 +375,7 @@ let zrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (Vec3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.negate p) %> rot %> translate p
     | None   -> rot )
 
 let rotate ?about { x; y; z } =
@@ -408,7 +408,7 @@ let rotate ?about { x; y; z } =
       }
     in
     match about with
-    | Some p -> translate (Vec3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.negate p) %> rot %> translate p
     | None   -> rot )
 
 let axis_rotate ?about ax r =
@@ -416,7 +416,7 @@ let axis_rotate ?about ax r =
   then id
   else (
     let rot =
-      let { x; y; z } = Vec3.normalize ax
+      let { x; y; z } = V3.normalize ax
       and c = Float.cos r
       and s = Float.sin r in
       let c2 = 1. -. c in
@@ -448,7 +448,7 @@ let axis_rotate ?about ax r =
       }
     in
     match about with
-    | Some p -> translate (Vec3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.negate p) %> rot %> translate p
     | None   -> rot )
 
 let scale { x; y; z } =
@@ -471,7 +471,7 @@ let scale { x; y; z } =
   }
 
 let mirror ax =
-  let { x; y; z } = Vec3.normalize ax in
+  let { x; y; z } = V3.normalize ax in
   let xx = 1. -. (2. *. x *. x)
   and xy = -2. *. x *. y
   and xz = -2. *. x *. z
@@ -582,15 +582,15 @@ let skew_yz ya za =
     }
 
 let align a b =
-  let a = Vec3.normalize a
-  and b = Vec3.normalize b in
-  if Vec3.approx a b
+  let a = V3.normalize a
+  and b = V3.normalize b in
+  if V3.approx a b
   then id
   else if a.z = 0. && b.z = 0.
-  then zrot Vec2.(ccw_theta (Vec3.to_vec2 b) -. ccw_theta (Vec3.to_vec2 a))
+  then zrot V2.(ccw_theta (V3.to_vec2 b) -. ccw_theta (V3.to_vec2 a))
   else (
-    let ax = Vec3.vector_axis a b
-    and r = Vec3.angle a b in
+    let ax = V3.vector_axis a b
+    and r = V3.angle a b in
     axis_rotate ax r )
 
 let transform t { x; y; z } =

@@ -61,12 +61,12 @@ module Proj2 = struct
     and mx = ref points.(idxs.(0))
     and len = Array.length idxs in
     for i = 1 to len - 1 do
-      let Vec2.{ x; y } = points.(idxs.(i)) in
+      let V2.{ x; y } = points.(idxs.(i)) in
       (mn := Float.{ x = min !mn.x x; y = min !mn.y y });
       mx := Float.{ x = max !mx.x x; y = max !mx.y y }
     done;
-    let Vec2.{ x = dx; y = dy } = Vec2.sub !mx !mn in
-    let project = if dx >= dy then Vec2.get_x else Vec2.get_y in
+    let V2.{ x = dx; y = dy } = V2.sub !mx !mn in
+    let project = if dx >= dy then V2.get_x else V2.get_y in
     Array.map (fun idx -> project points.(idx)) idxs
 end
 
@@ -76,22 +76,22 @@ module Proj3 = struct
     and mx = ref points.(idxs.(0))
     and len = Array.length idxs in
     for i = 1 to len - 1 do
-      let Vec3.{ x; y; z } = points.(idxs.(i)) in
+      let V3.{ x; y; z } = points.(idxs.(i)) in
       (mn := Float.{ x = min !mn.x x; y = min !mn.y y; z = min !mn.z z });
       mx := Float.{ x = max !mx.x x; y = max !mx.y y; z = max !mx.z z }
     done;
-    let Vec3.{ x = dx; y = dy; z = dz } = Vec3.sub !mx !mn in
+    let V3.{ x = dx; y = dy; z = dz } = V3.sub !mx !mn in
     let project =
       match Float.(compare dx dy, compare dx dz, compare dy dz) with
-      | 1, 1, _   -> Vec3.get_x
-      | -1, _, 1  -> Vec3.get_y
-      | _, -1, -1 -> Vec3.get_z
-      | _         -> Vec3.get_x
+      | 1, 1, _   -> V3.get_x
+      | -1, _, 1  -> V3.get_y
+      | _, -1, -1 -> V3.get_z
+      | _         -> V3.get_x
     in
     Array.map (fun idx -> project points.(idx)) idxs
 end
 
-module Make (V : Vec.S) (P : Projection with type vec := V.t) : S with type vec := V.t =
+module Make (V : V.S) (P : Projection with type vec := V.t) : S with type vec := V.t =
 struct
   type tree =
     | Leaf of int array

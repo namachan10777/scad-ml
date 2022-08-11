@@ -1,8 +1,8 @@
-open! Vec
+open! V
 
 type t =
-  { outer : Vec3.t list
-  ; holes : Vec3.t list list
+  { outer : V3.t list
+  ; holes : V3.t list list
   }
 
 let of_poly2 ?(plane = Plane.xy) Poly2.{ outer; holes } =

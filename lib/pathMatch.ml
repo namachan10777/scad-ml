@@ -49,7 +49,7 @@ module type S = sig
   val tangent_match : vec list -> vec list -> vec list * vec list
 end
 
-module Make (V : Vec.S) (P : CUTPOINT_DEPS with type vec := V.t and type line := V.line) =
+module Make (V : V.S) (P : CUTPOINT_DEPS with type vec := V.t and type line := V.line) =
 struct
   type dp_map_dir =
     | Diag (* map the next vertex of [big] to the next vertex of [small] *)

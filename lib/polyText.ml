@@ -1,6 +1,6 @@
 open Cairo
-open Vec
-module Bez = Bezier.Make (Vec2)
+open V
+module Bez = Bezier.Make (V2)
 
 let path_to_outlines ?(fn = 5) data =
   let f (paths, ps, last_p) = function
@@ -13,12 +13,12 @@ let path_to_outlines ?(fn = 5) data =
       let path =
         match ps with
         | [] -> [ last_p ]
-        | _  -> if Vec2.approx (Util.last_element ps) last_p then ps else last_p :: ps
+        | _  -> if V2.approx (Util.last_element ps) last_p then ps else last_p :: ps
       in
       path :: paths, [], last_p
   in
   let paths, _, _ = Path.fold data f ([], [], v2 0. 0.) in
-  List.rev_map (List.map @@ fun Vec.{ x; y } -> v2 x (-.y)) paths
+  List.rev_map (List.map @@ fun V.{ x; y } -> v2 x (-.y)) paths
 
 let text ?fn ?(center = false) ?slant ?weight ?(size = 10.) ~font txt =
   let ctxt = create (Image.create Image.A1 ~w:1 ~h:1) in

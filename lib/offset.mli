@@ -6,8 +6,8 @@ val offset
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Delta ]
   -> float
-  -> Vec2.t list
-  -> Vec2.t list
+  -> V2.t list
+  -> V2.t list
 
 val offset_with_faces
   :  ?fn:int
@@ -19,5 +19,5 @@ val offset_with_faces
   -> ?start_idx:int
   -> ?mode:[< `Chamfer | `Delta | `Radius > `Delta ]
   -> float
-  -> Vec2.t list
-  -> int * Vec2.t list * int list list
+  -> V2.t list
+  -> int * V2.t list * int list list

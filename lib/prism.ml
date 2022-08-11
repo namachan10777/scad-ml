@@ -1,5 +1,5 @@
 open Util
-module Bez = Bezier.Make (Vec3)
+module Bez = Bezier.Make (V3)
 
 module Prism = struct
   type spec =
@@ -47,8 +47,8 @@ type patch_edges =
 let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
   let trans_bezpatch = Math.transpose bezpatch
   and n_rows, n_cols = Math.mat_dims bezpatch in
-  let row_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) bezpatch
-  and col_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) trans_bezpatch in
+  let row_degen = Array.map (array_all_equal @@ V3.approx ~eps:0.) bezpatch
+  and col_degen = Array.map (array_all_equal @@ V3.approx ~eps:0.) trans_bezpatch in
   let top_degen = row_degen.(0)
   and bot_degen = row_degen.(n_rows - 1)
   and left_degen = col_degen.(0)
@@ -58,7 +58,7 @@ let degenerate_patch ?(fn = 16) ?(rev = false) bezpatch =
   and top_degen_case ~rev bp =
     let row_max =
       let full_degen =
-        let row_degen = Array.map (array_all_equal @@ Vec3.approx ~eps:0.) bp in
+        let row_degen = Array.map (array_all_equal @@ V3.approx ~eps:0.) bp in
         let r = Float.(to_int @@ ceil ((of_int n_rows /. 2.) -. 1.)) in
         n_rows >= 4 && Array.for_all Fun.id (Array.sub row_degen 1 r)
       in
@@ -147,47 +147,47 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
   let f i =
     let rside_prev, rside_next = r_sides.(i)
     and concave_sign = rt_in_sign *. if concave.(i) then -1. else 1.
-    and prev = Vec3.sub top.(index_wrap ~len (i - 1)) top.(i)
-    and next = Vec3.sub top.(index_wrap ~len (i + 1)) top.(i)
-    and edge = Vec3.sub bot.(i) top.(i) in
+    and prev = V3.sub top.(index_wrap ~len (i - 1)) top.(i)
+    and next = V3.sub top.(index_wrap ~len (i + 1)) top.(i)
+    and edge = V3.sub bot.(i) top.(i) in
     let prev_offset =
-      let s = Vec3.(smul (normalize prev) (rside_prev /. Float.sin (angle prev edge))) in
-      Vec3.add top.(i) s
+      let s = V3.(smul (normalize prev) (rside_prev /. Float.sin (angle prev edge))) in
+      V3.add top.(i) s
     and next_offset =
-      let s = Vec3.(smul (normalize next) (rside_next /. Float.sin (angle next edge))) in
-      Vec3.add top.(i) s
+      let s = V3.(smul (normalize next) (rside_next /. Float.sin (angle next edge))) in
+      V3.add top.(i) s
     and down =
       let edge_angle =
-        let edge = Vec3.{ a = bot.(i); b = top.(i) } in
+        let edge = V3.{ a = bot.(i); b = top.(i) } in
         rt_down /. Float.sin (Float.abs (Plane.line_angle plane edge))
       in
-      Vec3.(smul (normalize edge) edge_angle)
+      V3.(smul (normalize edge) edge_angle)
     and fill_row p1 p2 p3 =
-      [| p1; Vec3.lerp p2 p1 k_sides.(i); p2; Vec3.lerp p2 p3 k_sides.(i); p3 |]
+      [| p1; V3.lerp p2 p1 k_sides.(i); p2; V3.lerp p2 p3 k_sides.(i); p3 |]
     in
     let row0 =
       let in_prev =
-        let a = Vec3.(sub next (smul prev (dot next prev /. dot prev prev))) in
-        Vec3.(smul (normalize a) concave_sign)
+        let a = V3.(sub next (smul prev (dot next prev /. dot prev prev))) in
+        V3.(smul (normalize a) concave_sign)
       and in_next =
-        let a = Vec3.(sub prev (smul next (dot prev next /. dot next next))) in
-        Vec3.(smul (normalize a) concave_sign)
+        let a = V3.(sub prev (smul next (dot prev next /. dot next next))) in
+        V3.(smul (normalize a) concave_sign)
       and far_corner =
         let num =
           let s = concave_sign *. abs_rt_in in
-          Vec3.(smul (normalize (add (normalize prev) (normalize next))) s)
+          V3.(smul (normalize (add (normalize prev) (normalize next))) s)
         in
-        Vec3.(add top.(i) @@ sdiv num (Float.sin (Vec3.angle prev next /. 2.)))
+        V3.(add top.(i) @@ sdiv num (Float.sin (V3.angle prev next /. 2.)))
       in
-      let prev_corner = Vec3.(add prev_offset (smul in_prev abs_rt_in))
-      and next_corner = Vec3.(add next_offset (smul in_next abs_rt_in)) in
+      let prev_corner = V3.(add prev_offset (smul in_prev abs_rt_in))
+      and next_corner = V3.(add next_offset (smul in_next abs_rt_in)) in
       if concave_sign < 0.
       then fill_row prev_corner far_corner next_corner
       else (
-        let fc2 = Vec2.of_vec3 far_corner in
+        let fc2 = V2.of_vec3 far_corner in
         let prev_degen =
-          let po2 = Vec2.of_vec3 prev_offset in
-          Vec2.(
+          let po2 = V2.of_vec3 prev_offset in
+          V2.(
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
@@ -195,8 +195,8 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
               { a = po2; b = add po2 (of_vec3 in_prev) })
           |> Option.is_none
         and next_degen =
-          let no2 = Vec2.of_vec3 next_offset in
-          Vec2.(
+          let no2 = V2.of_vec3 next_offset in
+          V2.(
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
@@ -210,10 +210,10 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
           (if next_degen then far_corner else next_corner) )
     and row2 = fill_row prev_offset top.(i) next_offset
     and row4 =
-      Vec3.(fill_row (add prev_offset down) (add top.(i) down) (add next_offset down))
+      V3.(fill_row (add prev_offset down) (add top.(i) down) (add next_offset down))
     in
-    let row1 = Array.map2 (fun a b -> Vec3.lerp b a k_top) row0 row2
-    and row3 = Array.map2 (fun a b -> Vec3.lerp a b k_top) row2 row4 in
+    let row1 = Array.map2 (fun a b -> V3.lerp b a k_top) row0 row2
+    and row3 = Array.map2 (fun a b -> V3.lerp a b k_top) row2 row4 in
     [| row0; row1; row2; row3; row4 |]
   in
   Array.init len f
@@ -250,7 +250,7 @@ let curvature_continuity ~len ~bot_patch:bp ~top_patch:tp =
   done
 
 let bad_patches ~len ~bot_patch:bp ~top_patch:tp bot top =
-  let open Vec3 in
+  let open V3 in
   let w = index_wrap ~len in
   let vert_bad i acc =
     if distance top.(i) tp.(i).(4).(2) +. distance bot.(i) bp.(i).(4).(2)
@@ -333,8 +333,8 @@ let prism'
   let bottom_sign = APath2.clockwise_sign bot_proj in
   let concave =
     let f i =
-      let line = Vec2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in
-      bottom_sign *. Vec2.left_of_line ~line bot_proj.(wrap (i + 1)) > 0.
+      let line = V2.{ a = bot_proj.(wrap (i - 1)); b = bot_proj.(i) } in
+      bottom_sign *. V2.left_of_line ~line bot_proj.(wrap (i + 1)) > 0.
     in
     Array.init len f
   in

@@ -9,7 +9,7 @@
 (** Points and faces 3-dimensional mesh. *)
 type t = Mesh0.t = private
   { n_points : int
-  ; points : Vec3.t list
+  ; points : V3.t list
   ; faces : int list list
   }
 
@@ -20,9 +20,9 @@ val empty : t
 
 (** [make ~points ~faces]
 
-    Create a mesh [t] from a list of {!Vec3.t} [points], and a list of [faces]
+    Create a mesh [t] from a list of {!V3.t} [points], and a list of [faces]
     described by indices into [points]. *)
-val make : points:Vec3.t list -> faces:int list list -> t
+val make : points:V3.t list -> faces:int list list -> t
 
 (** {1 Low-level Generators} *)
 
@@ -76,7 +76,7 @@ val of_rows
   -> ?endcaps:endcaps
   -> ?col_wrap:bool
   -> ?style:style
-  -> Vec3.t list list
+  -> V3.t list list
   -> t
 
 (** [of_ragged ?looped ?reverse rows]
@@ -91,11 +91,11 @@ val of_rows
     as their lengths differ by no more than 2. Face winding order is reversed if
     [reverse] is [true]. Throws [Invalid_argument] if a row length delta of
     greater than 2 is encountered. *)
-val of_ragged : ?looped:bool -> ?rev:bool -> Vec3.t list list -> t
+val of_ragged : ?looped:bool -> ?rev:bool -> V3.t list list -> t
 
 (** [of_path3 ?rev layer]
 
-    Create a mesh from a single path (a closed loop of {!Vec2.t}), returning a
+    Create a mesh from a single path (a closed loop of {!V2.t}), returning a
     {!type:t} with a single face including all of the points. Face winding order
     is reversed if [rev] is [true]. This can be useful for producing a flat
     patch mesh to be combined with other meshes to produce a complete shape. *)
@@ -103,7 +103,7 @@ val of_path2 : ?rev:bool -> Path2.t -> t
 
 (** [of_path3 ?rev layer]
 
-    Create a mesh from a single path (a closed loop of {!Vec3.t}, should be
+    Create a mesh from a single path (a closed loop of {!V3.t}, should be
    coplanar though it is not confirmed), returning a {!type:t} with a single
    face including all of the points. Face winding order is reversed if [rev] is
    [true]. This can be useful for producing a flat patch mesh to be combined
@@ -459,9 +459,9 @@ val linear_extrude
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?fa:float
   -> ?slices:int
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> ?center:bool
   -> ?caps:Cap.caps
@@ -482,9 +482,9 @@ val path_extrude
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW `CW ]
   -> ?caps:Cap.t
   -> ?euler:bool
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> path:Path3.t
   -> Poly2.t
@@ -503,9 +503,9 @@ val helix_extrude
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> ?caps:Cap.caps
   -> ?left:bool
@@ -544,7 +544,7 @@ val morph
   -> ?outer_map:mapping
   -> ?hole_map:[ `Same | `Flat of mapping | `Mix of mapping list ]
   -> ?refine:int
-  -> ?ez:Vec2.t * Vec2.t
+  -> ?ez:V2.t * V2.t
   -> transforms:Affine3.t list
   -> Poly2.t
   -> Poly2.t
@@ -562,16 +562,16 @@ val linear_morph
   -> ?winding:[< `CCW | `CW | `NoCheck > `CCW ]
   -> ?fa:float
   -> ?slices:int
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> ?center:bool
   -> ?caps:Cap.caps
   -> ?outer_map:mapping
   -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
-  -> ?ez:Vec2.t * Vec2.t
+  -> ?ez:V2.t * V2.t
   -> height:float
   -> Poly2.t
   -> Poly2.t
@@ -591,11 +591,11 @@ val path_morph
   -> ?outer_map:mapping
   -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
-  -> ?ez:Vec2.t * Vec2.t
+  -> ?ez:V2.t * V2.t
   -> ?euler:bool
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> path:Path3.t
   -> Poly2.t
@@ -615,15 +615,15 @@ val helix_morph
   -> ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> ?scale_ez:Vec2.t * Vec2.t
-  -> ?twist_ez:Vec2.t * Vec2.t
-  -> ?scale:Vec2.t
+  -> ?scale_ez:V2.t * V2.t
+  -> ?twist_ez:V2.t * V2.t
+  -> ?scale:V2.t
   -> ?twist:float
   -> ?caps:Cap.caps
   -> ?outer_map:mapping
   -> ?hole_map:[ `Flat of mapping | `Mix of mapping list | `Same ]
   -> ?refine:int
-  -> ?ez:Vec2.t * Vec2.t
+  -> ?ez:V2.t * V2.t
   -> ?left:bool
   -> n_turns:int
   -> pitch:float
@@ -819,23 +819,23 @@ val area : t -> float
 (** [centroid ?eps t]
 
     Calculate the centroid of the mesh [t]. *)
-val centroid : ?eps:float -> t -> Vec3.t
+val centroid : ?eps:float -> t -> V3.t
 
 (** {1 Basic Transfomations} *)
 
-val translate : Vec3.t -> t -> t
+val translate : V3.t -> t -> t
 val xtrans : float -> t -> t
 val ytrans : float -> t -> t
 val ztrans : float -> t -> t
-val rotate : ?about:Vec3.t -> Vec3.t -> t -> t
-val xrot : ?about:Vec3.t -> float -> t -> t
-val yrot : ?about:Vec3.t -> float -> t -> t
-val zrot : ?about:Vec3.t -> float -> t -> t
-val quaternion : ?about:Vec3.t -> Quaternion.t -> t -> t
-val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> t -> t
+val rotate : ?about:V3.t -> V3.t -> t -> t
+val xrot : ?about:V3.t -> float -> t -> t
+val yrot : ?about:V3.t -> float -> t -> t
+val zrot : ?about:V3.t -> float -> t -> t
+val quaternion : ?about:V3.t -> Quaternion.t -> t -> t
+val axis_rotate : ?about:V3.t -> V3.t -> float -> t -> t
 val affine : Affine3.t -> t -> t
-val scale : Vec3.t -> t -> t
-val mirror : Vec3.t -> t -> t
+val scale : V3.t -> t -> t
+val mirror : V3.t -> t -> t
 
 (** {1 Debugging helpers} *)
 

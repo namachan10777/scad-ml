@@ -7,7 +7,7 @@ end)
 
 type t =
   { n_points : int
-  ; points : Vec3.t list
+  ; points : V3.t list
   ; faces : int list list
   }
 
@@ -71,7 +71,7 @@ let of_rows
         let rec loop acc r c =
           let acc =
             let i1, i2, i3, i4 = idxs r c in
-            Vec3.mean' [| ps'.(i1); ps'.(i2); ps'.(i3); ps'.(i4) |] :: acc
+            V3.mean' [| ps'.(i1); ps'.(i2); ps'.(i3); ps'.(i4) |] :: acc
           in
           if c = n_cols - 1
           then if r = n_rows - 1 then acc else loop acc (r + 1) 0
@@ -84,7 +84,7 @@ let of_rows
       let ps = Array.of_list points in
       let add_face a b c acc =
         (* drop degenerate faces *)
-        if Vec3.(
+        if V3.(
              distance ps.(a) ps.(b) > Util.epsilon
              && distance ps.(b) ps.(c) > Util.epsilon
              && distance ps.(c) ps.(a) > Util.epsilon)
@@ -114,7 +114,7 @@ let of_rows
         | `MinEdge                    ->
           fun acc r c ->
             let i1, i2, i3, i4 = idxs r c in
-            let default = Vec3.(distance ps.(i4) ps.(i2) <= distance ps.(i1) ps.(i3)) in
+            let default = V3.(distance ps.(i4) ps.(i2) <= distance ps.(i1) ps.(i3)) in
             add_faces default acc i1 i2 i3 i4
         | (`Convex | `Concave) as con ->
           (* find normal for 3 of the points, is the other point above or below? *)
@@ -126,12 +126,12 @@ let of_rows
           fun acc r c ->
             let i1, i2, i3, i4 = idxs r c in
             let n =
-              Vec3.(cross (sub ps.(i2) ps.(i1)) (sub ps.(i3) ps.(i1)))
-              |> if rev then Vec3.negate else Fun.id
+              V3.(cross (sub ps.(i2) ps.(i1)) (sub ps.(i3) ps.(i1)))
+              |> if rev then V3.negate else Fun.id
             in
             if Math.approx n.z 0.
             then add_face i1 i4 i3 acc
-            else add_faces (side Vec3.(dot n ps.(i4) > dot n ps.(i1))) acc i1 i2 i3 i4
+            else add_faces (side V3.(dot n ps.(i4) > dot n ps.(i1))) acc i1 i2 i3 i4
         | `Default                    ->
           fun acc r c ->
             let i1, i2, i3, i4 = idxs r c in
@@ -228,7 +228,7 @@ let of_ragged ?(looped = false) ?(rev = false) rows =
     let faces =
       let cull_degenerate =
         let v = Array.unsafe_get verts in
-        let not_degen a b = Float.compare (Vec3.distance (v a) (v b)) Util.epsilon = 1 in
+        let not_degen a b = Float.compare (V3.distance (v a) (v b)) Util.epsilon = 1 in
         function
         | [ i0; i1; i2 ] as face ->
           if not_degen i0 i1 && not_degen i1 i2 && not_degen i2 i0
@@ -243,7 +243,7 @@ let of_ragged ?(looped = false) ?(rev = false) rows =
 let of_path2 ?(rev = false) layer =
   let n_points, points, face =
     List.fold_left
-      (fun (n, ps, fs) p -> n + 1, Vec3.of_vec2 p :: ps, n :: fs)
+      (fun (n, ps, fs) p -> n + 1, V3.of_vec2 p :: ps, n :: fs)
       (0, [], [])
       layer
   in
@@ -305,7 +305,7 @@ let merge_points ?(eps = Util.epsilon) { n_points; points; faces } =
     then
       for i = 0 to len - 2 do
         for j = i + 1 to len - 1 do
-          if (not (IntTbl.mem drop j)) && Vec3.approx ~eps pts.(i) pts.(j)
+          if (not (IntTbl.mem drop j)) && V3.approx ~eps pts.(i) pts.(j)
           then IntTbl.add drop j i
         done
       done
@@ -370,7 +370,7 @@ let volume { n_points; points; faces } =
   else (
     let pts = Array.of_list points in
     let rec sum_face total_vol p1 idxs =
-      let calc total_vol p1 p2 p3 = Vec3.(dot (cross p3 p2) p1) +. total_vol in
+      let calc total_vol p1 p2 p3 = V3.(dot (cross p3 p2) p1) +. total_vol in
       match idxs with
       | [ i2; i3 ]              -> calc total_vol p1 pts.(i2) pts.(i3)
       | i2 :: (i3 :: _ as rest) -> sum_face (calc total_vol p1 pts.(i2) pts.(i3)) p1 rest
@@ -400,9 +400,9 @@ let centroid ?(eps = Util.epsilon) { n_points; points; faces } =
   let pts = Array.of_list points in
   let rec sum_face total_vol weighted_sum p1 idxs =
     let calc total_vol weighted_sum p1 p2 p3 =
-      let vol = Vec3.(dot (cross p3 p2) p1) in
-      let weighted = Vec3.(smul (add p1 (add p2 p3)) vol) in
-      vol +. total_vol, Vec3.add weighted_sum weighted
+      let vol = V3.(dot (cross p3 p2) p1) in
+      let weighted = V3.(smul (add p1 (add p2 p3)) vol) in
+      vol +. total_vol, V3.add weighted_sum weighted
     in
     match idxs with
     | [ i2; i3 ]              -> calc total_vol weighted_sum p1 pts.(i2) pts.(i3)
@@ -417,11 +417,11 @@ let centroid ?(eps = Util.epsilon) { n_points; points; faces } =
       | i1 :: idxs -> sum_face total_vol weighted_sum pts.(i1) idxs
       | []         -> invalid_arg "Polyhedron contains empty face."
     in
-    List.fold_left f (0., Vec3.zero) faces
+    List.fold_left f (0., V3.zero) faces
   in
   if Math.approx ~eps total_vol 0.
   then invalid_arg "The polyhedron has self-intersections.";
-  Vec3.(sdiv weighted_sum (total_vol *. 4.))
+  V3.(sdiv weighted_sum (total_vol *. 4.))
 
 let enforce_winding w shape =
   let reverse =

@@ -117,7 +117,7 @@ module type Arc = sig
     -> vec list
 end
 
-module Make (V : Vec.S) (Arc : Arc with type vec := V.t) = struct
+module Make (V : V.S) (Arc : Arc with type vec := V.t) = struct
   module Bz = Bezier.Make (V)
   module P = Path.Make (V)
 

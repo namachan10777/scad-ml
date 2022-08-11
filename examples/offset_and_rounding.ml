@@ -4,7 +4,7 @@ open Scad_ml
 (** Draw a [poly]gon and make a [pointy] scad from it to compare to our
     alterations. *)
 
-let poly = Poly2.make Vec2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
+let poly = Poly2.make V2.[ v (-4.) 0.; v 5. 3.; v 0. 7.; v 8. 7.; v 20. 20.; v 10. 0. ]
 
 let pointy =
   Poly2.to_scad poly

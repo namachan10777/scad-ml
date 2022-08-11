@@ -46,7 +46,7 @@ val make : ?validate:bool -> ?holes:Path2.t list -> Path2.t -> t
     Add [holes] to [t]. If validate is [true] (as it is by default),
     {!val:validation} is performed, raising exceptions if the defined polygon is
     not simple (and thus, may cause problems in CGAL). *)
-val add_holes : ?validate:bool -> holes:Vec2.t list list -> t -> t
+val add_holes : ?validate:bool -> holes:V2.t list list -> t -> t
 
 (** [validation ?eps t]
 
@@ -82,7 +82,7 @@ val wedge
   :  ?fn:int
   -> ?fa:float
   -> ?fs:float
-  -> centre:Vec2.t
+  -> centre:V2.t
   -> radius:float
   -> start:float
   -> float
@@ -93,13 +93,13 @@ val wedge
     Create a rectangular polygon with xy [dims] (e.g. width and height). If
     [center] is [true] then the path will be centred around the origin (default
     = [false]). *)
-val square : ?center:bool -> Vec2.t -> t
+val square : ?center:bool -> V2.t -> t
 
 (** [ellipse ?fn ?fa ?fs radii]
 
     Draw an ellipse with xy [radii]. The greater of the two radii is used for
     fragment/resolution calculation. *)
-val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> Vec2.t -> t
+val ellipse : ?fn:int -> ?fa:float -> ?fs:float -> V2.t -> t
 
 (** [star ~r1 ~r2 n]
 
@@ -111,7 +111,7 @@ val star : r1:float -> r2:float -> int -> t
     Draw an empty elliptical ring of outer xy [radii], with the given radial
     [thickness] (difference between outer and inner radii). For a circular
     ring, use equal x and y radii. *)
-val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:Vec2.t -> Vec2.t -> t
+val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:V2.t -> V2.t -> t
 
 (** [box ?center ~thickness dims]
 
@@ -119,21 +119,21 @@ val ring : ?fn:int -> ?fa:float -> ?fs:float -> thickness:Vec2.t -> Vec2.t -> t
     xy [thickness] (difference between outer and inner xy dimensions). If
     [center] is [true], then the path will be centred around the origin
     (default = [false]). *)
-val box : ?center:bool -> thickness:Vec2.t -> Vec2.t -> t
+val box : ?center:bool -> thickness:V2.t -> V2.t -> t
 
 (** {1 Geometry} *)
 
 (** [bbox t]
 
     Compute the 2d bounding box of the polygon [t]. *)
-val bbox : t -> Vec2.bbox
+val bbox : t -> V2.bbox
 
 (** [centroid ?eps t]
 
     Compute the centroid of the outer path of the polygon [t]. If [t.outer] is
     collinear or self-intersecting (within [eps] tolerance), an
     [Invalid_argument] exception is raised. *)
-val centroid : ?eps:float -> t -> Vec2.t
+val centroid : ?eps:float -> t -> V2.t
 
 (** [area ?signed t]
 
@@ -178,13 +178,13 @@ val offset
     Map the outer and inner paths of [t] with the function [f]. *)
 val map : (Path2.t -> Path2.t) -> t -> t
 
-val translate : Vec2.t -> t -> t
+val translate : V2.t -> t -> t
 val xtrans : float -> t -> t
 val ytrans : float -> t -> t
-val rotate : ?about:Vec2.t -> float -> t -> t
-val zrot : ?about:Vec2.t -> float -> t -> t
-val scale : Vec2.t -> t -> t
-val mirror : Vec2.t -> t -> t
+val rotate : ?about:V2.t -> float -> t -> t
+val zrot : ?about:V2.t -> float -> t -> t
+val scale : V2.t -> t -> t
+val mirror : V2.t -> t -> t
 val affine : Affine2.t -> t -> t
 
 (** {1 Output} *)

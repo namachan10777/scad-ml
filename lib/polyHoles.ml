@@ -1,7 +1,7 @@
 (* Polyhole partitioning algorithm ported from
    https://github.com/RonaldoCMP/Polygon-stuffs/blob/master/polyHolePartition.scad *)
 
-open Vec
+open V
 
 type tag =
   { n : int
@@ -15,11 +15,11 @@ let compare_tag a b =
   if Int.equal c 0 then Int.compare a.idx b.idx else c
 
 type point =
-  { p : Vec2.t
+  { p : V2.t
   ; tag : tag
   }
 
-let negate_point { p; tag } = { p = Vec2.negate p; tag }
+let negate_point { p; tag } = { p = V2.negate p; tag }
 
 module BridgeSet = Set.Make (struct
   type t = tag * tag
@@ -30,7 +30,7 @@ module BridgeSet = Set.Make (struct
 end)
 
 (* Opposite of usual convention, but this works. Flip inputs for now. *)
-let is_ccw a b c = Vec3.get_z Vec2.(cross (sub b a) (sub c a)) > 0.
+let is_ccw a b c = V3.get_z V2.(cross (sub b a) (sub c a)) > 0.
 
 (* check if point p is within the CCW triangle described by p1, p2, and p3. *)
 let in_tri p p1 p2 p3 = is_ccw p1 p p2 && is_ccw p2 p p3
@@ -61,11 +61,11 @@ let outer_intersect p outer =
       else if po1.y < p.y && po2.y >= p.y
       then (
         let u = (p.y -. po2.y) /. (po1.y -. po2.y) in
-        update i (Vec2.lerp po1 po2 u) )
+        update i (V2.lerp po1 po2 u) )
   done;
   if Float.is_infinite !out_x
   then failwith "Invalid polygon: holes may intersect with eachother, or the outer walls."
-  else !seg_idx, Vec2.v !out_x !out_y
+  else !seg_idx, V2.v !out_x !out_y
 
 (* Find a bridge between the point p (in the interior of poly outer) and a
    vertex (given by index) in the outer path. *)
@@ -81,7 +81,7 @@ let bridge_to_outer { p = { x; y } as pt; _ } outer =
     else next_idx, fun ({ y = cy; _ } as cp) -> cy > y && in_tri cp pt next intersect
   in
   let idx = ref first
-  and min_x = ref @@ Vec2.get_x outer.(first).p in
+  and min_x = ref @@ V2.get_x outer.(first).p in
   for i = 0 to len - 1 do
     let { p = { x = cx; _ } as p; _ } = outer.(i) in
     if valid_candidate p
@@ -94,7 +94,7 @@ let bridge_to_outer { p = { x; y } as pt; _ } outer =
   !idx
 
 let extremes holes =
-  let max_x m ({ p = { x; _ }; _ } as e) = if x > Vec2.get_x m.p then e else m in
+  let max_x m ({ p = { x; _ }; _ } as e) = if x > V2.get_x m.p then e else m in
   let rightmost =
     Array.init (Array.length holes) (fun i ->
         Array.fold_left max_x holes.(i).(0) holes.(i) )
@@ -159,7 +159,7 @@ let insert_bridge (bridge_start, bridge_end) polys =
   and rest = Array.init (n_poly - 1) (fun j -> polys.((poly_idx + 1 + j) mod n_poly)) in
   Array.concat [ [| end_to_start; start_to_end |]; rest ]
 
-let partition ?(rev = false) ?(lift = fun { x; y } -> Vec3.v x y 0.) ~holes outer =
+let partition ?(rev = false) ?(lift = fun { x; y } -> V3.v x y 0.) ~holes outer =
   let outer_sign = Path2.clockwise_sign outer in
   let flipped = Float.equal (-1.) outer_sign in
   let outer = if flipped then List.rev outer else outer in

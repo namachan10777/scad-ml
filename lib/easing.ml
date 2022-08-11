@@ -1,5 +1,5 @@
-open Vec
-module Bez = Bezier.Make (Vec2)
+open V
+module Bez = Bezier.Make (V2)
 
 let n_samples = 11
 let step = 1. /. Float.of_int (n_samples - 1)

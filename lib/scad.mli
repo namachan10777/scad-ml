@@ -16,11 +16,11 @@ type scad
 (** This GADT allows scads to be tagged as 2D or 3D, restricting usage of functions
     that should only apply to one or the other, and preventing mixing during
     boolean operations.
-    - The ['space] parameter can be {!Vec2.t} or {!Vec3.t}, corresponding to
+    - The ['space] parameter can be {!V2.t} or {!V3.t}, corresponding to
       dimensions over which the scad can be transformed.
     - The ['rot] parameter corresponds to the axes rotation available to the
       scad. For 2d shapes, this is a [float] representing z-axis rotation, and
-      for 3d shapes, xyz axes are available through {!Vec3.t}.
+      for 3d shapes, xyz axes are available through {!V3.t}.
     - The ['affine] parameter can be {!Affine2.t} or {!Affine3.t}, specifying
       the affine transformation matrix to use for the {!affine} function (which
       maps down to {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
@@ -28,10 +28,10 @@ type scad
 type ('space, 'rot, 'affine) t
 
 (** Two-dimensional shape *)
-type d2 = (Vec2.t, float, Affine2.t) t
+type d2 = (V2.t, float, Affine2.t) t
 
 (** Three-dimensional shape *)
-type d3 = (Vec3.t, Vec3.t, Affine3.t) t
+type d3 = (V3.t, V3.t, Affine3.t) t
 
 (** {1 A note on special facet parameters}
 
@@ -55,7 +55,7 @@ type d3 = (Vec3.t, Vec3.t, Affine3.t) t
 
     Creates a cube in the first octant, with the given xyz [dimensions]. When
     [center] is true, the cube is centered on the origin. *)
-val cube : ?center:bool -> Vec3.t -> d3
+val cube : ?center:bool -> V3.t -> d3
 
 (** [sphere ?fa ?fs ?fn radius]
 
@@ -96,7 +96,7 @@ val cone
     create any regular or irregular shape including those with concave as well
     as convex features. Curved surfaces are approximated by a series of flat
 
-    The {!Vec3.t} list of coordinate [points] represents the vertices of the
+    The {!V3.t} list of coordinate [points] represents the vertices of the
     shape. How these points define the surface of the generated shape is
     specified by the [faces] (0-based) index lists. Each element of [faces]
     should define a face in the same order (from the perspective of viewing the
@@ -113,7 +113,7 @@ val cone
     If you are having trouble, please see the
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Debugging_polyhedra}
     debugging polyhedra} section of the OpenSCAD user manual. *)
-val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
+val polyhedron : ?convexity:int -> V3.t list -> int list list -> d3
 
 (** {1 2d shape primitives} *)
 
@@ -122,7 +122,7 @@ val polyhedron : ?convexity:int -> Vec3.t list -> int list list -> d3
     Creates a square or rectangle in the first quadrant, with given xyz
     [dimensions]. When [?center] is true the square is centered on the
     origin. *)
-val square : ?center:bool -> Vec2.t -> d2
+val square : ?center:bool -> V2.t -> d2
 
 (** [circle ?fa ?fs ?fn radius]
 
@@ -140,7 +140,7 @@ val circle : ?fa:float -> ?fs:float -> ?fn:int -> float -> d2
 
     For information on the [?convexity], please see the documentation for
     {!polyhedron}. *)
-val polygon : ?convexity:int -> ?paths:int list list -> Vec2.t list -> d2
+val polygon : ?convexity:int -> ?paths:int list list -> V2.t list -> d2
 
 (** [text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn str]
 
@@ -175,7 +175,7 @@ val text
     These functions can be applied to both 2d and 3d shapes. Relevant vector and
     rotational parameters are tied to the dimensionality of the input shape,
     preventing transformations that could result in 2d shapes escaping the xy
-    plane. {i e.g.} Translation vectors of 2d shapes are given as {!Vec2.t}, and
+    plane. {i e.g.} Translation vectors of 2d shapes are given as {!V2.t}, and
     rotation is given as a single [float] angle about the z-axis. *)
 
 (** [translate p t]
@@ -200,7 +200,7 @@ val ztrans : float -> d3 -> d3
 
 (** [rotate ?about r t]
 
-    Performs an Euler rotation (zyx) if operating in 3d ([(r : Vec3.t) (t : d3)]),
+    Performs an Euler rotation (zyx) if operating in 3d ([(r : V3.t) (t : d3)]),
     otherwise ([(r : float) (t : d2)]), a single rotation around the z-axis is
     performed. If it is provided, rotations are performed around the point [about],
     otherwise rotation is about the origin. Angle(s) [r] are in radians. *)
@@ -210,13 +210,13 @@ val rotate : ?about:'s -> 'r -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
     Rotate the 3d shape [t] around the x-axis through the origin (or the point
     [about] if provided) by [r] (in radians). *)
-val xrot : ?about:Vec3.t -> float -> d3 -> d3
+val xrot : ?about:V3.t -> float -> d3 -> d3
 
 (** [yrot ?about r t]
 
     Rotate the 3d shape [t] around the y-axis through the origin (or the point
     [about] if provided) by [r] (in radians). *)
-val yrot : ?about:Vec3.t -> float -> d3 -> d3
+val yrot : ?about:V3.t -> float -> d3 -> d3
 
 (** [zrot ?about r t]
 
@@ -266,7 +266,7 @@ val render : ?convexity:int -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
     Rotates [t] about the arbitrary axis [ax] through the origin (or the point
     [about] if provided) by the angle [r] (in radians). *)
-val axis_rotate : ?about:Vec3.t -> Vec3.t -> float -> d3 -> d3
+val axis_rotate : ?about:V3.t -> V3.t -> float -> d3 -> d3
 
 (** [affine mat t]
 
@@ -280,7 +280,7 @@ val affine : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
     Applys the quaternion rotation [q] around the origin (or the point [about]
     if provided) to [t]. *)
-val quaternion : ?about:Vec3.t -> Quaternion.t -> d3 -> d3
+val quaternion : ?about:V3.t -> Quaternion.t -> d3 -> d3
 
 (** {1 2d Only Transformations} *)
 
@@ -431,7 +431,7 @@ val linear_extrude
   -> ?convexity:int
   -> ?twist:int
   -> ?slices:int
-  -> ?scale:Vec2.t
+  -> ?scale:V2.t
   -> ?fn:int
   -> d2
   -> d3

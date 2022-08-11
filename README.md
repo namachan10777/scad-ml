@@ -58,7 +58,7 @@ as well as some walkthrough style
 There is a companion ppx, [\[@@deriving
 scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
 transformation functions for user-defined records and abstract types made up of
-the `Scad.t`, along with their corresponding vector (`Vec2.t` or `Vec3.t`) types
+the `Scad.t`, along with their corresponding vector (`V2.t` or `V3.t`) types
 (and those composed of them) provided in this library.
 
 ## Authors
