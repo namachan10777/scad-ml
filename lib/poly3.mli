@@ -169,6 +169,9 @@ val offset
 val map : (Path3.t -> Path3.t) -> t -> t
 
 val translate : Vec3.t -> t -> t
+val xtrans : float -> t -> t
+val ytrans : float -> t -> t
+val ztrans : float -> t -> t
 val rotate : ?about:Vec3.t -> Vec3.t -> t -> t
 val xrot : ?about:Vec3.t -> float -> t -> t
 val yrot : ?about:Vec3.t -> float -> t -> t

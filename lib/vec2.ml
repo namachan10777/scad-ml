@@ -171,7 +171,9 @@ let[@inline] ( *$ ) a b = smul a b
 let[@inline] ( /$ ) a b = sdiv a b
 let of_vec3 Vec.{ x; y; z = _ } = { x; y }
 let to_vec3 ?(z = 0.) { x; y } = Vec.v3 x y z
-let translate = add
+let[@inline] translate a b = add a b
+let[@inline] xtrans d { x; y } = v (x +. d) y
+let[@inline] ytrans d { x; y } = v x (y +. d)
 
 let rotate ?about theta t =
   let s = Float.sin theta

@@ -150,6 +150,9 @@ let translate { x; y } =
   ; r2c2 = 1.
   }
 
+let[@inline] xtrans x = translate (v2 x 0.)
+let[@inline] ytrans y = translate (v2 0. y)
+
 let rotate ?about r =
   if not @@ Float.is_finite r
   then invalid_arg "Rotation angle must be finite."

@@ -433,6 +433,9 @@ let enforce_winding w shape =
   if reverse then List.rev shape else shape
 
 let translate p t = { t with points = Path3.translate p t.points }
+let xtrans x t = { t with points = Path3.xtrans x t.points }
+let ytrans y t = { t with points = Path3.ytrans y t.points }
+let ztrans z t = { t with points = Path3.ztrans z t.points }
 let rotate ?about r t = { t with points = Path3.rotate ?about r t.points }
 let xrot ?about r t = { t with points = Path3.xrot ?about r t.points }
 let yrot ?about r t = { t with points = Path3.yrot ?about r t.points }

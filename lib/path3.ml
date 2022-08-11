@@ -262,6 +262,9 @@ include
     end)
 
 let translate p = List.map (Vec3.translate p)
+let xtrans x = List.map (Vec3.xtrans x)
+let ytrans y = List.map (Vec3.ytrans y)
+let ztrans z = List.map (Vec3.ztrans z)
 let rotate ?about r = List.map (Vec3.rotate ?about r)
 let xrot ?about r = List.map (Vec3.xrot ?about r)
 let yrot ?about r = List.map (Vec3.yrot ?about r)

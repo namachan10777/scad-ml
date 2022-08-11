@@ -73,6 +73,16 @@ val zrot : ?about:t -> float -> t -> t
     Translate [t] along the vector [p]. Equivalent to {!val:add}. *)
 val translate : t -> t -> t
 
+(** [xtrans x t]
+
+    Translate [t] by the distance [x] along the x-axis. *)
+val xtrans : float -> t -> t
+
+(** [ytrans y t]
+
+    Translate [t] by the distance [y] along the y-axis. *)
+val ytrans : float -> t -> t
+
 (** [scale s t]
 
     Scale [t] by factors [s]. Equivalent to {!val:mul}. *)

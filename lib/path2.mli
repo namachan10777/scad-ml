@@ -283,6 +283,8 @@ include PathMatch.S with type vec := Vec2.t (** @inline *)
 (** {1 Basic Transfomations} *)
 
 val translate : Vec2.t -> t -> t
+val xtrans : float -> t -> t
+val ytrans : float -> t -> t
 val rotate : ?about:Vec2.t -> float -> t -> t
 val zrot : ?about:Vec2.t -> float -> t -> t
 val affine : Affine2.t -> t -> t

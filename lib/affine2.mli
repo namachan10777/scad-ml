@@ -43,8 +43,20 @@ val of_row_matrix : float array array -> (t, string) result
 
 (** [translation v]
 
-    Create a 2d affine transformation matrix from the xyz translation vector [v]. *)
+    Create a 2d affine transformation matrix from the xy translation vector [v]. *)
 val translate : Vec2.t -> t
+
+(** [xtrans x]
+
+    Create a 2d affine transformation matrix that applies a translation of [x]
+    distance along the x-axis. *)
+val xtrans : float -> t
+
+(** [ytrans y]
+
+    Create a 2d affine transformation matrix that applies a translation of [y]
+    distance along the y-axis. *)
+val ytrans : float -> t
 
 (** [rotate ?about r]
 

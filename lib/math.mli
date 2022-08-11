@@ -115,3 +115,20 @@ val transpose : 'a array array -> 'a array array
     {{:https://github.com/revarbat/BOSL2/blob/master/math.scad#L1361} BOSL2 math
     module}. *)
 val real_roots : ?eps:float -> ?tol:float -> float array -> float array
+
+(** {1 Search} *)
+
+(** [bisection ?max_iter ?tolerance ~lower ~upper f]
+
+    Perform a {{:https://en.wikipedia.org/wiki/Bisection_method} bisection}
+    search for the value that minimizes the function [f] between the bounds
+    [lower] and [upper]. [x] is returned either when [f x = 0.], or the bound
+    range falls below [tolerance]. Raises [Failure] if the iteration count
+    reaches [max_iter] (default = [100]). *)
+val bisection
+  :  ?max_iter:int
+  -> ?tolerance:float
+  -> lower:float
+  -> upper:float
+  -> (float -> float)
+  -> float

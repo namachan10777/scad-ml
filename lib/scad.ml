@@ -151,6 +151,16 @@ let translate (type s r a) (p : s) : (s, r, a) t -> (s, r, a) t = function
   | D2 scad -> d2 @@ Translate (Vec3.of_vec2 p, scad)
   | D3 scad -> d3 @@ Translate (p, scad)
 
+let xtrans (type s r a) x : (s, r, a) t -> (s, r, a) t = function
+  | D2 scad -> d2 @@ Translate (v3 x 0. 0., scad)
+  | D3 scad -> d3 @@ Translate (v3 x 0. 0., scad)
+
+let ytrans (type s r a) y : (s, r, a) t -> (s, r, a) t = function
+  | D2 scad -> d2 @@ Translate (v3 0. y 0., scad)
+  | D3 scad -> d3 @@ Translate (v3 0. y 0., scad)
+
+let[@inline] ztrans z t = translate (v3 0. 0. z) t
+
 let rotate : type s r a. ?about:s -> r -> (s, r, a) t -> (s, r, a) t =
  fun ?about r t ->
   let aux : (s, r, a) t -> (s, r, a) t = function

@@ -115,6 +115,8 @@ include
 let offset = Offset.offset
 let lift plane = to_path3 ~plane
 let translate p = List.map (Vec2.translate p)
+let xtrans x = List.map (Vec2.xtrans x)
+let ytrans y = List.map (Vec2.ytrans y)
 let rotate ?about r = List.map (Vec2.rotate ?about r)
 let[@inline] zrot ?about r t = rotate ?about r t
 let scale s = List.map (Vec2.scale s)

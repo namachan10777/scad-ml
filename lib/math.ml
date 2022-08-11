@@ -182,3 +182,21 @@ let real_roots ?eps ?(tol = 1e-14) p =
   in
   let _, l = Array.fold_left f (0, []) roots in
   Util.array_of_list_rev l
+
+let bisection ?(max_iter = 100) ?(tolerance = 0.001) ~lower ~upper f =
+  let rec loop i a b =
+    let c = (a +. b) /. 2. in
+    if (b -. a) /. 2. < tolerance
+    then c
+    else (
+      let res = f c in
+      if res = 0.
+      then c
+      else if i < max_iter
+      then
+        if Float.(Int.equal (compare 0. res) (compare 0. (f a)))
+        then loop (i + 1) c b
+        else loop (i + 1) a c
+      else failwith "Maximum iterations reached in bisection search." )
+  in
+  loop 0 lower upper

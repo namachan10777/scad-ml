@@ -58,6 +58,9 @@ let offset ?fn ?fs ?fa ?check_valid ?mode d t =
   map f t
 
 let translate p = map (Path3.translate p)
+let xtrans x = map (Path3.xtrans x)
+let ytrans y = map (Path3.ytrans y)
+let ztrans z = map (Path3.ztrans z)
 let rotate ?about r = map (Path3.rotate ?about r)
 let xrot ?about r = map (Path3.xrot ?about r)
 let yrot ?about r = map (Path3.yrot ?about r)

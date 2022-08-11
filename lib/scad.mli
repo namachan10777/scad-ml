@@ -183,6 +183,21 @@ val text
     Moves [t] along the vector [p]. *)
 val translate : 's -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
+(** [xtrans x t]
+
+    Moves [t] by the distance [x] along the x-axis. *)
+val xtrans : float -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
+
+(** [ytrans y t]
+
+    Moves [t] by the distance [y] along the y-axis. *)
+val ytrans : float -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
+
+(** [ztrans y t]
+
+    Moves the 3d shape [t] by the distance [z] along the z-axis. *)
+val ztrans : float -> d3 -> d3
+
 (** [rotate ?about r t]
 
     Performs an Euler rotation (zyx) if operating in 3d ([(r : Vec3.t) (t : d3)]),

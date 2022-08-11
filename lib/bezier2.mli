@@ -15,6 +15,8 @@ val line_intersection : line:Vec2.line -> Vec2.t list -> float list
 (** {1 Basic Transfomations} *)
 
 val translate : Vec2.t -> t -> t
+val xtrans : float -> t -> t
+val ytrans : float -> t -> t
 val rotate : ?about:Vec2.t -> float -> t -> t
 val zrot : ?about:Vec2.t -> float -> t -> t
 val scale : Vec2.t -> t -> t

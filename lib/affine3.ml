@@ -287,6 +287,10 @@ let translate { x; y; z } =
   ; r3c3 = 1.
   }
 
+let[@inline] xtrans x = translate (v3 x 0. 0.)
+let[@inline] ytrans y = translate (v3 0. y 0.)
+let[@inline] ztrans z = translate (v3 0. 0. z)
+
 let xrot ?about r =
   if not @@ Float.is_finite r
   then invalid_arg "X rotation angle must be finite."

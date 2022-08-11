@@ -203,7 +203,10 @@ let rotate ?about { x; y; z } t =
   | Some p -> sub t p |> xrot x |> yrot y |> zrot z |> add p
   | None   -> xrot x t |> yrot y |> zrot z
 
-let translate = add
-let scale = mul
+let[@inline] translate a b = add a b
+let[@inline] xtrans d { x; y; z } = v (x +. d) y z
+let[@inline] ytrans d { x; y; z } = v x (y +. d) z
+let[@inline] ztrans d { x; y; z } = v x y (z +. d)
+let[@inline] scale a b = mul a b
 let mirror ax t = sub t (smul ax (2. *. (dot t ax /. dot ax ax)))
 let projection { x; y; _ } = { x; y; z = 0. }

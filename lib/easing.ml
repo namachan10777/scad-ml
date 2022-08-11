@@ -43,7 +43,7 @@ let make p1 p2 =
     else if initial_slope = 0.
     then guess_u
     else
-      Util.bisection
+      Math.bisection
         ~max_iter:10
         ~tolerance:1e-7
         ~lower:start

@@ -16,6 +16,8 @@ let line_intersection ~(line : Vec2.line) ps =
   Util.fold_init (Array.length roots) f []
 
 let translate p t u = Vec2.translate p (t u)
+let xtrans x t u = Vec2.xtrans x (t u)
+let ytrans y t u = Vec2.ytrans y (t u)
 let rotate ?about r t u = Vec2.rotate ?about r (t u)
 let[@inline] zrot ?about r t u = rotate ?about r t u
 let affine m t u = Affine2.transform m (t u)

@@ -58,6 +58,24 @@ val scale : Vec3.t -> t
     Create an affine transformation matrix from the xyz translation vector [v]. *)
 val translate : Vec3.t -> t
 
+(** [xtrans x]
+
+    Create an affine transformation matrix that applies a translation of [x]
+    distance along the x-axis. *)
+val xtrans : float -> t
+
+(** [ytrans y]
+
+    Create an affine transformation matrix that applies a translation of [y]
+    distance along the y-axis. *)
+val ytrans : float -> t
+
+(** [ztrans z]
+
+    Create an affine transformation matrix that applies a translation of [z]
+    distance along the z-axis. *)
+val ztrans : float -> t
+
 (** [mirror ax]
 
     Create an affine transformation matrix that applies a reflection across the

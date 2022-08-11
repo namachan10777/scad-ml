@@ -150,6 +150,8 @@ let offset ?fn ?fs ?fa ?check_valid ?mode d =
   map (Offset.offset ?fn ?fs ?fa ~closed:true ?check_valid ?mode d)
 
 let translate p = map (Path2.translate p)
+let xtrans x = map (Path2.xtrans x)
+let ytrans y = map (Path2.ytrans y)
 let rotate ?about r = map (Path2.rotate ?about r)
 let[@inline] zrot ?about r t = rotate ?about r t
 let scale s = map (Path2.scale s)

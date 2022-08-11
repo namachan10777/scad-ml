@@ -1,6 +1,9 @@
 include Bezier.Make (Vec3)
 
 let translate p t u = Vec3.translate p (t u)
+let xtrans x t u = Vec3.xtrans x (t u)
+let ytrans y t u = Vec3.ytrans y (t u)
+let ztrans z t u = Vec3.ztrans z (t u)
 let rotate ?about r t u = Vec3.rotate ?about r (t u)
 let xrot ?about r t u = (Vec3.xrot ?about r) (t u)
 let yrot ?about r t u = (Vec3.yrot ?about r) (t u)
