@@ -185,7 +185,7 @@ let cap ?check_valid ?len ~flip ~close ~offset_mode ~m ~offsets shape =
     | Some l -> l
     | None   -> List.length shape
   and z_dir = if flip then -1. else 1.
-  and lift ~z m = List.map (fun p -> Affine3.transform m @@ V2.to_vec3 ~z p) in
+  and lift ~z m = List.map (fun p -> Affine3.transform m @@ V2.to_v3 ~z p) in
   let f (pts, faces, start_idx, last_shape, last_len, last_d) { d; z } =
     let mode, fn, fs, fa =
       match offset_mode with

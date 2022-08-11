@@ -243,7 +243,7 @@ let of_ragged ?(looped = false) ?(rev = false) rows =
 let of_path2 ?(rev = false) layer =
   let n_points, points, face =
     List.fold_left
-      (fun (n, ps, fs) p -> n + 1, V3.of_vec2 p :: ps, n :: fs)
+      (fun (n, ps, fs) p -> n + 1, V3.of_v2 p :: ps, n :: fs)
       (0, [], [])
       layer
   in

@@ -90,13 +90,13 @@ val mirror : t -> t -> t
 
 (** {1 2d - 3d conversion} *)
 
-(** [of_vec3 v]
+(** [of_v3 v]
 
     Drop the z coordinate from [v] to create a 2d vector. *)
-val of_vec3 : V.v3 -> t
+val of_v3 : V.v3 -> t
 
-(** [to_vec3 ?z v]
+(** [to_v3 ?z v]
 
     Create a 3d vector from the 2d vector [v] by adding a [z] coordinate
     (default = [0.]) *)
-val to_vec3 : ?z:float -> t -> V.v3
+val to_v3 : ?z:float -> t -> V.v3

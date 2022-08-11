@@ -158,7 +158,7 @@ let line_normal a b = normalize (v (a.y -. b.y) (b.x -. a.x))
 let get_x { x; _ } = x
 let get_y { y; _ } = y
 let get_z _ = 0.
-let to_vec2 t = t
+let to_v2 t = t
 let to_string { x; y } = Printf.sprintf "[%f, %f]" x y
 let deg_of_rad t = map Math.deg_of_rad t
 let rad_of_deg t = map Math.rad_of_deg t
@@ -170,8 +170,8 @@ let[@inline] ( +$ ) a b = sadd a b
 let[@inline] ( -$ ) a b = ssub a b
 let[@inline] ( *$ ) a b = smul a b
 let[@inline] ( /$ ) a b = sdiv a b
-let of_vec3 V.{ x; y; z = _ } = { x; y }
-let to_vec3 ?(z = 0.) { x; y } = V.v3 x y z
+let of_v3 V.{ x; y; z = _ } = { x; y }
+let to_v3 ?(z = 0.) { x; y } = V.v3 x y z
 let[@inline] translate a b = add a b
 let[@inline] xtrans d { x; y } = v (x +. d) y
 let[@inline] ytrans d { x; y } = v x (y +. d)

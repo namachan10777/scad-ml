@@ -29,14 +29,14 @@ let project { a; b; c; d } =
   let cp = V3.(sdiv (smul n d) (dot n n)) in
   let rot = Quaternion.(to_affine @@ align n (v3 0. 0. 1.)) in
   let m = Affine3.(mul rot (translate (V3.negate cp))) in
-  fun p -> V3.to_vec2 @@ Affine3.transform m p
+  fun p -> V3.to_v2 @@ Affine3.transform m p
 
 let lift { a; b; c; d } =
   let n = v3 a b c in
   let cp = V3.(sdiv (smul n d) (dot n n)) in
   let rot = Quaternion.(to_affine @@ align (v3 0. 0. 1.) n) in
   let m = Affine3.(mul (translate cp) rot) in
-  fun p -> Affine3.transform m (V3.of_vec2 p)
+  fun p -> Affine3.transform m (V3.of_v2 p)
 
 let normal { a; b; c; _ } = V3.normalize (v3 a b c)
 let offset { a; b; c; d } = d /. V3.norm (v3 a b c)

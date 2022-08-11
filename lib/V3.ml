@@ -166,8 +166,8 @@ let[@inline] ( +$ ) a b = sadd a b
 let[@inline] ( -$ ) a b = ssub a b
 let[@inline] ( *$ ) a b = smul a b
 let[@inline] ( /$ ) a b = sdiv a b
-let to_vec2 { x; y; _ } = V.v2 x y
-let of_vec2 ?(z = 0.) ({ x; y } : V.v2) = { x; y; z }
+let to_v2 { x; y; _ } = V.v2 x y
+let of_v2 ?(z = 0.) ({ x; y } : V.v2) = { x; y; z }
 
 let xrot ?about theta t =
   let rot { x; y; z } =

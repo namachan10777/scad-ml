@@ -168,6 +168,6 @@ let star ~r1 ~r2 n =
 let cubic_spline ?boundary ~fn ps = CubicSpline.(interpolate_path ~fn (fit ?boundary ps))
 
 let show_points f t =
-  Scad.union (List.mapi (fun i p -> Scad.translate (V3.of_vec2 p) (f i)) t)
+  Scad.union (List.mapi (fun i p -> Scad.translate (V3.of_v2 p) (f i)) t)
 
 let to_scad ?convexity t = Scad.polygon ?convexity t

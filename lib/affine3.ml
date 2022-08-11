@@ -587,7 +587,7 @@ let align a b =
   if V3.approx a b
   then id
   else if a.z = 0. && b.z = 0.
-  then zrot V2.(ccw_theta (V3.to_vec2 b) -. ccw_theta (V3.to_vec2 a))
+  then zrot V2.(ccw_theta (V3.to_v2 b) -. ccw_theta (V3.to_v2 a))
   else (
     let ax = V3.vector_axis a b
     and r = V3.angle a b in

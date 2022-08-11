@@ -51,7 +51,7 @@ let scaler ?ez dims =
       fun u -> V2.lerp (v2 1. 1.) dims (ez u)
     | None          -> V2.lerp (v2 1. 1.) dims
   in
-  fun u -> Affine3.scale @@ V3.of_vec2 ~z:1. @@ f u
+  fun u -> Affine3.scale @@ V3.of_v2 ~z:1. @@ f u
 
 let twister ?ez rot =
   let f =

@@ -148,7 +148,7 @@ let text ?size ?font ?halign ?valign ?spacing ?direction ?language ?script ?fn s
        }
 
 let translate (type s r a) (p : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Translate (V3.of_vec2 p, scad)
+  | D2 scad -> d2 @@ Translate (V3.of_v2 p, scad)
   | D3 scad -> d3 @@ Translate (p, scad)
 
 let xtrans (type s r a) x : (s, r, a) t -> (s, r, a) t = function
@@ -259,7 +259,7 @@ let polyhedron ?(convexity = 10) points faces =
   d3 @@ Polyhedron { points; faces; convexity }
 
 let mirror (type s r a) (ax : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Mirror (V3.of_vec2 ax, scad)
+  | D2 scad -> d2 @@ Mirror (V3.of_v2 ax, scad)
   | D3 scad -> d3 @@ Mirror (ax, scad)
 
 let projection ?(cut = false) (D3 scad) = d2 @@ Projection { scad; cut }
@@ -281,11 +281,11 @@ let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
   d3 @@ RotateExtrude { scad; angle; convexity; fa; fs; fn }
 
 let scale (type s r a) (factors : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Scale (V3.of_vec2 factors, scad)
+  | D2 scad -> d2 @@ Scale (V3.of_v2 factors, scad)
   | D3 scad -> d3 @@ Scale (factors, scad)
 
 let resize (type s r a) (new_dims : s) : (s, r, a) t -> (s, r, a) t = function
-  | D2 scad -> d2 @@ Resize (V3.of_vec2 new_dims, scad)
+  | D2 scad -> d2 @@ Resize (V3.of_v2 new_dims, scad)
   | D3 scad -> d3 @@ Resize (new_dims, scad)
 
 let offset ?(mode = `Delta) d (D2 scad) = d2 @@ Offset { scad; mode; d }

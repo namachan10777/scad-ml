@@ -184,24 +184,24 @@ let compute_patches ~r_top:(rt_in, rt_down) ~r_sides ~k_top ~k_sides ~concave to
       if concave_sign < 0.
       then fill_row prev_corner far_corner next_corner
       else (
-        let fc2 = V2.of_vec3 far_corner in
+        let fc2 = V2.of_v3 far_corner in
         let prev_degen =
-          let po2 = V2.of_vec3 prev_offset in
+          let po2 = V2.of_v3 prev_offset in
           V2.(
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
-              { a = fc2; b = add fc2 (of_vec3 prev) }
-              { a = po2; b = add po2 (of_vec3 in_prev) })
+              { a = fc2; b = add fc2 (of_v3 prev) }
+              { a = po2; b = add po2 (of_v3 in_prev) })
           |> Option.is_none
         and next_degen =
-          let no2 = V2.of_vec3 next_offset in
+          let no2 = V2.of_v3 next_offset in
           V2.(
             line_intersection
               ~bounds1:(true, false)
               ~bounds2:(true, false)
-              { a = fc2; b = add fc2 (of_vec3 next) }
-              { a = no2; b = add no2 (of_vec3 in_next) })
+              { a = fc2; b = add fc2 (of_v3 next) }
+              { a = no2; b = add no2 (of_v3 in_next) })
           |> Option.is_none
         in
         fill_row

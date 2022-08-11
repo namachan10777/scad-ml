@@ -253,7 +253,7 @@ module type S = sig
   val get_x : t -> float
   val get_y : t -> float
   val get_z : t -> float
-  val to_vec2 : t -> v2
+  val to_v2 : t -> v2
   val to_string : t -> string
 
   (** [deg_of_rad t]
