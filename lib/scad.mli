@@ -273,7 +273,7 @@ val quaternion : ?about:Vec3.t -> Quaternion.t -> d3 -> d3
 
     Generates a new 2D interior or exterior outline shifted a distance [d] from
     the original 2d shape [t]. The [mode] governs how [d] is used to create the
-    new corners.
+    new corners (default = [`Delta]).
     - [`Delta] will create a new outline whose sides are a fixed distance [d]
       (+ve out, -ve in) from the original outline.
     - [`Chamfer] fixed distance offset by [d] as with delta, but with corners
