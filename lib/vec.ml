@@ -232,6 +232,11 @@ module type S = sig
        Compute the bounding box that contains the vectors [a] and [b]. *)
   val bbox : t -> t -> bbox
 
+  (** [bbox_intersect a b]
+
+      Compute the intersect of the bounding boxes [a] and [b]. *)
+  val bbox_intersect : bbox -> bbox -> bbox
+
   (** {1 Utilities} *)
 
   val map : (float -> float) -> t -> t

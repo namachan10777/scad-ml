@@ -77,6 +77,15 @@ let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y) (Float.min a.z 
 let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y) (Float.max a.z b.z)
 let bbox a b = { min = lower_bounds a b; max = upper_bounds a b }
 
+let bbox_intersect a b =
+  let open Float in
+  let min = v (max a.min.x b.min.x) (max a.min.y b.min.y) (max a.min.z a.min.z)
+  and max = v (min a.max.x b.max.x) (min a.max.y b.max.y) (min a.max.z a.max.z) in
+  { min; max }
+
+let bbox_volume bb =
+  (bb.max.x -. bb.min.x) *. (bb.max.y -. bb.min.y) *. (bb.max.z -. bb.min.z)
+
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a
   and cb = sub c b in

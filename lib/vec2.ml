@@ -68,6 +68,12 @@ let angle_points a b c = angle (sub a b) (sub c b)
 let lower_bounds a b = v (Float.min a.x b.x) (Float.min a.y b.y)
 let upper_bounds a b = v (Float.max a.x b.x) (Float.max a.y b.y)
 let bbox a b = { min = lower_bounds a b; max = upper_bounds a b }
+let bbox_area bb = (bb.max.x -. bb.min.x) *. (bb.max.y -. bb.min.y)
+
+let bbox_intersect a b =
+  let min = { x = Float.max a.min.x b.min.x; y = Float.max a.min.y b.min.y }
+  and max = { x = Float.min a.max.x b.max.x; y = Float.min a.max.y b.max.y } in
+  { min; max }
 
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a

@@ -22,6 +22,11 @@ val to_tup : t -> float * float * float
 
 include Vec.S with type t := t (** @inline *)
 
+(** [bbox_volume bb]
+
+    Compute the volume of the bounding box [bb]. *)
+val bbox_volume : bbox -> float
+
 (** {1 Transformations}
 
     Equivalent to those found in {!module:Scad}. Quaternion operations are
