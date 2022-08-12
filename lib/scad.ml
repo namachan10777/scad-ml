@@ -462,7 +462,7 @@ let to_string t =
       Printf.sprintf
         "%srotate_extrude(%sconvexity=%d%s)\n%s"
         indent
-        (maybe_fmt "angle=%f" @@ Option.map deg_of_rad angle)
+        (maybe_fmt "angle=%f," @@ Option.map deg_of_rad angle)
         convexity
         (string_of_f_ fa fs fn)
         (print (Printf.sprintf "%s\t" indent) src)
