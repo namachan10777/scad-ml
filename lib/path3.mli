@@ -225,31 +225,45 @@ val scaler : ?ez:V2.t * V2.t -> V2.t -> float -> Affine3.t
     ease the scaling (see {!Easing.make}). *)
 val twister : ?ez:V2.t * V2.t -> float -> float -> Affine3.t
 
-(** [to_transforms ?euler ?scale_ez ?twist_ez ?scale ?twist t]
+(** [to_transforms ?mode ?scale_ez ?twist_ez ?scale ?twist t]
 
    Generate list of transformations that can be applied to three-dimensional
    vectors ({!V3.t} via {!Affine3.transform}) or shapes ({!Scad.d3} via
    {!Scad.affine}), to move them along the path [t] (intended to be applied
-   to the vector/shape from its original position each time).
+   to the vector/shape from its original position each time). Note that the
+   transforms are generated assuming the shape is centred on the origin, and for
+   the purposes of alignment to the beginning of the path and scaling/twisting,
+   laying flat on the XY plane.
 
-   Tangents are used to estimate appropriate rotations for each translation,
-   using quaternion alignment from tangent to tangent, accumulating rotation
-   along the way by default, when [euler = false]. Some effort is made in this
-   mode to vector of the shape being swept consistent and sensible, though some
-   rotation of the shape before sweeping may be necessary to get the desired
-   result. Setting [euler = true] will use euler rotations instead, which can
+   When [mode] is [`Auto | `Align _ | `NoAlign] (default it [`Auto]), tangents
+   are used to estimate appropriate rotations for each translation, using
+   quaternion alignment from tangent to tangent, accumulating rotation along the
+   way. In the case of [`Auto], some effort is made to automatically apply an
+   alignment rotation towards the first tangent of the path before each
+   transformation such that the orientation of the shape being swept will be
+   consistent and sensible, though some manual rotation of the shape before sweeping
+   along the generated transforms may be necessary to get the desired result.
+
+   [`Align v] and [`NoAlign] follow the same quaternion accumulation strategy
+   along the path [t], however they differ from [`Auto] in their handling of pre-alignment
+   transformations. With [`Align v], the vector [v] will be used to align the
+   assumed shape normal of [(v3 0. 0. 1.)] to, while [`NoAlign] will skip the
+   alignment step entirely (likely desirable if the intention is to sweep a shape
+   {i not} laying on the XY plane).
+
+   Setting [mode = `Euler] will use euler rotations instead, which can
    have results more in line with expectations in some scenarios (helical-like
    paths for example, though {!Mesh.helix_extrude} may be a better fit in that
-   case), but fail in others. For instance, [euler] can generate an abrupt when
+   case), but fail in others. For instance, [`Euler] can generate an abrupt when
    the path tangent is exactly vertical.
 
    If provided, [scale] and [twist], specify scaling and rotation to be applied
-   to along the path increasing up to the provided value by the end, analogous
+   along the path increasing up to the provided value by the end, analogous
    to the parameters of the same names in {!Scad.linear_extrude}, but with the
    added wrinkle of the [_ez] parameters that enable eased transitions (see
    {!scaler} and {!twister}). *)
 val to_transforms
-  :  ?euler:bool
+  :  ?mode:[ `Auto | `Align of V3.t | `NoAlign | `Euler ]
   -> ?scale_ez:V2.t * V2.t
   -> ?twist_ez:V2.t * V2.t
   -> ?scale:V2.t

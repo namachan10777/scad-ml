@@ -746,7 +746,7 @@ let path'
     ?merge
     ?winding
     ?caps
-    ?euler
+    ?(euler = false)
     ?scale_ez
     ?twist_ez
     ?scale
@@ -754,7 +754,8 @@ let path'
     ~path
     shape
   =
-  let transforms = Path3.to_transforms ?euler ?scale_ez ?twist_ez ?scale ?twist path in
+  let mode = if euler then `Euler else `Auto in
+  let transforms = Path3.to_transforms ~mode ?scale_ez ?twist_ez ?scale ?twist path in
   let progress =
     match shape with
     | Fixed _ -> None

@@ -63,7 +63,7 @@ let twister ?ez rot =
   in
   fun u -> Quaternion.(to_affine @@ make (v3 0. 0. 1.) (f u))
 
-let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
+let to_transforms ?(mode = `Auto) ?scale_ez ?twist_ez ?scale ?twist path =
   let p = Array.of_list path in
   let len = Array.length p
   and id _ = Affine3.id in
@@ -81,8 +81,8 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
   let scaler = Util.value_map_opt ~default:id (scaler ?ez:scale_ez) scale
   and twister = Util.value_map_opt ~default:id (twister ?ez:twist_ez) twist
   and transformer =
-    if euler
-    then (
+    match mode with
+    | `Euler ->
       let m = Quaternion.(to_affine @@ of_euler Float.(v3 (pi /. 2.) 0. (pi /. 2.))) in
       fun i ->
         let { x = dx; y = dy; z = dz } =
@@ -95,8 +95,8 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
         let ay = Float.atan2 dz (Float.sqrt ((dx *. dx) +. (dy *. dy)))
         and az = Float.atan2 dy dx in
         let q = Quaternion.of_euler (v3 0. (-.ay) az) in
-        Affine3.(m %> Quaternion.(to_affine ~trans:p.(i) q)) )
-    else (
+        Affine3.(m %> Quaternion.(to_affine ~trans:p.(i) q))
+    | _      ->
       let accum_qs =
         let local i =
           let p1 = p.(i)
@@ -116,39 +116,43 @@ let to_transforms ?(euler = false) ?scale_ez ?twist_ez ?scale ?twist path =
           Util.array_of_list_rev qs
       in
       let init =
-        let cardinal =
-          (* Determine an appropriate axis to pre-align the 2d shape with
+        match mode with
+        | `Auto          ->
+          let cardinal =
+            (* Determine an appropriate axis to pre-align the 2d shape with
                  (from normal of {x = 0.; y = 0.; z = 1.}), BEFORE alignment
                  with the initial tangent of the path. Adjust for sign of major
                  axes to prevent inconsistent flipping. *)
-          let similarity a b = V3.dot a b /. V3.(norm a *. norm b)
-          and n = V3.(normalize (p.(1) -@ p.(0))) in
-          let z = similarity n (v3 0. 0. 1.)
-          and x = similarity n (v3 1. 0. 0.)
-          and y = similarity n (v3 0. 1. 0.) in
-          let abs_x = Float.abs x
-          and abs_y = Float.abs y
-          and abs_z = Float.abs z
-          and sgn_x = Math.sign x
-          and sgn_y = Math.sign y
-          and sgn_z = Math.sign z in
-          let comp a b =
-            if Float.compare (Float.abs (a -. b)) 0.01 = 1 then Float.compare a b else 0
+            let similarity a b = V3.dot a b /. V3.(norm a *. norm b)
+            and n = V3.(normalize (p.(1) -@ p.(0))) in
+            let z = similarity n (v3 0. 0. 1.)
+            and x = similarity n (v3 1. 0. 0.)
+            and y = similarity n (v3 0. 1. 0.) in
+            let abs_x = Float.abs x
+            and abs_y = Float.abs y
+            and abs_z = Float.abs z
+            and sgn_x = Math.sign x
+            and sgn_y = Math.sign y
+            and sgn_z = Math.sign z in
+            let comp a b =
+              if Float.compare (Float.abs (a -. b)) 0.01 = 1 then Float.compare a b else 0
+            in
+            match comp abs_x abs_y, comp abs_x abs_z, comp abs_y abs_z with
+            | 1, 1, _   -> v3 sgn_x 0. 0. (* x-axis *)
+            | -1, _, 1  -> v3 0. sgn_y 0. (* y-axis *)
+            | 0, -1, -1 -> v3 0. 0. sgn_z (* xy equal, but less than z *)
+            | 0, _, _   -> v3 0. sgn_y 0. (* xy equal, roughly following plane *)
+            | _         -> v3 0. 0. sgn_z
           in
-          match comp abs_x abs_y, comp abs_x abs_z, comp abs_y abs_z with
-          | 1, 1, _   -> v3 sgn_x 0. 0. (* x-axis *)
-          | -1, _, 1  -> v3 0. sgn_y 0. (* y-axis *)
-          | 0, -1, -1 -> v3 0. 0. sgn_z (* xy equal, but less than z *)
-          | 0, _, _   -> v3 0. sgn_y 0. (* xy equal, roughly following plane *)
-          | _         -> v3 0. 0. sgn_z
-        in
-        let d = V3.normalize V3.(p.(1) -@ p.(0)) in
-        Quaternion.(to_affine @@ mul (align cardinal d) (align (v3 0. 0. 1.) cardinal))
+          let d = V3.normalize V3.(p.(1) -@ p.(0)) in
+          Quaternion.(to_affine @@ mul (align cardinal d) (align (v3 0. 0. 1.) cardinal))
+        | `Align initial -> Affine3.align initial (v3 0. 0. 1.)
+        | _              -> Affine3.id
       in
       fun i ->
         if i = 0
         then Affine3.(init %> translate p.(0))
-        else Affine3.(init %> Quaternion.(to_affine ~trans:p.(i) accum_qs.(i - 1))) )
+        else Affine3.(init %> Quaternion.(to_affine ~trans:p.(i) accum_qs.(i - 1)))
   in
   let f i = Affine3.(scaler (rel_pos i) %> twister (rel_pos i) %> transformer i) in
   List.init len f
