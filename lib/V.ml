@@ -235,7 +235,7 @@ module type S = sig
   (** [bbox_intersect a b]
 
       Compute the intersect of the bounding boxes [a] and [b]. *)
-  val bbox_intersect : bbox -> bbox -> bbox
+  val bbox_intersect : bbox -> bbox -> bbox option
 
   (** [bbox_area bb]
 

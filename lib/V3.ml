@@ -88,7 +88,7 @@ let bbox_intersect a b =
   let open Float in
   let min = v (max a.min.x b.min.x) (max a.min.y b.min.y) (max a.min.z a.min.z)
   and max = v (min a.max.x b.max.x) (min a.max.y b.max.y) (min a.max.z a.max.z) in
-  { min; max }
+  if max.x < min.x || max.y < min.y || max.z < min.z then None else Some { min; max }
 
 let bbox_volume bb =
   (bb.max.x -. bb.min.x) *. (bb.max.y -. bb.min.y) *. (bb.max.z -. bb.min.z)

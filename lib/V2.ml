@@ -74,7 +74,7 @@ let bbox_area bb = (bb.max.x -. bb.min.x) *. (bb.max.y -. bb.min.y)
 let bbox_intersect a b =
   let min = { x = Float.max a.min.x b.min.x; y = Float.max a.min.y b.min.y }
   and max = { x = Float.min a.max.x b.max.x; y = Float.min a.max.y b.max.y } in
-  { min; max }
+  if max.x < min.x || max.y < min.y then None else Some { min; max }
 
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a
