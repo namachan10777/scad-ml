@@ -83,10 +83,19 @@ let[@inline] v3 x y z = { x; y; z }
 module V2 = struct
   include V2 (** @inline *)
 
+  (** [lift p t]
+
+      Lift the 2d vector/point [t] onto the plane [p]. On partial application of
+      [p], a {!Affine3.t} is computed to perform the lift transform. Alias to
+      {!Plane.lift}. *)
+  let[@inline] lift plane t = Plane.lift plane t
+
+  (** {1 Additional 2d transformations} *)
+
   (** [affine m t]
 
       Apply 2d affine transformation matrix [m] to the vector [t]. *)
-  let affine m t = Affine2.transform m t
+  let[@inline] affine m t = Affine2.transform m t
 
   (** {1 2d to 3d transformations} *)
 
@@ -94,20 +103,20 @@ module V2 = struct
 
       Apply 3d affine transformation matrix [m] to the vector [t], taking it into
       the 3rd dimension. *)
-  let affine3 m { x; y } = Affine3.transform m (v3 x y 0.)
+  let[@inline] affine3 m { x; y } = Affine3.transform m (v3 x y 0.)
 
   (** [quaternion ?about q t]
 
       Rotate [t] with the quaternion [q] around the origin (or the point [about]
       if provided), taking it into the 3rd dimension. *)
-  let quaternion ?about q { x; y } = Quaternion.transform ?about q (v3 x y 0.)
+  let[@inline] quaternion ?about q { x; y } = Quaternion.transform ?about q (v3 x y 0.)
 
   (** [axis_rotate ?about ax a t]
 
       Rotates the vector [t] around the axis [ax] through the origin (or the
       point [about] if provided) by the angle [a], taking it into the third
       dimension. *)
-  let axis_rotate ?about ax a { x; y } =
+  let[@inline] axis_rotate ?about ax a { x; y } =
     Quaternion.(transform ?about (make ax a) (v3 x y 0.))
 end
 
@@ -118,6 +127,13 @@ end
     similar fashion to 3d OpenSCAD shapes ({!Scad.d3}). *)
 module V3 = struct
   include V3 (** @inline *)
+
+  (** [project p t]
+
+      Project the 3d vector/point [t] onto the plane [p]. On partial application of
+      [p], a {!Affine3.t} is computed to perform the projection transform. Alias to
+      {!Plane.project}. *)
+  let[@inline] project plane t = Plane.project plane t
 
   (** {1 Additional 3d transformations} *)
 
@@ -136,7 +152,7 @@ module V3 = struct
 
       Rotates the vector [t] around the axis [ax] through the origin (or the
       point [about] if provided) by the angle [a]. *)
-  let axis_rotate ?about ax a = Quaternion.(transform ?about (make ax a))
+  let[@inline] axis_rotate ?about ax a = Quaternion.(transform ?about (make ax a))
 end
 
 (** {1 Transformations} *)
