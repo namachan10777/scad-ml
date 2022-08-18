@@ -72,7 +72,7 @@ module type S = sig
       - If [rev] is [true], the bezier will be drawn in reverse (default = [false])
       - If [endpoint] is [true], the last point will be a control point (last or
         first depending on [rev]), otherwise it will be off by the step size
-        ([1 / fn]) *)
+        ([1 / fn]) (default = [true]). *)
   val curve : ?init:vec list -> ?rev:bool -> ?fn:int -> ?endpoint:bool -> t -> vec list
 
   (** [length ?start_u ?end_u ?max_deflect ps]
