@@ -62,7 +62,8 @@ let mean' a =
   done;
   sdiv !sum (Int.to_float len)
 
-let lerp a b u = add (smul a (1. -. u)) (smul b u)
+let lerp a b u =
+  if u = 0. then a else if u = 1. then b else add (smul a (1. -. u)) (smul b u)
 
 let lerpn ?(endpoint = true) a b n =
   let d = Float.of_int @@ if endpoint then Int.max 1 (n - 1) else n in
