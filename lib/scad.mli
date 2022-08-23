@@ -309,13 +309,13 @@ val offset : ?mode:[ `Delta | `Radius | `Chamfer ] -> float -> d2 -> d2
     of 2d and 3d shapes is enforced by the the GADT {!type:t}. Note that the
     polymorphic versions of {!union}, {!minkowski}, {!hull}, and
     {!intersection}, throw exceptions when the input list is empty. If empty
-    list inputs are expected, then use the appropriate [_2d] or [_3d]
+    list inputs are expected, then use the appropriate [2] or [3]
     variant. *)
 
 (** [union ts]
 
     Creates the union/sum (logical {b or }) [ts]. Throws an exception if [ts] is
-    empty, use {!union_2d} or {!union_3d} if you would like empty unions to pass
+    empty, use {!union2} or {!union3} if you would like empty unions to pass
     silently.
 
     {b Note: } It is mandatory for all unions, explicit or implicit, that
@@ -341,8 +341,8 @@ val offset : ?mode:[ `Delta | `Radius | `Chamfer ] -> float -> d2 -> d2
    ]} *)
 val union : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
-val union_2d : d2 list -> d2
-val union_3d : d3 list -> d3
+val union2 : d2 list -> d2
+val union3 : d3 list -> d3
 
 (** [add a b]
 
@@ -371,32 +371,32 @@ val sub : ('s, 'r, 'a) t -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
     Creates an in intersection of [ts]. This keeps the overlapping portion
     (logical {b and }). Only the area which is common or shared by {b all } shapes
-    are retained. Throws an exception if [ts] is empty, use {!intersection_2d}
-    or {!intersection_3d} if you would like empty intersections to pass
+    are retained. Throws an exception if [ts] is empty, use {!intersection2}
+    or {!intersection3} if you would like empty intersections to pass
     silently. *)
 val intersection : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
-val intersection_2d : d2 list -> d2
-val intersection_3d : d3 list -> d3
+val intersection2 : d2 list -> d2
+val intersection3 : d3 list -> d3
 
 (** [minkowski ts]
 
     Displays the minkowski sum of [ts]. Throws an exception if [ts] is empty,
-    use {!minkowski_2d} or {!minkowski_3d} if you would like empty minkowski
+    use {!minkowski2} or {!minkowski3} if you would like empty minkowski
     sums to pass silently. *)
 val minkowski : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
-val minkowski_2d : d2 list -> d2
-val minkowski_3d : d3 list -> d3
+val minkowski2 : d2 list -> d2
+val minkowski3 : d3 list -> d3
 
 (** [hull ts]
 
     Displays the convex hull of [ts]. Throws an exception if [ts] is empty, use
-    {!hull_2d} or {!hull_3d} if you would like empty hulls to pass silently. *)
+    {!hull2} or {!hull3} if you would like empty hulls to pass silently. *)
 val hull : ('s, 'r, 'a) t list -> ('s, 'r, 'a) t
 
-val hull_2d : d2 list -> d2
-val hull_3d : d3 list -> d3
+val hull2 : d2 list -> d2
+val hull3 : d3 list -> d3
 
 (** {1 3d to 2d} *)
 
@@ -458,7 +458,7 @@ val rotate_extrude
 
 (** {1 External (non-SCAD) Format Import} *)
 
-(** [import_2d ?dxf_layer ?convexity file]
+(** [import2 ?dxf_layer ?convexity file]
 
     Imports a [file] for use in the current OpenSCAD model. The file extension
     is used to determine which type. If [file] is a [.dxf], [?dxf_layer] can be
@@ -466,9 +466,9 @@ val rotate_extrude
     extension does not match (case insensitive) one of the following 2D formats:
     - DXF
     - SVG ({i Requires version 2019.05 of OpenSCAD}) *)
-val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
+val import2 : ?dxf_layer:string -> ?convexity:int -> string -> d2
 
-(** [import_3d ?convexity file]
+(** [import3 ?convexity file]
 
     Imports [file] for use in the current OpenSCAD model. The file extension is
     used to determine which type. Throws exception if the extension does not
@@ -477,7 +477,7 @@ val import_2d : ?dxf_layer:string -> ?convexity:int -> string -> d2
     - OFF
     - AMF ({i Requires version 2019.05 of OpenSCAD })
     - 3MF ({i Requires version 2019.05 of OpenSCAD }) *)
-val import_3d : ?convexity:int -> string -> d3
+val import3 : ?convexity:int -> string -> d3
 
 (** [surface ?convexity ?center ?invert file]
 

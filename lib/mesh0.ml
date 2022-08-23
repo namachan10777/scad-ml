@@ -127,7 +127,7 @@ let of_rows
             let i1, i2, i3, i4 = idxs r c in
             let n =
               V3.(cross (sub ps.(i2) ps.(i1)) (sub ps.(i3) ps.(i1)))
-              |> if rev then V3.negate else Fun.id
+              |> if rev then V3.neg else Fun.id
             in
             if Math.approx n.z 0.
             then add_face i1 i4 i3 acc

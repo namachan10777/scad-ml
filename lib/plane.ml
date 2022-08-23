@@ -28,7 +28,7 @@ let project { a; b; c; d } =
   let n = v3 a b c in
   let cp = V3.(sdiv (smul n d) (dot n n)) in
   let rot = Quaternion.(to_affine @@ align n (v3 0. 0. 1.)) in
-  let m = Affine3.(mul rot (translate (V3.negate cp))) in
+  let m = Affine3.(mul rot (translate (V3.neg cp))) in
   fun p -> V3.to_v2 @@ Affine3.transform m p
 
 let lift { a; b; c; d } =
@@ -45,7 +45,7 @@ let normalize { a; b; c; d } =
   let n = V3.norm (v3 a b c) in
   { a = a /. n; b = b /. n; c = c /. n; d = d /. n }
 
-let negate { a; b; c; d } = { a = -.a; b = -.b; c = -.c; d = -.d }
+let neg { a; b; c; d } = { a = -.a; b = -.b; c = -.c; d = -.d }
 let distance_to_point { a; b; c; d } p = V3.dot (v3 a b c) p -. d
 
 (** TODO: do some testing, and open an issue / PR with BOSL2 about greatest

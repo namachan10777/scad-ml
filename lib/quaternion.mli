@@ -31,10 +31,10 @@ val sub : t -> t -> t
     Quaternion multiplication of [a] and [b]. *)
 val mul : t -> t -> t
 
-(** [negate t]
+(** [neg t]
 
     Negation of all elements of [t]. *)
-val negate : t -> t
+val neg : t -> t
 
 (** [sadd t s]
 

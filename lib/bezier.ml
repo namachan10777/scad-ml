@@ -396,7 +396,7 @@ module Make (V : V.S) = struct
       let seg_len = V.distance p2 p1 in
       let seg_vec = V.(sdiv (sub p2 p1) seg_len)
       and t1 = tangents.(i) (* second tangent pointing backwards *)
-      and t2 = V.negate tangents.(Util.index_wrap ~len:len_ts (i + 1)) in
+      and t2 = V.neg tangents.(Util.index_wrap ~len:len_ts (i + 1)) in
       (* total component of tangents parallel to the segment *)
       let parallel = Float.abs (V.dot t1 seg_vec) +. Float.abs (V.dot t2 seg_vec)
       and normal1 = V.(sub t1 (smul seg_vec (dot t1 seg_vec)))

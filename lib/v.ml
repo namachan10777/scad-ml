@@ -73,10 +73,10 @@ module type S = sig
     Hadamard (element-wise) division of vector [a] by [b]. *)
   val div : t -> t -> t
 
-  (** [negate t]
+  (** [neg t]
 
     Negation of all elements of [t]. *)
-  val negate : t -> t
+  val neg : t -> t
 
   (** [add_scalar t s]
 

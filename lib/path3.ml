@@ -212,7 +212,7 @@ let normal = function
       in
       fst @@ List.fold_left f (f (V3.zero, p1) p2) poly
     in
-    V3.(normalize @@ negate area_vec)
+    V3.(normalize @@ neg area_vec)
   | _                      -> invalid_arg "Too few points to calculate path normal."
 
 let coplanar ?eps t =

@@ -61,10 +61,10 @@ val offset : t -> float
   that their vector norm is equal to one. *)
 val normalize : t -> t
 
-(** [negate_normal t]
+(** [neg_normal t]
 
     Negate the plane [t]. *)
-val negate : t -> t
+val neg : t -> t
 
 (** [distance_to_point t p]
 

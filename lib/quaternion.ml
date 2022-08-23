@@ -28,7 +28,7 @@ let mul a b =
 
 let smul t s = { x = t.x *. s; y = t.y *. s; z = t.z *. s; w = t.w *. s }
 let sdiv t s = { x = t.x /. s; y = t.y /. s; z = t.z /. s; w = t.w /. s }
-let negate q = smul q (-1.)
+let neg q = smul q (-1.)
 let norm { x; y; z; w } = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z) +. (w *. w))
 
 let normalize t =
@@ -116,7 +116,7 @@ let slerp a b =
     (* If dot is negative, slerp won't take shorter path. Fix by reversing one quat.
      *  Dot is constrained for cases using compute, so acos is safe. *)
     match dot a b with
-    | d when d < 0. -> compute (negate a) b (-.d)
+    | d when d < 0. -> compute (neg a) b (-.d)
     | d when d > 0.9995 -> add a (smul (sub b a) v) |> normalize
     | d -> compute a b d
 

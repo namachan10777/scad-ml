@@ -19,7 +19,7 @@ type point =
   ; tag : tag
   }
 
-let negate_point { p; tag } = { p = V2.negate p; tag }
+let neg_point { p; tag } = { p = V2.neg p; tag }
 
 module BridgeSet = Set.Make (struct
   type t = tag * tag
@@ -185,8 +185,8 @@ let partition ?(rev = false) ?(lift = fun { x; y } -> V3.v x y 0.) ~holes outer 
   let poly, pos_bridges = polyhole_complex ~holes:pos_holes pos_outer
   and _, neg_bridges =
     polyhole_complex
-      ~holes:(Array.map (fun hole -> Array.map negate_point hole) pos_holes)
-      (Array.map negate_point pos_outer)
+      ~holes:(Array.map (fun hole -> Array.map neg_point hole) pos_holes)
+      (Array.map neg_point pos_outer)
   in
   let bridges = remove_duplicate_bridges pos_bridges neg_bridges in
   let polys = List.fold_left (fun polys b -> insert_bridge b polys) [| poly |] bridges in

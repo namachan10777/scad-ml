@@ -172,7 +172,7 @@ let rotate ?about r =
       }
     in
     match about with
-    | Some p -> translate (V2.negate p) %> rot %> translate p
+    | Some p -> translate (V2.neg p) %> rot %> translate p
     | None   -> rot )
 
 let[@inline] zrot ?about r = rotate ?about r

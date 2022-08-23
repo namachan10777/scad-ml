@@ -8,7 +8,7 @@ let quat_slerp =
   let step t scad =
     Scad.quaternion (slerp t) scad |> Scad.translate (v3 0. (30. *. t) 0.)
   in
-  Scad.union_3d
+  Scad.union3
     [ cyl; step 0.1 cyl; step 0.5 cyl; step 0.7 cyl; step 0.90 cyl; step 1. cyl ]
 
 let () = print_string (Scad.to_string quat_slerp)

@@ -317,7 +317,7 @@ let xrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (V3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.neg p) %> rot %> translate p
     | None   -> rot )
 
 let yrot ?about r =
@@ -346,7 +346,7 @@ let yrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (V3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.neg p) %> rot %> translate p
     | None   -> rot )
 
 let zrot ?about r =
@@ -375,7 +375,7 @@ let zrot ?about r =
       }
     in
     match about with
-    | Some p -> translate (V3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.neg p) %> rot %> translate p
     | None   -> rot )
 
 let rotate ?about { x; y; z } =
@@ -408,7 +408,7 @@ let rotate ?about { x; y; z } =
       }
     in
     match about with
-    | Some p -> translate (V3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.neg p) %> rot %> translate p
     | None   -> rot )
 
 let axis_rotate ?about ax r =
@@ -448,7 +448,7 @@ let axis_rotate ?about ax r =
       }
     in
     match about with
-    | Some p -> translate (V3.negate p) %> rot %> translate p
+    | Some p -> translate (V3.neg p) %> rot %> translate p
     | None   -> rot )
 
 let scale { x; y; z } =

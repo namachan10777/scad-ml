@@ -171,8 +171,8 @@ let rotate : type s r a. ?about:s -> r -> (s, r, a) t -> (s, r, a) t =
   | Some p ->
     let p' : s =
       match t with
-      | D2 _ -> V2.negate p
-      | D3 _ -> V3.negate p
+      | D2 _ -> V2.neg p
+      | D3 _ -> V3.neg p
     in
     translate p' t |> aux |> translate p
   | None   -> aux t
@@ -189,7 +189,7 @@ let zrot : type s r a. ?about:s -> float -> (s, r, a) t -> (s, r, a) t =
 let axis_rotate ?about ax r t =
   let aux (D3 scad) = d3 @@ AxisRotate (ax, r, scad) in
   match about with
-  | Some p -> translate (V3.negate p) t |> aux |> translate p
+  | Some p -> translate (V3.neg p) t |> aux |> translate p
   | None   -> aux t
 
 let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
@@ -199,24 +199,24 @@ let affine (type s r a) (m : a) : (s, r, a) t -> (s, r, a) t = function
 let quaternion ?about q t =
   let aux (D3 scad) = d3 @@ MultMatrix (Quaternion.to_affine q, scad) in
   match about with
-  | Some p -> translate (V3.negate p) t |> aux |> translate p
+  | Some p -> translate (V3.neg p) t |> aux |> translate p
   | None   -> aux t
 
-let union_2d ts = d2 @@ Union (List.map unpack ts)
-let union_3d ts = d3 @@ Union (List.map unpack ts)
+let union2 ts = d2 @@ Union (List.map unpack ts)
+let union3 ts = d3 @@ Union (List.map unpack ts)
 
 let empty_exn n =
   invalid_arg
     (Printf.sprintf
-       "List must be non-empty. Use %s_2d or %s_3d if empty lists are expected."
+       "List must be non-empty. Use %s2 or %s3 if empty lists are expected."
        n
        n )
 
 let union : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> union_2d ts
-  | D3 _ :: _ -> union_3d ts
+  | D2 _ :: _ -> union2 ts
+  | D3 _ :: _ -> union3 ts
   | []        -> empty_exn "union"
 
 let add a b = union [ a; b ]
@@ -225,34 +225,34 @@ let difference (type s r a) (t : (s, r, a) t) (sub : (s, r, a) t list) =
   map (fun scad -> Difference (scad, List.map unpack sub)) t
 
 let sub a b = difference a [ b ]
-let intersection_2d ts = d2 @@ Intersection (List.map unpack ts)
-let intersection_3d ts = d3 @@ Intersection (List.map unpack ts)
+let intersection2 ts = d2 @@ Intersection (List.map unpack ts)
+let intersection3 ts = d3 @@ Intersection (List.map unpack ts)
 
 let intersection : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> intersection_2d ts
-  | D3 _ :: _ -> intersection_3d ts
+  | D2 _ :: _ -> intersection2 ts
+  | D3 _ :: _ -> intersection3 ts
   | []        -> empty_exn "intersection"
 
-let hull_2d ts = d2 @@ Hull (List.map unpack ts)
-let hull_3d ts = d3 @@ Hull (List.map unpack ts)
+let hull2 ts = d2 @@ Hull (List.map unpack ts)
+let hull3 ts = d3 @@ Hull (List.map unpack ts)
 
 let hull : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> hull_2d ts
-  | D3 _ :: _ -> hull_3d ts
+  | D2 _ :: _ -> hull2 ts
+  | D3 _ :: _ -> hull3 ts
   | []        -> empty_exn "hull"
 
-let minkowski_2d ts = d2 @@ Minkowski (List.map unpack ts)
-let minkowski_3d ts = d3 @@ Minkowski (List.map unpack ts)
+let minkowski2 ts = d2 @@ Minkowski (List.map unpack ts)
+let minkowski3 ts = d3 @@ Minkowski (List.map unpack ts)
 
 let minkowski : type s r a. (s, r, a) t list -> (s, r, a) t =
  fun ts ->
   match ts with
-  | D2 _ :: _ -> minkowski_2d ts
-  | D3 _ :: _ -> minkowski_3d ts
+  | D2 _ :: _ -> minkowski2 ts
+  | D3 _ :: _ -> minkowski3 ts
   | []        -> empty_exn "minkowski"
 
 let polyhedron ?(convexity = 10) points faces =
@@ -293,14 +293,14 @@ let import ?dxf_layer ?(convexity = 10) file = Import { file; convexity; dxf_lay
 let d2_import_exts = Export.ExtSet.of_list [ ".dxf"; ".svg" ]
 let d3_import_exts = Export.ExtSet.of_list [ ".stl"; ".off"; ".amf"; ".3mf" ]
 
-let import_2d ?dxf_layer ?convexity file =
+let import2 ?dxf_layer ?convexity file =
   match Export.legal_ext d2_import_exts file with
   | Ok ()     -> d2 @@ import ?dxf_layer ?convexity file
   | Error ext ->
     invalid_arg
       (Printf.sprintf "Input file extension %s is not supported for 2D import." ext)
 
-let import_3d ?convexity file =
+let import3 ?convexity file =
   match Export.legal_ext d3_import_exts file with
   | Ok ()     -> d3 @@ import ?convexity file
   | Error ext ->
