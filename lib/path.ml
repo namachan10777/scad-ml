@@ -95,6 +95,13 @@ module type S = sig
       Remove collinear points from [path]. *)
   val prune_collinear : t -> t
 
+  (** [deduplicate_consecutive ?closed ?eps ?keep path]
+
+      Remove consecutive duplicate points (less than [eps] distance, default
+      [1e-9]) from [path], keeping the first of each duplicate run. The path is
+      treated as open ([closed = false]) by default. *)
+  val deduplicate_consecutive : ?closed:bool -> ?eps:float -> t -> t
+
   (** [deriv ?closed ?h path]
 
       Computes a numerical derivative of [path], with [h] (default [1.]) giving
@@ -426,6 +433,16 @@ module Make (V : V.S) = struct
 
   let prune_collinear' path = Util.array_of_list_rev (prune_collinear_rev' path)
   let prune_collinear path = List.rev @@ prune_collinear_rev' (Array.of_list path)
+
+  let deduplicate_consecutive ?(closed = false) ?eps = function
+    | []            -> []
+    | first :: rest ->
+      let rec loop acc last = function
+        | []       -> if closed && V.approx ?eps first last then acc else last :: acc
+        | hd :: tl ->
+          if V.approx ?eps hd last then loop acc last tl else loop (last :: acc) hd tl
+      in
+      List.rev (loop [] first rest)
 
   let deriv ?(closed = false) ?(h = 1.) path =
     let path = Array.of_list path in

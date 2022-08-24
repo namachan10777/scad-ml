@@ -291,5 +291,5 @@ module Make (V : V.S) (Arc : Arc with type vec := V.t) = struct
         corner path.(wrap (i - 1)) path.(i) path.(wrap (i + 1))
       | None      -> [ path.(i) ]
     in
-    List.init len f |> List.concat |> Util.deduplicate_consecutive ~equal:V.approx
+    List.init len f |> List.concat |> P.deduplicate_consecutive
 end

@@ -134,15 +134,6 @@ let array_all_equal f a =
   let len = Array.length a in
   if len < 2 then true else Array.for_all (f a.(0)) a
 
-let deduplicate_consecutive ?(closed = false) ~equal = function
-  | []            -> []
-  | first :: rest ->
-    let rec loop acc last = function
-      | []       -> if closed && equal first last then acc else last :: acc
-      | hd :: tl -> if equal hd last then loop acc last tl else loop (last :: acc) hd tl
-    in
-    List.rev (loop [] first rest)
-
 let value_map_opt ~default f = function
   | Some a -> f a
   | None   -> default
