@@ -110,6 +110,8 @@ type d3 = (V3.t, V3.t, Affine3.t) t
 
 let d2 scad = D2 scad
 let d3 scad = D3 scad
+let empty2 = D2 (Union [])
+let empty3 = D3 (Union [])
 
 let unpack : type s r a. (s, r, a) t -> scad = function
   | D2 scad -> scad

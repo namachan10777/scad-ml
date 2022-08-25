@@ -154,7 +154,7 @@ module type S = sig
     - [tangents] provides control over the tangents of the computed curve where
       it passes through the points of [path]. Tangents can either be provided by
       the user with [`Tangents l], or computed [`NonUniform | `Uniform] (see
-      {!Path2.tangents}).
+      {!Path2.tangents}). Default is [`NonUniform].
     - If [closed] is [true] (default = [false]), an additional segment between
       the last and first points of [path] will be included in the computations.
       Thus, this impacts the correct lengths of lists provided to the [size] and

@@ -115,6 +115,9 @@ val cone
     debugging polyhedra} section of the OpenSCAD user manual. *)
 val polyhedron : ?convexity:int -> V3.t list -> int list list -> d3
 
+(** An empty 3d non-shape (union of nothing). *)
+val empty3 : d3
+
 (** {1 2d shape primitives} *)
 
 (** [square ?center dimensions]
@@ -169,6 +172,9 @@ val text
   -> ?fn:int
   -> string
   -> d2
+
+(** An empty 2d non-shape (union of nothing). *)
+val empty2 : d2
 
 (** {1 Basic Transformations}
 
