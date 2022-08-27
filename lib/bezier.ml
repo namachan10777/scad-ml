@@ -114,7 +114,7 @@ module type S = sig
     - [size] sets the absolute or relative (as a fraction of segment length)
       distance that the computed curve can deviate from the input [path].
       Provided either as a flat value for all points, or a list with a value for
-      each {i segment} of the [path] (default = [`FlatRel 0.1]).
+      each {i segment} of the [path] (default = [`Flat (`Rel 0.1)]).
     - [tangents] provides control over the tangents of the computed curve where
       it passes through the points of [path]. Tangents can either be provided by
       the user with [`Tangents l], or computed [`NonUniform | `Uniform] (see
@@ -127,9 +127,9 @@ module type S = sig
     :  ?closed:bool
     -> ?size:
          [ `Abs of float list
-         | `FlatAbs of float
-         | `FlatRel of float
          | `Rel of float list
+         | `Flat of [ `Abs of float | `Rel of float ]
+         | `Mix of [ `Abs of float | `Rel of float ] list
          ]
     -> ?tangents:[ `NonUniform | `Uniform | `Tangents of vec list ]
     -> vec list
@@ -150,7 +150,7 @@ module type S = sig
     - [size] sets the absolute or relative (as a fraction of segment length)
       distance that the computed curve can deviate from the input [path].
       Provided either as a flat value for all points, or a list with a value for
-      each {i segment} of the [path] (default = [`FlatRel 0.1]).
+      each {i segment} of the [path] (default = [`Flat (`Rel 0.1)]).
     - [tangents] provides control over the tangents of the computed curve where
       it passes through the points of [path]. Tangents can either be provided by
       the user with [`Tangents l], or computed [`NonUniform | `Uniform] (see
@@ -163,9 +163,9 @@ module type S = sig
     :  ?closed:bool
     -> ?size:
          [ `Abs of float list
-         | `FlatAbs of float
-         | `FlatRel of float
          | `Rel of float list
+         | `Flat of [ `Abs of float | `Rel of float ]
+         | `Mix of [ `Abs of float | `Rel of float ] list
          ]
     -> ?tangents:[ `NonUniform | `Uniform | `Tangents of vec list ]
     -> vec list
@@ -358,22 +358,33 @@ module Make (V : V.S) = struct
 
   let bezpath_of_path
       ?(closed = false)
-      ?(size = `FlatRel 0.1)
+      ?(size = `Flat (`Rel 0.1))
       ?(tangents = `NonUniform)
       path
     =
     let ps = Array.of_list path
     and get_size =
-      let valid l = List.fold_left (fun m a -> Float.min m a) Float.max_float l > 0. in
+      let valid unwrap l =
+        let mn = List.fold_left (fun m a -> Float.min m (unwrap a)) Float.infinity l in
+        Float.is_finite mn && mn > 0.
+      and unwrap = function
+        | `Abs s | `Rel s -> s
+      in
       match size with
-      | `FlatRel s when s > 0. -> fun _ seg_len -> seg_len *. s
-      | `FlatAbs s when s > 0. -> fun _ _ -> s
-      | `Rel ss when valid ss ->
+      | `Flat (`Rel s) when s > 0. -> fun _ seg_len -> seg_len *. s
+      | `Flat (`Abs s) when s > 0. -> fun _ _ -> s
+      | `Rel ss when valid Fun.id ss ->
         let ss = Array.of_list ss in
         fun i seg_len -> seg_len *. Array.unsafe_get ss i
-      | `Abs ss when valid ss ->
+      | `Abs ss when valid Fun.id ss ->
         let ss = Array.of_list ss in
         fun i _ -> Array.unsafe_get ss i
+      | `Mix ss when valid unwrap ss ->
+        let ss = Array.of_list ss in
+        fun i seg_len ->
+          ( match Array.unsafe_get ss i with
+          | `Rel s -> seg_len *. s
+          | `Abs s -> s )
       | _ -> invalid_arg "Size must be greater than zero."
     and power_poly =
       let m =
