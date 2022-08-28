@@ -95,12 +95,22 @@ module type S = sig
       Remove collinear points from [path]. *)
   val prune_collinear : t -> t
 
-  (** [deduplicate_consecutive ?closed ?eps ?keep path]
+  (** [deduplicate_consecutive ?closed ?keep ?eps path]
 
       Remove consecutive duplicate points (less than [eps] distance, default
-      [1e-9]) from [path], keeping the first of each duplicate run. The path is
-      treated as open ([closed = false]) by default. *)
-  val deduplicate_consecutive : ?closed:bool -> ?eps:float -> t -> t
+      [1e-9]) from [path]. By default [keep] is [`First], which includes the
+      first point of each run of duplicates in the output. This can be instead
+      be set to [keep] the [`Last], or to [`FirstAndEnds] or [`LastAndEnds], which
+      follow their respective simpler rules with the caveat of preserving the
+      endpoints (first and last points) of the path. The path is treated as open
+      ([closed = false]) by default, if [closed] is [true] the last point of the
+      path may be dropped (even if [keep] is [`FirstAndEnds | `LastAndEnds]). *)
+  val deduplicate_consecutive
+    :  ?closed:bool
+    -> ?keep:[ `First | `Last | `FirstAndEnds | `LastAndEnds ]
+    -> ?eps:float
+    -> t
+    -> t
 
   (** [deriv ?closed ?h path]
 
@@ -434,15 +444,27 @@ module Make (V : V.S) = struct
   let prune_collinear' path = Util.array_of_list_rev (prune_collinear_rev' path)
   let prune_collinear path = List.rev @@ prune_collinear_rev' (Array.of_list path)
 
-  let deduplicate_consecutive ?(closed = false) ?eps = function
+  let deduplicate_consecutive ?(closed = false) ?(keep = `First) ?eps = function
     | []            -> []
     | first :: rest ->
-      let rec loop acc last = function
-        | []       -> if closed && V.approx ?eps first last then acc else last :: acc
-        | hd :: tl ->
-          if V.approx ?eps hd last then loop acc last tl else loop (last :: acc) hd tl
+      let final last acc =
+        if closed && V.approx ?eps first last then acc else last :: acc
       in
-      List.rev (loop [] first rest)
+      let rec loop acc is_first last = function
+        | []       -> final last acc
+        | [ hd ]   ->
+          ( match V.approx ?eps hd last, keep with
+          | true, `First -> final last acc
+          | true, (`Last | `LastAndEnds | `FirstAndEnds) -> final hd acc
+          | false, _ -> final hd (hd :: acc) )
+        | hd :: tl ->
+          ( match V.approx ?eps hd last, is_first, keep with
+          | true, _, (`First | `FirstAndEnds) -> loop acc is_first last tl
+          | true, true, `LastAndEnds -> loop acc is_first last tl
+          | true, _, `Last | true, false, `LastAndEnds -> loop acc is_first hd tl
+          | false, _, _ -> loop (last :: acc) false hd tl )
+      in
+      List.rev (loop [] true first rest)
 
   let deriv ?(closed = false) ?(h = 1.) path =
     let path = Array.of_list path in
