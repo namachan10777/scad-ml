@@ -92,8 +92,9 @@ module type S = sig
 
   (** [prune_collinear path]
 
-      Remove collinear points from [path]. *)
-  val prune_collinear : t -> t
+      Remove collinear points from [path]. If [closed] is [true] the last point
+      can be pruned as collinear with the first. The first point is never pruned. *)
+  val prune_collinear : ?closed:bool -> t -> t
 
   (** [deduplicate_consecutive ?closed ?keep ?eps path]
 
@@ -432,37 +433,49 @@ module Make (V : V.S) = struct
 
   let is_collinear ?eps path = Option.is_none (noncollinear_triple ?eps path)
 
-  let prune_collinear_rev' path =
+  let prune_collinear_rev' ?(closed = false) path =
     let len = Array.length path in
     let w = Util.index_wrap ~len in
     let f i acc =
       let p = path.(i) in
-      if not (V.collinear path.(w (i - 1)) p path.(w (i + 1))) then p :: acc else acc
+      if i = 0 || ((not closed) && i = len - 1)
+      then p :: acc
+      else if not (V.collinear path.(w (i - 1)) p path.(w (i + 1)))
+      then p :: acc
+      else acc
     in
     Util.fold_init len f []
 
-  let prune_collinear' path = Util.array_of_list_rev (prune_collinear_rev' path)
-  let prune_collinear path = List.rev @@ prune_collinear_rev' (Array.of_list path)
+  let prune_collinear' ?closed path =
+    Util.array_of_list_rev (prune_collinear_rev' ?closed path)
+
+  let prune_collinear ?closed path =
+    List.rev @@ prune_collinear_rev' ?closed (Array.of_list path)
 
   let deduplicate_consecutive ?(closed = false) ?(keep = `First) ?eps = function
     | []            -> []
+    | [ a; b ] as l ->
+      ( match V.approx ?eps a b, keep with
+      | true, `First -> [ a ]
+      | true, `Last  -> [ b ]
+      | _            -> l )
     | first :: rest ->
       let final last acc =
         if closed && V.approx ?eps first last then acc else last :: acc
       in
       let rec loop acc is_first last = function
-        | []       -> final last acc
         | [ hd ]   ->
           ( match V.approx ?eps hd last, keep with
           | true, `First -> final last acc
           | true, (`Last | `LastAndEnds | `FirstAndEnds) -> final hd acc
-          | false, _ -> final hd (hd :: acc) )
+          | false, _ -> final hd (last :: acc) )
         | hd :: tl ->
           ( match V.approx ?eps hd last, is_first, keep with
           | true, _, (`First | `FirstAndEnds) -> loop acc is_first last tl
           | true, true, `LastAndEnds -> loop acc is_first last tl
           | true, _, `Last | true, false, `LastAndEnds -> loop acc is_first hd tl
           | false, _, _ -> loop (last :: acc) false hd tl )
+        | []       -> failwith "unreachable"
       in
       List.rev (loop [] true first rest)
 
