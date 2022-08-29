@@ -97,7 +97,8 @@ module type S = sig
   (** [roundover ?fn ?fa ?fs path_spec]
 
       Apply the roundover specifictions in [path_spec] on the bundled
-      path/shape, with quality set by the [fn], [fa], and [fs] parameters. *)
+      path/shape, with quality set by the [fn], [fa], and [fs] parameters.
+      Collinear points are ignored (included in output without roundover applied). *)
   val roundover : ?fn:int -> ?fa:float -> ?fs:float -> Round.t -> vec list
 end
 
@@ -259,26 +260,30 @@ module Make (V : V.S) (Arc : Arc with type vec := V.t) = struct
     let path = Array.of_list path in
     let len = Array.length path in
     let w = Util.index_wrap ~len in
-    let f (i, pts, sps) sp =
+    let f (i, sps) sp =
       let p = path.(i) in
       if (not (V.collinear path.(w (i - 1)) p path.(w (i + 1)))) || Option.is_none sp
-      then i + 1, p :: pts, sp :: sps
-      else i + 1, pts, sps
+      then i + 1, sp :: sps
+      else i + 1, None :: sps
     in
-    let _, path, specs = List.fold_left f (0, [], []) specs in
-    Util.array_of_list_rev path, Array.get (Util.array_of_list_rev specs)
+    let _, specs = List.fold_left f (0, []) specs in
+    path, Array.get (Util.array_of_list_rev specs)
 
   let roundover ?fn ?fa ?fs path_spec =
     let path, get_spec =
       match path_spec with
       | Mix mix                       -> prune_mixed_spec mix
       | Flat { path; corner; closed } ->
-        let path = P.prune_collinear' (Array.of_list path) in
+        let path = Array.of_list path in
         let len = Array.length path in
         let get_corner =
-          if closed
-          then fun _ -> Some corner
-          else fun i -> if i = 0 || i = len - 1 then None else Some corner
+          let w = Util.index_wrap ~len in
+          let g i =
+            if V.collinear path.(w (i - 1)) path.(i) path.(w (i + 1))
+            then None
+            else Some corner
+          in
+          if closed then g else fun i -> if i = 0 || i = len - 1 then None else g i
         in
         path, get_corner
     in
