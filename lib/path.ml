@@ -96,20 +96,21 @@ module type S = sig
       can be pruned as collinear with the first. The first point is never pruned. *)
   val prune_collinear : ?closed:bool -> t -> t
 
-  (** [deduplicate_consecutive ?closed ?keep ?eps path]
+  (** [deduplicate_consecutive ?closed ?keep ?eq path]
 
-      Remove consecutive duplicate points (less than [eps] distance, default
-      [1e-9]) from [path]. By default [keep] is [`First], which includes the
-      first point of each run of duplicates in the output. This can be instead
-      be set to [keep] the [`Last], or to [`FirstAndEnds] or [`LastAndEnds], which
-      follow their respective simpler rules with the caveat of preserving the
-      endpoints (first and last points) of the path. The path is treated as open
-      ([closed = false]) by default, if [closed] is [true] the last point of the
-      path may be dropped (even if [keep] is [`FirstAndEnds | `LastAndEnds]). *)
+      Remove consecutive duplicate points as determined by the (approximate)
+      equality function [eq] ([V.approx ~eps:1e-9] by default) from [path]. By
+      default [keep] is [`First], which includes the first point of each run of
+      duplicates in the output. This can be instead be set to [keep] the [`Last],
+      or to [`FirstAndEnds] or [`LastAndEnds], which follow their respective
+      simpler rules with the caveat of preserving the endpoints (first and last
+      points) of the path. The path is treated as open ([closed = false]) by
+      default, if [closed] is [true] the last point of the path may be dropped
+      (even if [keep] is [`FirstAndEnds | `LastAndEnds]). *)
   val deduplicate_consecutive
     :  ?closed:bool
     -> ?keep:[ `First | `Last | `FirstAndEnds | `LastAndEnds ]
-    -> ?eps:float
+    -> ?eq:(vec -> vec -> bool)
     -> t
     -> t
 
@@ -452,25 +453,27 @@ module Make (V : V.S) = struct
   let prune_collinear ?closed path =
     List.rev @@ prune_collinear_rev' ?closed (Array.of_list path)
 
-  let deduplicate_consecutive ?(closed = false) ?(keep = `First) ?eps = function
+  let deduplicate_consecutive
+      ?(closed = false)
+      ?(keep = `First)
+      ?(eq = V.approx ~eps:Util.epsilon)
+    = function
     | []            -> []
     | [ a; b ] as l ->
-      ( match V.approx ?eps a b, keep with
+      ( match eq a b, keep with
       | true, `First -> [ a ]
       | true, `Last  -> [ b ]
       | _            -> l )
     | first :: rest ->
-      let final last acc =
-        if closed && V.approx ?eps first last then acc else last :: acc
-      in
+      let final last acc = if closed && eq first last then acc else last :: acc in
       let rec loop acc is_first last = function
         | [ hd ]   ->
-          ( match V.approx ?eps hd last, keep with
+          ( match eq hd last, keep with
           | true, `First -> final last acc
           | true, (`Last | `LastAndEnds | `FirstAndEnds) -> final hd acc
           | false, _ -> final hd (last :: acc) )
         | hd :: tl ->
-          ( match V.approx ?eps hd last, is_first, keep with
+          ( match eq hd last, is_first, keep with
           | true, _, (`First | `FirstAndEnds) -> loop acc is_first last tl
           | true, true, `LastAndEnds -> loop acc is_first last tl
           | true, _, `Last | true, false, `LastAndEnds -> loop acc is_first hd tl
