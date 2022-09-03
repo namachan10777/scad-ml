@@ -83,10 +83,11 @@ val greatest_distance : t -> V3.t list -> float
     Returns [true] if all points [ps] are within [eps] distance of the plane [t]. *)
 val are_points_on : ?eps:float -> t -> V3.t list -> bool
 
-(** [is_point_above t p]
+(** [is_point_above ?eps t p]
 
- Returns [true] is point [p] is above the plane [t]. *)
-val is_point_above : t -> V3.t -> bool
+    Returns [true] is point [p] is [eps] (default [1e-9]) distance above the
+    plane [t]. *)
+val is_point_above : ?eps:float -> t -> V3.t -> bool
 
 (** [line_angle t line]
 

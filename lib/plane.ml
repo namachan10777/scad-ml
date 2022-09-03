@@ -69,7 +69,7 @@ let greatest_distance t ps =
     (Float.max (-.max_norm -. -.d) (-.min_norm -. -.d))
 
 let are_points_on ?(eps = Util.epsilon) t ps = greatest_distance t ps < eps
-let is_point_above t p = distance_to_point t p > Util.epsilon
+let is_point_above ?(eps = Util.epsilon) t p = distance_to_point t p > eps
 
 let line_angle t V3.{ a; b } =
   let dir = V3.(normalize @@ sub b a)
