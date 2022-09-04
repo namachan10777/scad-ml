@@ -97,8 +97,8 @@ let bbox_volume bb =
 let clockwise_sign ?(eps = Util.epsilon) a b c =
   let ba = sub b a
   and cb = sub c b in
-  let crx = dot a (cross ba cb) in
-  if Float.abs crx <= eps *. norm ba *. norm cb then 0. else Math.sign crx
+  let { z; _ } = cross ba cb in
+  if Float.abs z <= eps *. norm ba *. norm cb then 0. else Math.sign z
 
 let collinear p1 p2 p3 =
   let a = distance p1 p2
