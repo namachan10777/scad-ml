@@ -21,8 +21,9 @@ module type S = sig
   (** [to_continuous path]
 
       Return a continuous function from values over the range of [0.] to [1.]
-      to positions along [path] (like a bezier function). *)
-  val to_continuous : t -> float -> vec
+      to positions along [path] (like a bezier function), treated as open
+      ([closed = false]) by default. *)
+  val to_continuous : ?closed:bool -> t -> float -> vec
 
   (** [resample ~freq path]
 
@@ -234,9 +235,13 @@ module Make (V : V.S) = struct
       let lengths, last = List.fold_left f ([], hd) tl in
       List.rev (if closed then V.distance last hd :: lengths else lengths)
 
-  let to_continuous path =
-    let travels = Array.of_list (cummulative_length path)
-    and path = Array.of_list path in
+  let to_continuous ?closed path =
+    let travels = Array.of_list (cummulative_length ?closed path)
+    and path =
+      let a = Array.of_list path in
+      let len = Array.length a in
+      fun i -> Array.unsafe_get a (Util.index_wrap ~len i)
+    in
     let len = Array.length travels in
     let total = travels.(len - 1) in
     let extrapolate s =
@@ -250,8 +255,8 @@ module Make (V : V.S) = struct
         if d >= d0 && d <= d1
         then (
           let frac = (d -. d0) /. (d1 -. d0)
-          and p0 = Array.unsafe_get path idx
-          and p1 = Array.unsafe_get path (idx + 1) in
+          and p0 = path idx
+          and p1 = path (idx + 1) in
           p := Some (V.lerp p0 p1 frac) )
         else incr i
       done;
