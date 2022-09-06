@@ -231,6 +231,14 @@ val yrot : ?about:V3.t -> float -> d3 -> d3
     equivalent to {!rotate}. *)
 val zrot : ?about:'s -> float -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
+(** [affine mat t]
+
+    Transforms the geometry [t] with the given affine transformation matrix
+    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes) via the
+    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
+    multmatrix} operation in OpenSCAD. *)
+val affine : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
+
 (** [mirror ax t]
 
     Mirrors [t] on a plane through the origin, defined by the normal vector
@@ -273,14 +281,6 @@ val render : ?convexity:int -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
     Rotates [t] about the arbitrary axis [ax] through the origin (or the point
     [about] if provided) by the angle [r] (in radians). *)
 val axis_rotate : ?about:V3.t -> V3.t -> float -> d3 -> d3
-
-(** [affine mat t]
-
-    Transforms the geometry [t] with the given affine transformation matrix
-    [mat] ({!Affine2.t} for 2d, {!Affine3.t} for 3d shapes) via the
-    {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#multmatrix}
-    multmatrix} operation in OpenSCAD. *)
-val affine : 'a -> ('s, 'r, 'a) t -> ('s, 'r, 'a) t
 
 (** [quaternion ?about q t]
 
