@@ -418,7 +418,7 @@ val projection : ?cut:bool -> d3 -> d2
 
 (** {1 2d to 3d extrusions} *)
 
-(** [linear_extrude ?height ?center ?convexity ?twist ?slices ?scale ?fn t]
+(** [extrude ?height ?center ?convexity ?twist ?slices ?scale ?fn t]
 
     Takes a 2D object [t], and extrudes it upwards from the XY plane to
     [?height]. If [?center] is true, the resulting 3D object is centered around
@@ -431,7 +431,7 @@ val projection : ?cut:bool -> d3 -> d2
     - [?scale] expands or contracts the shape in X and Y as it is extruded
       upward. Default is (1., 1.), no scaling.
     - [?convexity]: see {!polyhedron} documentation. *)
-val linear_extrude
+val extrude
   :  ?height:float
   -> ?center:bool
   -> ?convexity:int
@@ -442,7 +442,7 @@ val linear_extrude
   -> d2
   -> d3
 
-(** [rotate_extrude ?angle ?convexity ?fa ?fs ?fn t]
+(** [revolve ?angle ?convexity ?fa ?fs ?fn t]
 
     Spins a 2D shape [t] around the Z-axis in an arc of [?angle] (default = 2π)
     to form a solid which has rotational symmetry. Since [t] is actually 2D (and
@@ -453,7 +453,7 @@ val linear_extrude
     examples can be found
     {{:https://en.wikibooks.org/wiki/OpenSCAD_User_Manual/The_OpenSCAD_Language#Rotate_Extrude}
     here}. *)
-val rotate_extrude
+val revolve
   :  ?angle:float
   -> ?convexity:int
   -> ?fa:float

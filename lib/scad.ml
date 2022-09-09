@@ -266,7 +266,7 @@ let mirror (type s r a) (ax : s) : (s, r, a) t -> (s, r, a) t = function
 
 let projection ?(cut = false) (D3 scad) = d2 @@ Projection { scad; cut }
 
-let linear_extrude
+let extrude
     ?(height = 10.)
     ?(center = false)
     ?(convexity = 10)
@@ -279,7 +279,7 @@ let linear_extrude
   if height <= 0. then invalid_arg "Extrusion height must be positive.";
   d3 @@ LinearExtrude { scad; height; center; convexity; twist; slices; scale; fn }
 
-let rotate_extrude ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
+let revolve ?angle ?(convexity = 10) ?fa ?fs ?fn (D2 scad) =
   d3 @@ RotateExtrude { scad; angle; convexity; fa; fs; fn }
 
 let scale (type s r a) (factors : s) : (s, r, a) t -> (s, r, a) t = function

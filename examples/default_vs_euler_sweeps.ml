@@ -18,7 +18,7 @@ let paths =
   p (v3 0. 0. d) :: p (v3 0. 0. (-.d)) :: List.concat_map f (List.init 8 Float.of_int)
 
 (** Original orientation of the shape [poly] for reference. *)
-let flat = Scad.linear_extrude ~height:1. (Poly2.to_scad poly)
+let flat = Scad.extrude ~height:1. (Poly2.to_scad poly)
 
 (** Extrude [poly] along each of the generated [paths], using either default/standard,
     or euler path transformations (see {{!Scad_ml.Path3.to_transforms} [Path3.to_transforms]}). *)

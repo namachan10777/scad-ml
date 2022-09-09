@@ -262,7 +262,7 @@ val point_inside
 
   Point duplicating strategies for associating vertices between incommensurate
   closed polygonal paths/profiles. Primarily for use in conjunction with
-  {!Mesh.skin} and {!Mesh.morph}, where commensurate profiles are required to
+  {!Mesh.skin} and {!Mesh.morphing_sweep}, where commensurate profiles are required to
   draw edges between.
 
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}

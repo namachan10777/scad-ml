@@ -479,7 +479,7 @@ let sweep'
 let sweep ?style ?check_valid ?merge ?winding ?caps ~transforms shape =
   sweep' ?style ?check_valid ?merge ?winding ?caps ~transforms (Fixed shape)
 
-let morph
+let morphing_sweep
     ?(style = `MinEdge)
     ?check_valid
     ?merge
@@ -547,7 +547,7 @@ let linear'
     ~transforms
     shape
 
-let linear_extrude
+let extrude
     ?style
     ?check_valid
     ?merge
@@ -579,7 +579,7 @@ let linear_extrude
     ~height
     (Fixed shape)
 
-let linear_morph
+let morph
     ?(style = `MinEdge)
     ?check_valid
     ?merge

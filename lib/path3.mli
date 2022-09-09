@@ -259,7 +259,7 @@ val twister : ?ez:V2.t * V2.t -> float -> float -> Affine3.t
 
    If provided, [scale] and [twist], specify scaling and rotation to be applied
    along the path increasing up to the provided value by the end, analogous
-   to the parameters of the same names in {!Scad.linear_extrude}, but with the
+   to the parameters of the same names in {!Scad.extrude}, but with the
    added wrinkle of the [_ez] parameters that enable eased transitions (see
    {!scaler} and {!twister}). *)
 val to_transforms
@@ -297,7 +297,7 @@ val helical_transforms
 
   Point duplicating strategies for associating vertices between incommensurate
   closed polygonal paths/profiles. Primarily for use in conjunction with
-  {!Mesh.skin} and {!Mesh.morph}, where commensurate profiles are required to
+  {!Mesh.skin} and {!Mesh.morphing_sweep}, where commensurate profiles are required to
   draw edges between.
 
   Ported from the {{:https://github.com/revarbat/BOSL2/blob/master/skin.scad}

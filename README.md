@@ -10,9 +10,10 @@ and transformation functions are made available.
 
 - Angles are represented in radians (and converted to degrees when compiling to
   OpenSCAD).
+- `linear_extrude` and `rotate_extrude` have been renamed to `extrude` and `revolve`
 - The dimensional system (2D or 3D) each shape inhabits is tracked by the type
   system. This is used to restrict the operations that can be legally applied
-  (e.g. 2D shapes cannot be moved off of the xy plane, `linear_extrude` can only
+  (e.g. 2D shapes cannot be moved off of the xy plane, `extrude` can only
   be applied to 2D shapes) and enforcing non-mixing of 2D and 3D shapes during
   boolean operations.
 - Additional modules providing sweeps, roundovers, and more, inspired largely by

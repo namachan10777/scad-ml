@@ -22,7 +22,7 @@ let caps =
     specified by [caps], and convert into {{!Scad_ml.Scad.t} [Scad.t]}s that we
     can union to create our final model. *)
 
-let extruder poly = Mesh.(to_scad @@ linear_extrude ~caps ~height:0.5 poly)
+let extruder poly = Mesh.(to_scad @@ extrude ~caps ~height:0.5 poly)
 let () = List.map extruder hello |> Scad.union |> Scad.to_file "rounded_text.scad"
 
 (** {%html:

@@ -4,7 +4,7 @@ open Scad_ml
 (** A numbered marker function for {{!Scad_ml.Path2.show_points}
     [Path2.show_points]} and {{!Scad_ml.Path3.show_points}
     [Path3.show_points]} that we can use to visualize our arcs (and their ordering). *)
-let show i = Scad.linear_extrude ~height:1. (Scad.text ~size:2. (Printf.sprintf "%i" i))
+let show i = Scad.extrude ~height:1. (Scad.text ~size:2. (Printf.sprintf "%i" i))
 
 (** Draw an arcing path of [fn] points on the xy plane through the points
     describing a triangle. *)
@@ -29,7 +29,7 @@ let () =
       (v2 (-15.) 0.)
       (v2 5. (-5.))
   in
-  let wedge = Scad.linear_extrude ~height:1. @@ Path2.to_scad arc
+  let wedge = Scad.extrude ~height:1. @@ Path2.to_scad arc
   and marks =
     Path2.show_points show arc
     |> Scad.translate (v3 0. 0. 1.1)

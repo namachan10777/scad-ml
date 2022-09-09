@@ -5,7 +5,7 @@ open Scad_ml
 (** While {{!Scad_ml.Mesh.sweep}
     [Mesh.sweep]} and it's derived functions are useful for sweeping fixed
     polygons with holes, as shown in the {{!page-"rounded_polyhole_sweep"}
-    rounded sweeps demo}, the {{!Scad_ml.Mesh.morph} [Mesh.morph]} family
+    rounded sweeps demo}, the {{!Scad_ml.Mesh.morphing_sweep} [Mesh.morphing_sweep]} family
     provides a means to do so with different shapes at the beginning and end. *)
 
 let () =
@@ -31,13 +31,13 @@ let () =
 
 (** Similar to the [?scale_ez] and [?twist_ez] parameters on
     {{!Scad_ml.Path3.to_transforms} [Path3.to_transforms]} and those that make
-    use of it, such as {{!Scad_ml.Mesh.linear_morph} [Mesh.linear_morph]}, the
+    use of it, such as {{!Scad_ml.Mesh.morph} [Mesh.morph]}, the
     morphing sweep functions in the {{!Scad_ml.Mesh} [Mesh]} module expose [?ez], which offers
     the same style of bezier easing (see {{!Scad_ml.Easing} [Easing]}) for morphs. *)
 
 let () =
   let scad =
-    Mesh.linear_morph
+    Mesh.morph
       ~refine:2
       ~ez:(v2 0.42 0., v2 1. 1.)
       ~slices:60

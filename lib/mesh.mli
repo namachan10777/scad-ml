@@ -113,7 +113,7 @@ val of_path3 : ?rev:bool -> Path3.t -> t
 (** [of_poly2 ?rev poly]
 
     Create a mesh from a 2d polygon. If [poly] does not have any holes, then
-    this is equivalent to {!Mesh.of_path2}. If there are holes, polyhole
+    this is equivalent to {!of_path2}. If there are holes, polyhole
     partitioning is performed to determine a set of faces that can close the
     points.
 
@@ -126,7 +126,7 @@ val of_poly2 : ?rev:bool -> Poly2.t -> t
 (** [of_poly3 ?rev poly]
 
     Create a mesh from a 3d polygon. If [poly] does not have any holes, then
-    this is equivalent to {!Mesh.of_path3}. If there are holes, polyhole
+    this is equivalent to {!of_path3}. If there are holes, polyhole
     partitioning is performed to determine a set of faces that can close the
     points.
 
@@ -267,7 +267,7 @@ library's [offset_sweep] functions from the
 
 module Cap : sig
   (** Configuration module for declaring how extrusions from 2d to 3d via
-    {!Mesh.sweep} should be capped off. *)
+    {!sweep} should be capped off. *)
 
   (** Offset diameter [d] (positive or negative), and corresponding vertical
     step [z] (enforced positive only when consumed). *)
@@ -323,7 +323,7 @@ module Cap : sig
     ; bot : poly_spec
     }
 
-  (** Top-level configuration type for {!Mesh.sweep}, allowing for the end-caps
+  (** Top-level configuration type for {!sweep}, allowing for the end-caps
    to be specified using the types above, or to simply loop the first and last
    layers of the mesh together (see: {!type:endcaps} [`Loop] as used by
    {!of_rows}). *)
@@ -445,14 +445,14 @@ val sweep
   -> Poly2.t
   -> t
 
-(** [linear_extrude ~height poly]
+(** [extrude ~height poly]
 
     Vertically extrude a 2d polygon into a 3d mesh. [slices], [scale], [twist],
     [center], and [height] parameters are analogous to those found on
-    {!Scad.linear_extrude}, but with the added wrinkle of the [_ez] parameters,
+    {!Scad.extrude}, but with the added wrinkle of the [_ez] parameters,
     which enable eased transitions (see {!Path3.scaler} and {!Path3.twister}).
     See {!sweep} for explaination of shared parameters. *)
-val linear_extrude
+val extrude
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
@@ -474,7 +474,7 @@ val linear_extrude
 
     Extrude a 2d polygon along the given [path] into a 3d mesh. This is a
     convenience function that composes transform generation using
-    {!Path3.to_transforms} with {!Mesh.sweep}. *)
+    {!Path3.to_transforms} with {!sweep}. *)
 val path_extrude
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -494,7 +494,7 @@ val path_extrude
      ?caps ?left ~n_turns ~pitch ?r2 r1 poly]
 
     Helical extrusion of a 2d polygon into a 3d mesh. This is a special case of
-    {!Mesh.path_extrude}, but following a path generated with {!Path3.helix}, and
+    {!path_extrude}, but following a path generated with {!Path3.helix}, and
     using transforms that take the helical rotation into account. *)
 val helix_extrude
   :  ?style:style
@@ -527,7 +527,7 @@ val helix_extrude
     the shapes via the [?ez] parameters (default is linear transition along the
     spatial distance covered by the sweep beginning from its origin). *)
 
-(** [morph ~transforms a b]
+(** [morphing_sweep ~transforms a b]
 
     Morph between the polygons [a] and [b] while sweeping the hybrids along
     [transforms] to create a mesh. The [outer_map], [hole_map], and [refine]
@@ -535,7 +535,7 @@ val helix_extrude
     {!skin}, while the optional [ez] parameter allows the transition to be
     bezier eased via {!Easing.make}, rather than strictly linearly. See {!sweep}
     for details on the remaining common parameters. *)
-val morph
+val morphing_sweep
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
@@ -550,12 +550,12 @@ val morph
   -> Poly2.t
   -> t
 
-(** [linear_morph ~height a b]
+(** [morph ~height a b]
 
     Vertically morph between the 2d polygons [a] and [b]. This function is to
-    {!morph}, as {!linear_extrude} is to {!sweep}. See each of the former for
+    {!morphing_sweep}, as {!extrude} is to {!sweep}. See each of the former for
     details on their common parameters.  *)
-val linear_morph
+val morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
   -> ?merge:bool
@@ -581,7 +581,7 @@ val linear_morph
 
     Morph between the 2d polygons [a] and [b] along the given [path]. This is a
     convenience function that composes transform generation using
-    {!Path3.to_transforms} with {!Mesh.morph}.  *)
+    {!Path3.to_transforms} with {!morphing_sweep}.  *)
 val path_morph
   :  ?style:style
   -> ?check_valid:[ `Quality of int | `No ]
@@ -605,7 +605,7 @@ val path_morph
 (** [helix_morph ~n_turns ~pitch ?r2 r1 a b]
 
     Morph between the 2d polygons [a] and [b] along a helical path. This is a
-    special case of {!Mesh.path_morph}, but following a path generated with
+    special case of {!path_morph}, but following a path generated with
     {!Path3.helix}, and using transforms that take the helical rotation into
     account. *)
 val helix_morph

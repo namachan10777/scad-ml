@@ -22,7 +22,7 @@ let poly =
   |> Path2.of_tups
   |> Poly2.make
 
-let () = Scad.to_file "elbow.scad" (Scad.linear_extrude ~height:1. @@ Poly2.to_scad poly)
+let () = Scad.to_file "elbow.scad" (Scad.extrude ~height:1. @@ Poly2.to_scad poly)
 
 (** {%html:
     <p style="text-align:center;">
