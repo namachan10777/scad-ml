@@ -96,6 +96,19 @@ val is_point_above : ?eps:float -> t -> V3.t -> bool
  normal vector of [t]). *)
 val line_angle : t -> V3.line -> float
 
+(** [line_intersection t line]
+
+    Find the intersection between a 3d [line] and the plane [t] (within [eps]
+    tolerance, default [1e-9]), if it exists. [bounds] indicates whether [line]
+    is capped at either (ray) or both (segment) of its ends (default is unbounded
+    ([bounds = (false, false)]).  *)
+val line_intersection
+  :  ?eps:float
+  -> ?bounds:bool * bool
+  -> t
+  -> V3.line
+  -> [ `OutOfBounds | `OnPlane of V3.line | `Parallel | `Point of V3.t * float ]
+
 val to_string : t -> string
 
 (** {1 Basic Workplanes }*)
