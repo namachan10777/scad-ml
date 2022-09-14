@@ -576,7 +576,11 @@ module Make (V : V.S) = struct
           if d < min_dist then u, d else min_u, min_dist
         in
         fst @@ List.fold_left f (f (0., Float.max_float) (a1, b1)) tl
-      | [] -> failwith "Failure to find minima."
+      | [] ->
+        failwith
+        @@ Printf.sprintf
+             "Failure to find minima, consider increasing n_steps from %i."
+             n_steps
     in
     aux 0. 1.
 
