@@ -80,8 +80,11 @@ let line_angle t V3.{ a; b } =
 
 let line_intersection ?(eps = Util.epsilon) ?(bounds = false, false) t l =
   let a = (t.a *. l.V3.a.x) +. (t.b *. l.a.y) +. (t.c *. l.a.z) +. (t.d *. -1.)
-  and b = (t.a *. l.V3.b.x) +. (t.b *. l.b.y) +. (t.c *. l.b.z) +. (t.d *. 0.) in
-  match Math.approx ~eps a 0., Math.approx ~eps b 0. with
+  and b =
+    let { x; y; z } = V3.sub l.b l.a in
+    (t.a *. x) +. (t.b *. y) +. (t.c *. z) +. (t.d *. 0.)
+  in
+  match Math.approx ~eps b 0., Math.approx ~eps a 0. with
   | true, true  -> `OnPlane l
   | true, false -> `Parallel
   | _           ->
@@ -90,6 +93,6 @@ let line_intersection ?(eps = Util.epsilon) ?(bounds = false, false) t l =
       let bn_a, bn_b = bounds in
       ((not bn_a) || frac >= 0. -. eps) && ((not bn_b) || frac <= 1. +. eps)
     in
-    if good then `Point (V3.(l.a -@ ((l.b -@ l.a) *$ (a /. b))), frac) else `OutOfBounds
+    if good then `Point V3.(l.a +@ ((l.b -@ l.a) *$ frac), frac) else `OutOfBounds
 
 let to_string { a; b; c; d } = Printf.sprintf "[%f, %f, %f, %f]" a b c d
