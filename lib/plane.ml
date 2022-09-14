@@ -90,6 +90,6 @@ let line_intersection ?(eps = Util.epsilon) ?(bounds = false, false) t l =
       let bn_a, bn_b = bounds in
       ((not bn_a) || frac >= 0. -. eps) && ((not bn_b) || frac <= 1. +. eps)
     in
-    if good then `Point (V3.((l.a -$ a) /@ ((l.b -@ l.a) *$ b)), frac) else `OutOfBounds
+    if good then `Point (V3.(l.a -@ ((l.b -@ l.a) *$ (a /. b))), frac) else `OutOfBounds
 
 let to_string { a; b; c; d } = Printf.sprintf "[%f, %f, %f, %f]" a b c d
