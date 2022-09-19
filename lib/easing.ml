@@ -44,10 +44,10 @@ let make p1 p2 =
     then guess_u
     else
       Math.bisection
-        ~max_iter:10
+        ~max_iter:16
         ~tolerance:1e-7
         ~lower:start
         ~upper:(start +. step)
         (fun u -> (bez u).x -. x)
   in
-  fun x -> if x = 0. then 0. else if x = 1. then 1. else (bez (u_of_x x)).y
+  fun x -> if x <= 0. then 0. else if x >= 1. then 1. else (bez (u_of_x x)).y

@@ -1,11 +1,13 @@
-(** Three-dimensional vector *)
+(** Three-dimensional vector
+    @canonical Scad_ml.v3 *)
 type v3 =
   { x : float
   ; y : float
   ; z : float
   }
 
-(** Two-dimensional vector *)
+(** Two-dimensional vector
+    @canonical Scad_ml.v2 *)
 type v2 =
   { x : float
   ; y : float
