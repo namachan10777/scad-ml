@@ -50,4 +50,9 @@ let make p1 p2 =
         ~upper:(start +. step)
         (fun u -> (bez u).x -. x)
   in
-  fun x -> if x <= 0. then 0. else if x >= 1. then 1. else (bez (u_of_x x)).y
+  fun x ->
+    if x <= 0. || Math.approx 0. x
+    then 0.
+    else if x >= 1. || Math.approx 1. x
+    then 1.
+    else (bez (u_of_x x)).y
