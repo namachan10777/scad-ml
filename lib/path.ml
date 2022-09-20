@@ -154,6 +154,8 @@ module type S = sig
   val continuous_closest_point
     :  ?n_steps:int
     -> ?max_err:float
+    -> ?start_u:float
+    -> ?end_u:float
     -> (float -> vec)
     -> vec
     -> float
@@ -547,7 +549,14 @@ module Make (V : V.S) = struct
     else deriv_nonuniform ~closed ~h:(segment_lengths ~closed path) path )
     |> List.map V.normalize
 
-  let continuous_closest_point ?(n_steps = 15) ?(max_err = 0.01) path_f p =
+  let continuous_closest_point
+      ?(n_steps = 15)
+      ?(max_err = 0.01)
+      ?(start_u = 0.)
+      ?(end_u = 1.)
+      path_f
+      p
+    =
     let step = 1. /. Float.of_int n_steps in
     let rec aux start_u end_u =
       let minima_ranges =
@@ -582,7 +591,7 @@ module Make (V : V.S) = struct
              "Failure to find minima, consider increasing n_steps from %i."
              n_steps
     in
-    aux 0. 1.
+    aux (Float.max 0. start_u) (Float.min 1. end_u)
 
   let segment ?(closed = false) = function
     | [] | [ _ ] -> invalid_arg "Cannot segment path with fewer than 2 points."
