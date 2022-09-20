@@ -37,6 +37,7 @@ let normalize t =
   let n = norm t in
   if n > 0. then sdiv t n else t
 
+let ortho { x; y } = v (-.y) x
 let dot a b = (a.x *. b.x) +. (a.y *. b.y)
 let cross a b = V.v3 0. 0. ((a.x *. b.y) -. (a.y *. b.x))
 let mid a b = v ((a.x +. b.x) /. 2.) ((a.y +. b.y) /. 2.)

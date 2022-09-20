@@ -20,6 +20,11 @@ val to_tup : t -> float * float
 
 include V.S with type t := t (** @inline *)
 
+(** [ortho t]
+
+    Compute the orthoganal vector of [t]. *)
+val ortho : t -> t
+
 (** [left_of_line ?eps ~line t]
 
     Return [1.] if [t] is left of [line], [-1.] if it is to the right, and [0.]
