@@ -144,7 +144,7 @@ module type S = sig
       to correct for non-uniform sampling of points. *)
   val tangents : ?uniform:bool -> ?closed:bool -> t -> t
 
-  (** [continuous_closest_point ?n_steps ?max_err f p]
+  (** [continuous_closest_point ?closed ?n_steps ?max_err f p]
 
       Find the closest position (from [0.] to [1.]) along the path function [f]
       to the point [p].
@@ -152,10 +152,9 @@ module type S = sig
       - [n_steps] sets the granularity of search at each stage.
       - [max_err] the maximum distance the solution can be from the target [p] *)
   val continuous_closest_point
-    :  ?n_steps:int
+    :  ?closed:bool
+    -> ?n_steps:int
     -> ?max_err:float
-    -> ?start_u:float
-    -> ?end_u:float
     -> (float -> vec)
     -> vec
     -> float
@@ -550,18 +549,18 @@ module Make (V : V.S) = struct
     |> List.map V.normalize
 
   let continuous_closest_point
+      ?(closed = false)
       ?(n_steps = 15)
       ?(max_err = 0.01)
-      ?(start_u = 0.)
-      ?(end_u = 1.)
       path_f
       p
     =
     let step = 1. /. Float.of_int n_steps in
+    let wrap u = if u < 0. then 1. +. u else if u > 1. then u -. 1. else u in
     let rec aux start_u end_u =
       let minima_ranges =
         let us =
-          let f i = Math.lerp start_u end_u (step *. Float.of_int i) in
+          let f i = wrap (Math.lerp start_u end_u (step *. Float.of_int i)) in
           Array.init (n_steps + 1) f
         in
         let ps = Array.map path_f us in
@@ -591,7 +590,7 @@ module Make (V : V.S) = struct
              "Failure to find minima, consider increasing n_steps from %i."
              n_steps
     in
-    aux (Float.max 0. start_u) (Float.min 1. end_u)
+    if closed then aux (-0.1) 1.1 else aux 0. 1.
 
   let segment ?(closed = false) = function
     | [] | [ _ ] -> invalid_arg "Cannot segment path with fewer than 2 points."
