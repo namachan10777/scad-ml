@@ -560,10 +560,10 @@ module Make (V : V.S) = struct
     let rec aux start_u end_u =
       let minima_ranges =
         let us =
-          let f i = wrap (Math.lerp start_u end_u (step *. Float.of_int i)) in
+          let f i = Math.lerp start_u end_u (step *. Float.of_int i) in
           Array.init (n_steps + 1) f
         in
-        let ps = Array.map path_f us in
+        let ps = Array.map (fun u -> path_f @@ wrap u) us in
         let len = Array.length ps in
         let f i acc =
           let i = len - 1 - i in
