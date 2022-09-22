@@ -171,6 +171,12 @@ module type S = sig
        pairwise point association with the [reference] polygon. Paths should have
        the same clockwise winding direction (not checked / corrected). *)
   val reindex_polygon : t -> t -> t
+
+  (** [lerp a b u]
+
+      Linearly interpolate between the paths [a] and [b]. Raises
+      [Invalid_argument] if the paths are of unequal length. *)
+  val lerp : t -> t -> float -> t
 end
 
 module type S' = sig
@@ -622,4 +628,9 @@ module Make (V : V.S) = struct
       !min_idx
     in
     List.init len (fun i -> poly'.(Util.index_wrap ~len (idx + i)))
+
+  let lerp a b u =
+    try List.map2 (fun a b -> V.lerp a b u) a b with
+    | Invalid_argument _ ->
+      invalid_arg "Cannot interpolate between paths of unequal length."
 end
