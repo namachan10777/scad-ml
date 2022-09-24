@@ -4,13 +4,6 @@ module type S = sig
 
   type vec
 
-  type overrun =
-    [ `Fail
-    | `Warn
-    | `Fix
-    | `NoCheck
-    ]
-
   (** Configuration module with types and helpers for specifying path
     roundovers. *)
   module Round : sig
@@ -105,12 +98,22 @@ module type S = sig
 
       Apply the roundover specifictions in [path_spec] on the bundled
       path/shape, with quality set by the [fn], [fa], and [fs] parameters.
-      Collinear points are ignored (included in output without roundover applied). *)
+      Collinear points are ignored (included in output without roundover
+      applied).
+
+      When [overrun] is set to [`Fail] (as it is by default) this function will
+      raise [Failure] if computed joint distances would lead to point insertion
+      that causes the path to reverse/double back on itself. Alternatively:
+      - [`Warn] will print the detected overruns to [stdout] rather than
+        raising [Failure] (useful for debuggin)
+      - [`Fix] will automatically reduce the corner joints involved in each
+        overrun proportional to their lengths.
+      - [`NoCheck] skips overrun detection *)
   val roundover
     :  ?fn:int
     -> ?fa:float
     -> ?fs:float
-    -> ?overrun:overrun
+    -> ?overrun:[ `Fail | `Warn | `Fix | `NoCheck ]
     -> Round.t
     -> vec list
 end
@@ -134,13 +137,6 @@ end
 module Make (V : V.S) (Arc : Arc with type vec := V.t) = struct
   module Bz = Bezier.Make (V)
   module P = Path.Make (V)
-
-  type overrun =
-    [ `Fail
-    | `Warn
-    | `Fix
-    | `NoCheck
-    ]
 
   module Round = struct
     type radius = [ `Radius of float ]
