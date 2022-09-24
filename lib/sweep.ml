@@ -131,7 +131,7 @@ module Cap = struct
       ( R2.bez_corner
           ~fn:(Int.max 1 fn + 2)
           ~curv
-          ~spec:(`Joint joint)
+          ~d:joint
           V2.zero
           (v2 0. (Float.abs joint))
           (v2 (-.joint) (Float.abs joint))
