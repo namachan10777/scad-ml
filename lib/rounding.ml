@@ -460,5 +460,5 @@ module Make (V : V.S) (Arc : Arc with type vec := V.t) = struct
         ~default:()
         (overruns_to_string ~specs overruns)
     | _     -> () );
-    P.deduplicate_consecutive @@ List.concat parts
+    P.deduplicate_consecutive ~closed:true @@ List.concat parts
 end
