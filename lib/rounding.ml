@@ -20,26 +20,15 @@ module type S = sig
     type width = [ `Width of float ]
 
     (** Roundover specification for a corner of a path. *)
-    type corner =
-      | Chamf of [ joint | cut | width ] (** corner chamfer *)
-      | Circ of [ radius | joint | cut ] (** circular roundover *)
-      | Bez of
-          { spec : [ joint | cut ] (** continuous curvature roundover *)
-          ; curv : float (** bezier curvature smoothness *)
-          }
+    type corner
 
     (** Full roundover specification for a path, either given as a mixed list of
-         pairs of coordinates and {!type:corner} specifications that apply to them,
-         or a single spec to be applied to all corners of the included path. *)
-    type t =
-      | Mix of (vec * corner option) list
-      | Flat of
-          { path : vec list
-          ; corner : corner
-          ; closed : bool
-                (** If [true], roundover will be applied on the first
-                        and last points, otherwise they will be left untouched. *)
-          }
+         pairs of coordinates and {!type:corner} specifications that apply to
+         them, or a single spec to be applied to all
+         corners of the included path. *)
+    type t
+
+    (** {1 Corners} *)
 
     (** [chamf spec]
 
@@ -57,9 +46,11 @@ module type S = sig
         the smoothness of bezier curvature (default = [0.5]). *)
     val bez : ?curv:float -> [ cut | joint ] -> corner
 
+    (** {1 General specifications} *)
+
     (** [mix l]
 
-        Wrap a list of point * optional corner specification pairs as a
+        Wrap a list of points paired with (optional) corner specifications as a
         {!type:t}. Note that it is the users responsibility to leave the specs for
         the first and last points as [None] if they intend to treat the path as
         open. *)
@@ -71,6 +62,8 @@ module type S = sig
         the points in [path] (other than the first and last points if [closed] is
         [false], default = [true]). *)
     val flat : ?closed:bool -> corner:corner -> vec list -> t
+
+    (** {1 Variable amplitude specifications} *)
 
     (** [chamfers ~kind spec_pts]
 
