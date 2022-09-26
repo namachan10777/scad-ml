@@ -30,6 +30,15 @@ let[@inline] smul t s = v (t.x *. s) (t.y *. s) (t.z *. s)
 let[@inline] sdiv t s = v (t.x /. s) (t.y /. s) (t.z /. s)
 let map f { x; y; z } = v (f x) (f y) (f z)
 let equal a b = Float.equal a.x b.x && Float.equal a.y b.y && Float.equal a.z b.z
+
+let compare a b =
+  let x = Float.compare a.x b.x in
+  if x = 0
+  then (
+    let y = Float.compare a.y b.y in
+    if y = 0 then Float.compare a.z b.z else y )
+  else x
+
 let norm { x; y; z } = Float.sqrt ((x *. x) +. (y *. y) +. (z *. z))
 let distance a b = norm (sub a b)
 

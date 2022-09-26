@@ -167,6 +167,49 @@ let star ~r1 ~r2 n =
 
 let cubic_spline ?boundary ~fn ps = CubicSpline.(interpolate_path ~fn (fit ?boundary ps))
 
+(* Adapted from BOSL2's hull2d_path in the geometry module
+(https://github.com/revarbat/BOSL2/blob/46e15e50053e986f1370e8688b5c5b078ccf818e/geometry.scad#L2347)
+which is based on this method the method described here:
+https://www.hackerearth.com/practice/math/geometry/line-sweep-technique/tutorial/ *)
+
+let hull ?(all = false) ps =
+  let ps = Array.of_list ps in
+  let len = Array.length ps in
+  Array.fast_sort V2.compare ps;
+  let is_cw =
+    let lhs a b c = V2.(cross (a -@ c) (b -@ c)).z
+    and rhs a b c = V2.(Util.epsilon *. distance a c *. distance b c) in
+    if all
+    then fun a b c -> lhs a b c <= rhs a b c
+    else fun a b c -> lhs a b c < -.rhs a b c
+  in
+  let rec backtrack idx h stop i =
+    match h with
+    | a :: (b :: _ as rest) ->
+      if i = stop || is_cw ps.(idx) ps.(a) ps.(b)
+      then i, h
+      else backtrack idx rest stop (i + 1)
+    | _                     -> i, h
+  in
+  if len < 2
+  then []
+  else (
+    let h = ref [ 1; 0 ]
+    and n = ref 2 in
+    for i = 2 to len - 1 do
+      let removed, h' = backtrack i !h (!n - 1) 0 in
+      h := i :: h';
+      n := !n - removed + 1
+    done;
+    let n_lower = !n in
+    for i = 0 to len - 2 do
+      let idx = len - 2 - i in
+      let removed, h' = backtrack idx !h (!n - n_lower - 1) 0 in
+      h := if idx > 0 then idx :: h' else h';
+      n := !n - removed + 1
+    done;
+    List.rev_map (Array.get ps) !h )
+
 let show_points f t =
   Scad.union (List.mapi (fun i p -> Scad.translate (V3.of_v2 p) (f i)) t)
 

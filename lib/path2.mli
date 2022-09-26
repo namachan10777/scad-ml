@@ -258,6 +258,13 @@ val point_inside
   -> V2.t
   -> [> `Inside | `OnBorder | `Outside ]
 
+(** [hull ?all t]
+
+    Compute the convex hull polygon that encloses the points in the path [t].
+    When [all] is [true], the output path will include the non-vertex points
+    resting on the edges of the hull (default = [false]). *)
+val hull : ?all:bool -> t -> t
+
 (** {1 Path Matching / Vertex Association}
 
   Point duplicating strategies for associating vertices between incommensurate

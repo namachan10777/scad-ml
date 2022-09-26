@@ -41,6 +41,11 @@ module type S = sig
       Float equality between the vectors [a] and [b]. *)
   val equal : t -> t -> bool
 
+  (** [compare a b]
+
+      Compare the vectors [a] and [b]. *)
+  val compare : t -> t -> int
+
   (** [approx ?eps a b]
 
     Returns true if the distance between vectors [a] and [b] is less than or

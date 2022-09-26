@@ -48,8 +48,6 @@ struct
     match curve with
     | [] | [ _ ]     -> invalid_arg "Curved path has too few points."
     | p0 :: p1 :: tl ->
-      print_newline ();
-      print_newline ();
       let angle_sign tangent = TS.tangent_sign line tangent in
       let f (i, min_cross, nearest_tangent, last_sign, last_tangent) p =
         let tangent = V.{ a = last_tangent.b; b = p } in

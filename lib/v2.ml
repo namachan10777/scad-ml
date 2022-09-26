@@ -29,6 +29,11 @@ let[@inline] smul t s = v (t.x *. s) (t.y *. s)
 let[@inline] sdiv t s = v (t.x /. s) (t.y /. s)
 let map f { x; y } = v (f x) (f y)
 let equal a b = Float.equal a.x b.x && Float.equal a.y b.y
+
+let compare a b =
+  let x = Float.compare a.x b.x in
+  if x = 0 then Float.compare a.y b.y else x
+
 let norm { x; y } = Float.sqrt ((x *. x) +. (y *. y))
 let distance a b = norm (sub a b)
 let approx ?(eps = Util.epsilon) a b = Float.(compare (distance a b) eps) < 1
