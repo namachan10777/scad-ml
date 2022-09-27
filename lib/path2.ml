@@ -204,7 +204,7 @@ let hull ?(all = false) ps =
     let n_lower = !n in
     for i = 0 to len - 2 do
       let idx = len - 2 - i in
-      let removed, h' = backtrack idx !h (!n - n_lower - 1) 0 in
+      let removed, h' = backtrack idx !h (!n - n_lower) 0 in
       h := if idx > 0 then idx :: h' else h';
       n := !n - removed + 1
     done;
