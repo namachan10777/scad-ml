@@ -31,6 +31,18 @@ val make : V3.t -> V3.t -> V3.t -> t
  projecting off of. *)
 val of_normal : ?point:V3.t -> V3.t -> t
 
+(** [to_projection t]
+
+    Compute an affine transformation matrix that projects 3d objects onto the
+    plane [t]. *)
+val to_projection : t -> Affine3.t
+
+(** [to_lift t]
+
+    Compute an affine transformation matrix that lifts 3d objects onto the
+    plane [t] (should be coming off of the "xy" plane). *)
+val to_lift : t -> Affine3.t
+
 (** [project t p]
 
  Project the 3d point [p] onto the plane [t]. On partial application of [t],
