@@ -24,24 +24,23 @@ let xy = { a = 0.; b = 0.; c = 1.; d = 0. }
 let xz = { a = 0.; b = 1.; c = 0.; d = 0. }
 let yz = { a = 1.; b = 0.; c = 0.; d = 0. }
 
-let to_projection { a; b; c; d } =
+let to_affine ~op { a; b; c; d } =
   let n = v3 a b c in
   let cp = V3.(sdiv (smul n d) (dot n n)) in
-  let rot = Quaternion.(to_affine @@ align n (v3 0. 0. 1.)) in
-  Affine3.(mul rot (translate (V3.neg cp)))
+  match op with
+  | `Project ->
+    let rot = Quaternion.(to_affine @@ align n (v3 0. 0. 1.)) in
+    Affine3.(mul rot (translate (V3.neg cp)))
+  | `Lift    ->
+    let rot = Quaternion.(to_affine @@ align (v3 0. 0. 1.) n) in
+    Affine3.(mul (translate cp) rot)
 
 let project t =
-  let m = to_projection t in
+  let m = to_affine ~op:`Project t in
   fun p -> V3.to_v2 @@ Affine3.transform m p
 
-let to_lift { a; b; c; d } =
-  let n = v3 a b c in
-  let cp = V3.(sdiv (smul n d) (dot n n)) in
-  let rot = Quaternion.(to_affine @@ align (v3 0. 0. 1.) n) in
-  Affine3.(mul (translate cp) rot)
-
 let lift t =
-  let m = to_lift t in
+  let m = to_affine ~op:`Lift t in
   fun p -> Affine3.transform m (V3.of_v2 p)
 
 let normal { a; b; c; _ } = V3.normalize (v3 a b c)
