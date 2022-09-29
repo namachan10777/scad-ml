@@ -596,7 +596,7 @@ module Make (V : V.S) = struct
              "Failure to find minima, consider increasing n_steps from %i."
              n_steps
     in
-    if closed then aux (-0.1) 1.1 else aux 0. 1.
+    if closed then aux (-0.5) 1.5 else aux 0. 1.
 
   let segment ?(closed = false) = function
     | [] | [ _ ] -> invalid_arg "Cannot segment path with fewer than 2 points."
