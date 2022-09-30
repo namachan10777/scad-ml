@@ -432,6 +432,35 @@ let enforce_winding w shape =
   in
   if reverse then List.rev shape else shape
 
+let hull = function
+  | [ _ ] | [ _; _ ] -> invalid_arg "Too few points (< 3) to hull."
+  | ps               ->
+    let (a, b, c), plane =
+      match Path3.noncollinear_triple ps with
+      | Some (idxs, (a, b, c)) -> idxs, Plane.make a b c
+      | None                   -> invalid_arg "Cannot hull colinear points."
+    in
+    let non_coplanar ps =
+      let rec loop i = function
+        | []       -> None
+        | hd :: tl ->
+          if not (Float.abs (Plane.distance_to_point plane hd) < Util.epsilon)
+          then Some i
+          else loop (i + 1) tl
+      in
+      loop 0 ps
+    in
+    ( match non_coplanar ps with
+    | None   -> of_path2 (Path2.hull @@ Path3.project plane ps)
+    | Some d ->
+      let ps = Array.of_list ps in
+      let len = Array.length ps in
+      let _remaining =
+        let f i acc = if i <> a && i <> b && i <> c && i <> d then i :: acc else acc in
+        List.rev @@ Util.fold_init len f []
+      in
+      empty )
+
 let translate p t = { t with points = Path3.translate p t.points }
 let xtrans x t = { t with points = Path3.xtrans x t.points }
 let ytrans y t = { t with points = Path3.ytrans y t.points }
