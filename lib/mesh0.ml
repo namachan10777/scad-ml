@@ -432,15 +432,19 @@ let enforce_winding w shape =
   in
   if reverse then List.rev shape else shape
 
+(* Adapted from BOSL2's hull3d_faces in the geometry module
+(https://github.com/revarbat/BOSL2/blob/f174071dc2e2529591ab87417e87d8daead0b1bb/geometry.scad#L2405)
+which is based on the method described here:
+https://www.hackerearth.com/practice/math/geometry/line-sweep-technique/tutorial/ *)
+
 let hull = function
   | [ _ ] | [ _; _ ] -> invalid_arg "Too few points (< 3) to hull."
-  | ps               ->
+  | points           ->
     let (a, b, c), plane =
-      match Path3.noncollinear_triple ps with
+      match Path3.noncollinear_triple points with
       | Some (idxs, (a, b, c)) -> idxs, Plane.make a b c
       | None                   -> invalid_arg "Cannot hull colinear points."
-    in
-    let non_coplanar ps =
+    and non_coplanar plane ps =
       let rec loop i = function
         | []       -> None
         | hd :: tl ->
@@ -450,16 +454,48 @@ let hull = function
       in
       loop 0 ps
     in
-    ( match non_coplanar ps with
-    | None   -> of_path2 (Path2.hull @@ Path3.project plane ps)
+    ( match non_coplanar plane points with
+    | None   -> of_path3 @@ Path2.(lift plane @@ hull @@ Path3.project plane points)
     | Some d ->
-      let ps = Array.of_list ps in
-      let len = Array.length ps in
-      let _remaining =
+      let ps = Array.of_list points in
+      let len = Array.length ps
+      and eps = Util.epsilon in
+      let remaining =
         let f i acc = if i <> a && i <> b && i <> c && i <> d then i :: acc else acc in
         List.rev @@ Util.fold_init len f []
+      and b, c = if Plane.is_point_above plane ps.(d) then c, b else b, c in
+      let triangles = [ [ a; b; c ]; [ d; b; a ]; [ c; d; a ]; [ b; d; c ] ] in
+      let planes_of_tris =
+        let[@warning "-partial-match"] f [ a; b; c ] = Plane.make ps.(a) ps.(b) ps.(c) in
+        List.map f
       in
-      empty )
+      let f (triangles, planes) idx =
+        let dists = List.map (Fun.flip Plane.distance_to_point ps.(idx)) planes in
+        (* collect half edges of triangles that are in conflict with the points
+              at idx, pruning the conflicting triangles and their planes in the process *)
+        let half_edges, triangles, planes =
+          let[@warning "-partial-match"] add edges [ a; b; c ] =
+            (c, a) :: (b, c) :: (a, b) :: edges
+          in
+          let f (edges, keep_tri, keep_pln) tri pln d =
+            if d > eps
+            then add edges tri, keep_tri, keep_pln
+            else edges, tri :: keep_tri, pln :: keep_pln
+          in
+          Util.fold3 f ([], [], []) triangles planes dists
+        in
+        (* form new triangles with the outer perimeter (horizon) of the set of
+               conflicting triangles and the point at idx *)
+        let tris =
+          let non_internal (a, b) =
+            if not @@ List.mem (b, a) half_edges then Some [ a; b; idx ] else None
+          in
+          List.filter_map non_internal half_edges
+        in
+        List.rev_append tris triangles, List.rev_append (planes_of_tris tris) planes
+      in
+      let faces, _ = List.fold_left f (triangles, planes_of_tris triangles) remaining in
+      make ~points ~faces )
 
 let translate p t = { t with points = Path3.translate p t.points }
 let xtrans x t = { t with points = Path3.xtrans x t.points }

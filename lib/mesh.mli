@@ -141,6 +141,13 @@ val of_poly3 : ?rev:bool -> Poly3.t -> t
     Create a polyhedron mesh from a list of polygonal point faces. *)
 val of_polygons : Path3.t list -> t
 
+(** [hull points]
+
+    Create a convex hull mesh that encloses [points]. If the points are
+    coplanar, a 2-dimensional hull is found, resulting in an unclosed single
+    face mesh (as with {!of_path3}). Unused points are not discarded. *)
+val hull : Path3.t -> t
+
 (** {1 Skins}
 
     Functions for generating meshes which cover over a sequence of closed

@@ -166,6 +166,15 @@ let fold_init n f init =
 
 let prepend_init n f init = fold_init n (fun i acc -> f i :: acc) init
 
+let fold3 f init l1 l2 l3 =
+  let rec loop acc l1 l2 l3 =
+    match l1, l2, l3 with
+    | [], [], []                   -> acc
+    | h1 :: t1, h2 :: t2, h3 :: t3 -> loop (f acc h1 h2 h3) t1 t2 t3
+    | _                            -> invalid_arg "Util.fold3: Unequal lengths."
+  in
+  loop init l1 l2 l3
+
 let last_element = function
   | []       -> invalid_arg "No last element in empty list."
   | hd :: tl -> List.fold_left (fun _ e -> e) hd tl

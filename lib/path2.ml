@@ -169,7 +169,7 @@ let cubic_spline ?boundary ~fn ps = CubicSpline.(interpolate_path ~fn (fit ?boun
 
 (* Adapted from BOSL2's hull2d_path in the geometry module
 (https://github.com/revarbat/BOSL2/blob/46e15e50053e986f1370e8688b5c5b078ccf818e/geometry.scad#L2347)
-which is based on this method the method described here:
+which is based on the method described here:
 https://www.hackerearth.com/practice/math/geometry/line-sweep-technique/tutorial/ *)
 
 let hull ?(all = false) ps =
