@@ -80,10 +80,14 @@ module type S = sig
 
   (** [noncollinear_triple ?eps path]
 
-      Returns a triple of non-collinear points from [path] (if the path is not
-    completely collinear). Two well separated points are selected, and the third
-    point is the furthest off the line drawn by the first two points.*)
-  val noncollinear_triple : ?eps:float -> t -> (vec * vec * vec) option
+      Returns a pair of triples of non-collinear indices and the corresponding
+      points from [path] (if the path is not completely collinear). Two well
+      separated points are selected, and the third point is the furthest off the
+      line drawn by the first two points.*)
+  val noncollinear_triple
+    :  ?eps:float
+    -> t
+    -> ((int * int * int) * (vec * vec * vec)) option
 
   (** [is_collinear ?eps path]
 
@@ -423,26 +427,27 @@ module Make (V : V.S) = struct
   let noncollinear_triple ?(eps = Util.epsilon) = function
     | [] | [ _ ] | [ _; _ ]   -> None
     | hd :: (p :: tl as rest) ->
-      let furthest_point, dist =
-        let f (fp, dist) p =
+      let _, furthest_idx, furthest_point, dist =
+        let f (i, idx, fp, dist) p =
           let d = V.distance hd p in
-          if d > dist then p, d else fp, dist
+          if d > dist then i + 1, i, p, d else i + 1, idx, fp, dist
         in
-        List.fold_left f (p, V.distance hd p) tl
+        List.fold_left f (1, 1, p, V.distance hd p) tl
       in
       if dist <= eps
       then None
       else (
         let n = V.(sdiv (sub hd furthest_point) dist)
         and threshold = dist *. eps in
-        let offline, _ =
-          let f (op, offset) p =
+        let _, offline, _ =
+          let f (i, pair, offset) p =
             let off = V.distance_to_vector (V.sub p hd) n in
-            if off > offset then Some p, off else op, offset
+            if off > offset then i + 1, Some (i, p), off else i + 1, pair, offset
           in
-          List.fold_left f (None, threshold) rest
+          List.fold_left f (1, None, threshold) rest
         in
-        Option.map (fun op -> hd, furthest_point, op) offline )
+        let f (oi, op) = (0, furthest_idx, oi), (hd, furthest_point, op) in
+        Option.map f offline )
 
   let is_collinear ?eps path = Option.is_none (noncollinear_triple ?eps path)
 
