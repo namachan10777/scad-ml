@@ -461,6 +461,8 @@ let hull = function
       let add_tri a b c ((triangles, planes) as acc) =
         try [ a; b; c ] :: triangles, Plane.make ps.(a) ps.(b) ps.(c) :: planes with
         | Invalid_argument _ -> acc (* invalid triangle (points are collinear) *)
+      and[@warning "-partial-match"] add_edges edges [ a; b; c ] =
+        (c, a) :: (b, c) :: (a, b) :: edges
       and b, c = if Plane.is_point_above plane ps.(d) then c, b else b, c in
       let triangles, planes =
         add_tri a b c ([], []) |> add_tri d b a |> add_tri c d a |> add_tri b d c
@@ -468,19 +470,15 @@ let hull = function
       let f idx ((triangles, planes) as acc) =
         if idx <> a && idx <> b && idx <> c && idx <> d (* skip starting points *)
         then (
-          let dists = List.map (Fun.flip Plane.distance_to_point ps.(idx)) planes in
           (* collect half edges of triangles that are in conflict with the points
               at idx, pruning the conflicting triangles and their planes in the process *)
           let half_edges, triangles, planes =
-            let[@warning "-partial-match"] add edges [ a; b; c ] =
-              (c, a) :: (b, c) :: (a, b) :: edges
-            in
-            let f (edges, keep_tri, keep_pln) tri pln d =
-              if d > Util.epsilon
-              then add edges tri, keep_tri, keep_pln
+            let f (edges, keep_tri, keep_pln) tri pln =
+              if Plane.distance_to_point pln ps.(idx) > Util.epsilon
+              then add_edges edges tri, keep_tri, keep_pln
               else edges, tri :: keep_tri, pln :: keep_pln
             in
-            Util.fold3 f ([], [], []) triangles planes dists
+            List.fold_left2 f ([], [], []) triangles planes
           in
           (* form new triangles with the outer perimeter (horizon) of the set of
                conflicting triangles and the point at idx *)
