@@ -484,8 +484,8 @@ let hull = function
           in
           (* form new triangles with the outer perimeter (horizon) of the set of
                conflicting triangles and the point at idx *)
-          let non_internal ((triangles, planes) as acc) (a, b) =
-            if List.mem (b, a) half_edges then triangles, planes else add_tri a b idx acc
+          let non_internal acc (a, b) =
+            if List.mem (b, a) half_edges then acc else add_tri a b idx acc
           in
           List.fold_left non_internal (triangles, planes) half_edges )
         else acc
