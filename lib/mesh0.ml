@@ -443,7 +443,7 @@ let hull = function
     let (a, b, c), plane =
       match Path3.noncollinear_triple points with
       | Some (idxs, (a, b, c)) -> idxs, Plane.make a b c
-      | None                   -> invalid_arg "Cannot hull colinear points."
+      | None                   -> invalid_arg "Cannot hull collinear points."
     and non_coplanar plane ps =
       let rec loop i = function
         | []       -> None
@@ -458,44 +458,40 @@ let hull = function
     | None   -> of_path3 @@ Path2.(lift plane @@ hull @@ Path3.project plane points)
     | Some d ->
       let ps = Array.of_list points in
-      let len = Array.length ps
-      and eps = Util.epsilon in
-      let remaining =
-        let f i acc = if i <> a && i <> b && i <> c && i <> d then i :: acc else acc in
-        List.rev @@ Util.fold_init len f []
+      let add_tri a b c ((triangles, planes) as acc) =
+        try [ a; b; c ] :: triangles, Plane.make ps.(a) ps.(b) ps.(c) :: planes with
+        | Invalid_argument _ -> acc (* invalid triangle (points are collinear) *)
       and b, c = if Plane.is_point_above plane ps.(d) then c, b else b, c in
-      let triangles = [ [ a; b; c ]; [ d; b; a ]; [ c; d; a ]; [ b; d; c ] ] in
-      let planes_of_tris =
-        let[@warning "-partial-match"] f [ a; b; c ] = Plane.make ps.(a) ps.(b) ps.(c) in
-        List.map f
+      let triangles, planes =
+        add_tri a b c ([], []) |> add_tri d b a |> add_tri c d a |> add_tri b d c
       in
-      let f (triangles, planes) idx =
-        let dists = List.map (Fun.flip Plane.distance_to_point ps.(idx)) planes in
-        (* collect half edges of triangles that are in conflict with the points
+      let f idx ((triangles, planes) as acc) =
+        if idx <> a && idx <> b && idx <> c && idx <> d (* skip starting points *)
+        then (
+          let dists = List.map (Fun.flip Plane.distance_to_point ps.(idx)) planes in
+          (* collect half edges of triangles that are in conflict with the points
               at idx, pruning the conflicting triangles and their planes in the process *)
-        let half_edges, triangles, planes =
-          let[@warning "-partial-match"] add edges [ a; b; c ] =
-            (c, a) :: (b, c) :: (a, b) :: edges
+          let half_edges, triangles, planes =
+            let[@warning "-partial-match"] add edges [ a; b; c ] =
+              (c, a) :: (b, c) :: (a, b) :: edges
+            in
+            let f (edges, keep_tri, keep_pln) tri pln d =
+              if d > Util.epsilon
+              then add edges tri, keep_tri, keep_pln
+              else edges, tri :: keep_tri, pln :: keep_pln
+            in
+            Util.fold3 f ([], [], []) triangles planes dists
           in
-          let f (edges, keep_tri, keep_pln) tri pln d =
-            if d > eps
-            then add edges tri, keep_tri, keep_pln
-            else edges, tri :: keep_tri, pln :: keep_pln
-          in
-          Util.fold3 f ([], [], []) triangles planes dists
-        in
-        (* form new triangles with the outer perimeter (horizon) of the set of
+          (* form new triangles with the outer perimeter (horizon) of the set of
                conflicting triangles and the point at idx *)
-        let tris =
-          let non_internal (a, b) =
-            if not @@ List.mem (b, a) half_edges then Some [ a; b; idx ] else None
+          let non_internal ((triangles, planes) as acc) (a, b) =
+            if List.mem (b, a) half_edges then triangles, planes else add_tri a b idx acc
           in
-          List.filter_map non_internal half_edges
-        in
-        List.rev_append tris triangles, List.rev_append (planes_of_tris tris) planes
+          List.fold_left non_internal (triangles, planes) half_edges )
+        else acc
       in
-      let faces, _ = List.fold_left f (triangles, planes_of_tris triangles) remaining in
-      make ~points ~faces )
+      let faces, _ = Util.fold_init (Array.length ps) f (triangles, planes) in
+      { n_points = Array.length ps; faces; points } )
 
 let translate p t = { t with points = Path3.translate p t.points }
 let xtrans x t = { t with points = Path3.xtrans x t.points }
