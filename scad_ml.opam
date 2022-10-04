@@ -12,9 +12,9 @@ authors: [
   "Geoff deRosenroll<geoffderosenroll@gmail.com"
 ]
 license: "BSL-1.0"
-homepage: "https://github.com/namachan10777/scad-ml"
-doc: "https://namachan10777.github.io/scad-ml"
-bug-reports: "https://github.com/namachan10777/scad-ml/issues"
+homepage: "https://github.com/geoffder/scad-ml"
+doc: "https://geoffder.github.io/scad-ml"
+bug-reports: "https://github.com/geoffder/scad-ml/issues"
 depends: [
   "dune" {>= "3.3"}
   "ocaml" {>= "4.08.0"}
@@ -35,4 +35,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/namachan10777/scad-ml.git"
+dev-repo: "git+https://github.com/geoffder/scad-ml.git"
