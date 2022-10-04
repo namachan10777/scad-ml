@@ -49,15 +49,15 @@ viewer](https://openscad.org/downloads.html) as you normally would.
 ## Documentation
 
 Documentation is available
-[online](https://namachan10777.github.io/scad-ml/scad_ml/index.html), covering the
-[API](https://namachan10777.github.io/scad-ml/scad_ml/index.html#api)
+[online](https://geoffder.github.io/scad-ml/scad_ml/index.html), covering the
+[API](https://geoffder.github.io/scad-ml/scad_ml/index.html#api)
 as well as some walkthrough style
-[examples](https://namachan10777.github.io/scad-ml/scad_ml/index.html#examples).
+[examples](https://geoffder.github.io/scad-ml/scad_ml/index.html#examples).
 
 ## Companion PPX
 
 There is a companion ppx, [\[@@deriving
-scad\]](https://github.com/geoffder/ppx_deriving_scad) for generating
+scad\]](https://github.com/geoffder/ppx_deriving_scad/tree/revamp) for generating
 transformation functions for user-defined records and abstract types made up of
 the `Scad.t`, along with their corresponding vector (`V2.t` or `V3.t`) types
 (and those composed of them) provided in this library.

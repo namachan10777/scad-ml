@@ -9,9 +9,9 @@
 (generate_opam_files true)
 
 (source
- (github namachan10777/scad-ml))
+ (github geoffder/scad-ml))
 
-(documentation https://namachan10777.github.io/scad-ml)
+(documentation https://geoffder.github.io/scad-ml)
 
 (license BSL-1.0)
 
